@@ -132,9 +132,9 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
     <div id="pmeta"></div>
   </div>
   <div id="ptabs">
-    <div class="ptab on" data-tab="pulv">💧 Pulverizaciones</div>
-    <div class="ptab" data-tab="suelos">🌱 Suelos</div>
-    <div class="ptab" id="tab-siembra" data-tab="siembra" onclick="switchPTab(this)">🌾 Siembra</div>
+    <div class="ptab on" data-tab="pulv" onclick="switchPTab(this)">💧 Pulverizaciones</div>
+    <div class="ptab" data-tab="suelos" onclick="switchPTab(this)">🌱 Suelos</div>
+    <div class="ptab" data-tab="siembra" onclick="switchPTab(this)">🌾 Siembra</div>
   </div>
   <div id="pbody"></div>
 </div>
@@ -336,12 +336,7 @@ document.querySelectorAll('.ybtn').forEach(b=>b.addEventListener('click',()=>{
   b.classList.add('on');
   draw();
 }));
-document.querySelectorAll('.ptab').forEach(t=>t.addEventListener('click',()=>{
-  activeTab=t.dataset.tab;
-  document.querySelectorAll('.ptab').forEach(x=>x.classList.remove('on'));
-  t.classList.add('on');
-  renderTab();
-}));
+// ptab switching handled by inline onclick
 
 // ── PANEL ──
 function openP(lote){
