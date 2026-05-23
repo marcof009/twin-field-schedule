@@ -166,7 +166,7 @@ else:
 
 # ── 5. GUARDAR ─────────────────────────────────────────────────────────────
 output = {'lotes': lotes, 'pulv': pulv, 'suelos': suelos, 'siembra': siembra}
-out_path = os.path.join(OUT_DIR, 'data.json')
+out_path = os.path.join(OUT_DIR, 'data', 'la_alicia.json')
 with open(out_path, 'w', encoding='utf-8') as f:
     json.dump(output, f, ensure_ascii=False, separators=(',', ':'))
 size = os.path.getsize(out_path)
