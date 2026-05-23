@@ -647,7 +647,7 @@ function renderResumen(){
   html+=`<div class="rsection-title">Campo vs Empresa</div>
   <div class="rbar-legend">
     <div class="rbar-leg-item"><div class="rbar-leg-dot" style="background:var(--acc)"></div>Este campo</div>
-    <div class="rbar-leg-item"><div class="rbar-leg-dot" style="background:#4a90d9;opacity:.6"></div>Empresa total</div>
+    <div class="rbar-leg-item"><div class="rbar-leg-dot" style="background:#4a90d9;opacity:.6"></div>Total empresa (= 100%)</div>
   </div>`;
   const allCrops=[...new Set([...Object.keys(cS.byCrop),...Object.keys(eS.byCrop)])]
     .sort((a,b)=>(cS.byCrop[b]?.ha||0)-(cS.byCrop[a]?.ha||0));
@@ -655,12 +655,14 @@ function renderResumen(){
     const cHa=cS.byCrop[lbl]?.ha||0;const eHa=eS.byCrop[lbl]?.ha||0;
     const k2=cS.byCrop[lbl]?.key||eS.byCrop[lbl]?.key||'default';
     const color=CC[k2]||CC.default;
+    const maxBar=eHa||1; // empresa total for this crop = 100%
+    const pct=(eHa>0?(cHa/eHa*100).toFixed(0):0);
     html+=`<div class="rbar-wrap">
       <div class="rbar-label"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle;background:${color}"></span>${lbl}</span>
-      <span style="color:var(--txt2);font-size:11px">${Math.round(cHa)} / ${Math.round(eHa)} ha</span></div>
+      <span style="color:var(--txt2);font-size:11px">${Math.round(cHa)} de ${Math.round(eHa)} ha (${pct}%)</span></div>
       <div class="rbar-track">
-        <div class="rbar-empresa" style="width:${(eHa/maxHa*100).toFixed(1)}%;background:#4a90d9"></div>
-        <div class="rbar-campo" style="width:${(cHa/maxHa*100).toFixed(1)}%;background:${color}"></div>
+        <div class="rbar-empresa" style="width:100%;background:#4a90d9"></div>
+        <div class="rbar-campo" style="width:${(cHa/maxBar*100).toFixed(1)}%;background:${color}"></div>
       </div>
     </div>`;
   });
@@ -669,11 +671,13 @@ function renderResumen(){
   [['Fina',Math.round(cS.tot.fina),Math.round(eS.tot.fina),'#ef6c6c'],
    ['Gruesa',Math.round(cS.tot.gruesa),Math.round(eS.tot.gruesa),'#66bb6a'],
    ['Campo Natural',Math.round(cS.tot.cn),Math.round(eS.tot.cn),'#8d6e63']].forEach(([lbl,c,e,color])=>{
+    const maxBar=e||1;
+    const pct=(e>0?(c/e*100).toFixed(0):0);
     html+=`<div class="rbar-wrap">
-      <div class="rbar-label"><span>${lbl}</span><span style="color:var(--txt2);font-size:11px">${c} / ${e} ha</span></div>
+      <div class="rbar-label"><span>${lbl}</span><span style="color:var(--txt2);font-size:11px">${c} de ${e} ha (${pct}%)</span></div>
       <div class="rbar-track">
-        <div class="rbar-empresa" style="width:${(e/maxHa*100).toFixed(1)}%;background:#4a90d9"></div>
-        <div class="rbar-campo" style="width:${(c/maxHa*100).toFixed(1)}%;background:${color}"></div>
+        <div class="rbar-empresa" style="width:100%;background:#4a90d9"></div>
+        <div class="rbar-campo" style="width:${(c/maxBar*100).toFixed(1)}%;background:${color}"></div>
       </div>
     </div>`;
   });
