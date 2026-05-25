@@ -142,6 +142,12 @@ CAMPO_KEY_MAP = {
 }
 if os.path.exists(SIEMBRA_FILE):
     df_si = pd.read_excel(SIEMBRA_FILE, sheet_name=0, header=0)
+def sf(v, d=0):
+            try:
+                f = float(v)
+                return d if f != f else f
+            except:
+                return d
     for _, row in df_si.iterrows():
         campo = str(row.get('Campo','')).strip().upper()
         lote  = str(row.get('Lote','')).strip()
@@ -151,13 +157,12 @@ if os.path.exists(SIEMBRA_FILE):
         siembra.setdefault(ck, {})[lote] = {
             'cultivo':  str(row.get('Cultivo','')),
             'variedad': str(row.get('Variedad','')),
-            'kg_ha':    float(row.get('Kg_ha',  0) or 0),
-            'map_ha':   float(row.get('MAP_ha', 0) or 0),
-            'dap_ha':   float(row.get('DAP_ha', 0) or 0),
+            'kg_ha':    sf(row.get('Kg_ha')),
+            'map_ha':   sf(row.get('MAP_ha')),
+            'dap_ha':   sf(row.get('DAP_ha')),
             'ant':      str(row.get('Antecesor','')),
-            'pg':       float(row.get('PG',    0) or 0),
-            'p1000':    float(row.get('P1000', 0) or 0),
-            'analisis': str(row.get('Analisis','')),
+            'pg':       sf(row.get('PG')),
+            'p1000':    sf(row.get('P1000')),
         }
     total = sum(len(l) for l in siembra.values())
     print(f"  {total} lotes con datos de siembra")
