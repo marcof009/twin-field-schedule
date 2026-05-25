@@ -8,31 +8,31 @@
 <title>Campo — Gestión</title>
 <style>
 :root {
-  --bg:#0d1117; --surf:#161c26; --surf2:#1e2635; --bord:rgba(255,255,255,0.08);
-  --txt:#eef0f4; --txt2:#8a95a8; --acc:#d4a853; --grn:#8dc468;
+  --bg:#f0f7f0; --surf:#ffffff; --surf2:#e8f2e8; --bord:rgba(0,0,0,0.10);
+  --txt:#1a2e1a; --txt2:#5a7a5a; --acc:#2d7a2d; --grn:#4a9e4a;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;background:var(--bg);color:var(--txt)}
 
 /* HEADER */
-#hdr{position:fixed;top:0;left:0;right:0;z-index:100;height:50px;background:var(--bg);border-bottom:1px solid var(--bord);display:flex;align-items:center;padding:0 14px;gap:10px}
+#hdr{position:fixed;top:0;left:0;right:0;z-index:100;height:58px;background:var(--bg);border-bottom:1px solid var(--bord);display:flex;align-items:center;padding:0 14px;gap:10px}
 #hdr h1{font-size:17px;font-weight:700;letter-spacing:-0.3px;flex:1}
 #hdr h1 em{font-style:normal;color:var(--acc)}
 #hdr-right{display:flex;gap:6px;align-items:center}
 
 /* CAMPO TABS */
-#ctabs{position:fixed;top:50px;left:0;right:0;z-index:99;background:var(--surf);border-bottom:1px solid var(--bord);display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#ctabs{position:fixed;top:58px;left:0;right:0;z-index:99;background:var(--surf);border-bottom:1px solid var(--bord);display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 #ctabs::-webkit-scrollbar{display:none}
 .ctab{flex:none;padding:8px 16px;font-size:11.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--txt2);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s}
 .ctab.on{color:var(--acc);border-bottom-color:var(--acc)}
 
 /* CANVAS CONTAINER */
-#map-wrap{position:fixed;top:90px;left:0;right:0;bottom:0;overflow:hidden;cursor:grab;touch-action:none}
+#map-wrap{position:fixed;top:98px;left:0;right:0;bottom:0;overflow:hidden;cursor:grab;touch-action:none}
 #map-wrap.grabbing{cursor:grabbing}
 #cv{display:block;width:100%;height:100%}
 
 /* YEAR PILL */
-#ypill{position:fixed;top:98px;left:10px;z-index:50;background:rgba(13,17,23,.88);backdrop-filter:blur(10px);border:1px solid var(--bord);border-radius:10px;padding:5px 3px;display:flex;flex-direction:column;gap:1px}
+#ypill{position:fixed;top:106px;left:10px;z-index:50;background:rgba(13,17,23,.88);backdrop-filter:blur(10px);border:1px solid var(--bord);border-radius:10px;padding:5px 3px;display:flex;flex-direction:column;gap:1px}
 .ybtn{padding:4px 10px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer;border-radius:6px;transition:all .15s;white-space:nowrap}
 .ybtn.on{background:var(--acc);color:#000}
 
@@ -150,7 +150,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 .login-sub{font-size:13px;color:var(--txt2);text-align:center;margin-bottom:28px}
 .login-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .login-field label{font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--txt2)}
-.login-field input{background:var(--surf2);border:1px solid var(--bord);border-radius:10px;padding:12px 14px;font-size:15px;color:var(--txt);font-family:inherit;outline:none;-webkit-appearance:none;width:100%}
+.login-field input{background:var(--surf2);border:1px solid var(--bord);border-radius:10px;padding:12px 14px;font-size:15px;color:var(--txt);font-family:inherit;outline:none;-webkit-appearance:none;width:100%;-webkit-text-fill-color:var(--txt)}
 .login-field input:focus{border-color:var(--acc)}
 .login-btn{background:var(--acc);color:#000;font-size:15px;font-weight:700;border:none;border-radius:10px;padding:14px;cursor:pointer;font-family:inherit;margin-top:6px;-webkit-appearance:none;width:100%}
 .login-btn:active{opacity:.85}
@@ -161,8 +161,11 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 <body>
 
 <div id="hdr">
-  <h1>La <em>Alicia</em></h1>
-  <button onclick="logout()" style="background:none;border:1px solid var(--bord);border-radius:7px;color:var(--txt2);font-size:11px;padding:5px 10px;cursor:pointer;font-family:inherit;-webkit-appearance:none">Salir</button>
+  <div style="flex:1;min-width:0">
+    <div id="hdr-client" style="font-size:15px;font-weight:700;letter-spacing:-.2px;color:var(--txt)">—</div>
+    <div style="font-size:10px;color:var(--txt2);margin-top:1px">Ing. Agr. Marcos Fernández &nbsp;·&nbsp; (+54) 2983 618926</div>
+  </div>
+  <button onclick="logout()" style="background:none;border:1px solid var(--bord);border-radius:7px;color:var(--txt2);font-size:11px;padding:5px 10px;cursor:pointer;font-family:inherit;-webkit-appearance:none;flex-shrink:0">Salir</button>
 </div>
 
 <div id="ctabs">
@@ -198,10 +201,10 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
     <div class="login-err" id="login-err"></div>
   </div>
 </div>
-<div id="loading" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:999;background:#0d1117;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+<div id="loading" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:999;background:#f0f7f0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">
   <div style="font-size:28px">🌾</div>
-  <div style="color:#d4a853;font-size:15px;font-weight:600">La Alicia</div>
-  <div style="color:#8a95a8;font-size:13px">Cargando datos...</div>
+  <div style="color:#2d7a2d;font-size:15px;font-weight:600">Campo</div>
+  <div style="color:#5a7a5a;font-size:13px">Cargando datos...</div>
 </div>
 
 <div id="leg"><h4>Cultivo</h4><div id="legitems"></div></div>
@@ -297,7 +300,9 @@ async function loadData(){
     D = await resp.json();
     // Update title with client name
     const clientLabels = {la_alicia:'La Alicia',alan:'Alan',mauricio:'Mauricio',el_puntal:'El Puntal',la_chicha:'La Chicha'};
-    document.querySelector('#hdr h1').innerHTML = clientLabels[clientKey]||clientKey;
+    const clientName = clientLabels[clientKey]||clientKey;
+    const hdrClient = document.getElementById('hdr-client');
+    if(hdrClient) hdrClient.textContent = clientName;
     document.getElementById('loading').style.display='none';
     init();
   } catch(e) {
