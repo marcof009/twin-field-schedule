@@ -15,24 +15,24 @@
 html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;background:var(--bg);color:var(--txt)}
 
 /* HEADER */
-#hdr{position:fixed;top:0;left:0;right:0;z-index:100;height:58px;background:var(--bg);border-bottom:1px solid var(--bord);display:flex;align-items:center;padding:0 14px;gap:10px}
+#hdr{position:fixed;top:0;left:0;right:0;z-index:100;height:66px;background:var(--bg);border-bottom:1px solid var(--bord);display:flex;align-items:center;padding:0 14px;gap:10px}
 #hdr h1{font-size:17px;font-weight:700;letter-spacing:-0.3px;flex:1}
 #hdr h1 em{font-style:normal;color:var(--acc)}
 #hdr-right{display:flex;gap:6px;align-items:center}
 
 /* CAMPO TABS */
-#ctabs{position:fixed;top:58px;left:0;right:0;z-index:99;background:var(--surf);border-bottom:1px solid var(--bord);display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#ctabs{position:fixed;top:66px;left:0;right:0;z-index:99;background:var(--surf);border-bottom:1px solid var(--bord);display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 #ctabs::-webkit-scrollbar{display:none}
 .ctab{flex:none;padding:8px 16px;font-size:11.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--txt2);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s}
 .ctab.on{color:var(--acc);border-bottom-color:var(--acc)}
 
 /* CANVAS CONTAINER */
-#map-wrap{position:fixed;top:98px;left:0;right:0;bottom:0;overflow:hidden;cursor:grab;touch-action:none}
+#map-wrap{position:fixed;top:106px;left:0;right:0;bottom:0;overflow:hidden;cursor:grab;touch-action:none}
 #map-wrap.grabbing{cursor:grabbing}
 #cv{display:block;width:100%;height:100%}
 
 /* YEAR PILL */
-#ypill{position:fixed;top:106px;left:10px;z-index:50;background:rgba(13,17,23,.88);backdrop-filter:blur(10px);border:1px solid var(--bord);border-radius:10px;padding:5px 3px;display:flex;flex-direction:column;gap:1px}
+#ypill{position:fixed;top:114px;left:10px;z-index:50;background:rgba(13,17,23,.88);backdrop-filter:blur(10px);border:1px solid var(--bord);border-radius:10px;padding:5px 3px;display:flex;flex-direction:column;gap:1px}
 .ybtn{padding:4px 10px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer;border-radius:6px;transition:all .15s;white-space:nowrap}
 .ybtn.on{background:var(--acc);color:#000}
 
@@ -161,9 +161,33 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 <body>
 
 <div id="hdr">
-  <div style="flex:1;min-width:0">
-    <div id="hdr-client" style="font-size:15px;font-weight:700;letter-spacing:-.2px;color:var(--txt)">—</div>
-    <div style="font-size:10px;color:var(--txt2);margin-top:1px">Ing. Agr. Marcos Fernández &nbsp;·&nbsp; (+54) 2983 618926</div>
+  <div style="flex:1;min-width:0;display:flex;align-items:center;gap:10px">
+    <div style="display:flex;flex-direction:column;align-items:center;line-height:1">
+      <svg width="80" height="22" viewBox="0 0 80 22" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="17" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="800" font-size="18" fill="#e8650a" letter-spacing="1">TW</text>
+  <text x="37" y="17" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="800" font-size="18" fill="#e8650a" letter-spacing="1">N</text>
+  <!-- espiga de maiz en lugar de la i -->
+  <g transform="translate(33,1)">
+    <!-- grano central -->
+    <ellipse cx="3.5" cy="13" rx="2.8" ry="3.5" fill="#e8650a"/>
+    <!-- granos laterales -->
+    <ellipse cx="1" cy="11" rx="2" ry="2.8" fill="#e8650a" transform="rotate(-20,1,11)"/>
+    <ellipse cx="6" cy="11" rx="2" ry="2.8" fill="#e8650a" transform="rotate(20,6,11)"/>
+    <ellipse cx="0.5" cy="8" rx="1.5" ry="2.2" fill="#e8650a" transform="rotate(-35,0.5,8)"/>
+    <ellipse cx="6.5" cy="8" rx="1.5" ry="2.2" fill="#e8650a" transform="rotate(35,6.5,8)"/>
+    <!-- hoja/tallo -->
+    <path d="M3.5,16 Q3.5,19 3.5,21" stroke="#e8650a" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <path d="M3.5,18 Q1,17 0,15" stroke="#e8650a" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <path d="M3.5,17 Q6,16 7,14" stroke="#e8650a" stroke-width="1" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
+      <div style="font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#e8650a;margin-top:1px">Field Schedule</div>
+    </div>
+    <div style="width:1px;height:32px;background:var(--bord)"></div>
+    <div>
+      <div id="hdr-client" style="font-size:14px;font-weight:700;letter-spacing:-.2px;color:var(--txt)">—</div>
+      <div style="font-size:9.5px;color:var(--txt2);margin-top:1px">Ing. Agr. Marcos Fernández &nbsp;·&nbsp; (+54) 2983 618926</div>
+    </div>
   </div>
   <button onclick="logout()" style="background:none;border:1px solid var(--bord);border-radius:7px;color:var(--txt2);font-size:11px;padding:5px 10px;cursor:pointer;font-family:inherit;-webkit-appearance:none;flex-shrink:0">Salir</button>
 </div>
@@ -186,9 +210,28 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-logo">🌾</div>
-    <div class="login-title">Campo</div>
-    <div class="login-sub">Gestión de lotes</div>
+    <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:4px">
+      <svg width="80" height="22" viewBox="0 0 80 22" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="17" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="800" font-size="18" fill="#e8650a" letter-spacing="1">TW</text>
+  <text x="37" y="17" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="800" font-size="18" fill="#e8650a" letter-spacing="1">N</text>
+  <!-- espiga de maiz en lugar de la i -->
+  <g transform="translate(33,1)">
+    <!-- grano central -->
+    <ellipse cx="3.5" cy="13" rx="2.8" ry="3.5" fill="#e8650a"/>
+    <!-- granos laterales -->
+    <ellipse cx="1" cy="11" rx="2" ry="2.8" fill="#e8650a" transform="rotate(-20,1,11)"/>
+    <ellipse cx="6" cy="11" rx="2" ry="2.8" fill="#e8650a" transform="rotate(20,6,11)"/>
+    <ellipse cx="0.5" cy="8" rx="1.5" ry="2.2" fill="#e8650a" transform="rotate(-35,0.5,8)"/>
+    <ellipse cx="6.5" cy="8" rx="1.5" ry="2.2" fill="#e8650a" transform="rotate(35,6.5,8)"/>
+    <!-- hoja/tallo -->
+    <path d="M3.5,16 Q3.5,19 3.5,21" stroke="#e8650a" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <path d="M3.5,18 Q1,17 0,15" stroke="#e8650a" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <path d="M3.5,17 Q6,16 7,14" stroke="#e8650a" stroke-width="1" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#e8650a;margin-top:3px">Field Schedule</div>
+    </div>
+    <div class="login-sub" style="margin-top:12px">Gestión de lotes</div>
     <div class="login-field">
       <label>Usuario</label>
       <input type="text" id="login-user" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="usuario">
@@ -399,7 +442,7 @@ function visLotes(){
 function draw(){
   const W=cv.width,H=cv.height;
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#0a0d12';
+  ctx.fillStyle='#e8f5e8';
   ctx.fillRect(0,0,W,H);
 
   const lotes=visLotes();
