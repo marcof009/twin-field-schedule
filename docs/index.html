@@ -166,10 +166,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 </div>
 
 <div id="ctabs">
-  <div class="ctab on" data-campo="fina_la_turca" onclick="switchCampo(this)">La Turca</div>
-  <div class="ctab" data-campo="fina_la_manga" onclick="switchCampo(this)">La Manga</div>
-  <div class="ctab" data-campo="fina_san_fermin" onclick="switchCampo(this)">San Fermín</div>
-  <div class="ctab" data-campo="fina_becutti" onclick="switchCampo(this)">Becutti</div>
+  <!-- populated dynamically by init() -->
 </div>
 
 <div id="ypill">
@@ -340,7 +337,7 @@ const cc=v=>CC[ck(v)]||CC.default;
 const cl=v=>CL[ck(v)]||v||'—';
 
 // ── STATE ──
-let yr='r26', campo='fina_la_turca', selLote=null, activeTab='pulv';
+let yr='r26', campo='', selLote=null, activeTab='pulv';
 
 // ── MAP STATE ──
 const cv=document.getElementById('cv');
@@ -864,6 +861,14 @@ document.getElementById('pnl').addEventListener('touchend',e=>{
 
 // ── INIT ──
 function init(){
+  // Build tabs dynamically from loaded data
+  const layers = [...new Set(D.lotes.map(l=>l.layer))];
+  const ctabs = document.getElementById('ctabs');
+  ctabs.innerHTML = layers.map((l,i)=>{
+    const label = D.lotes.find(x=>x.layer===l)?.campo || l;
+    return `<div class="ctab ${i===0?'on':''}" data-campo="${l}" onclick="switchCampo(this)">${label}</div>`;
+  }).join('');
+  campo = layers[0] || 'fina_la_turca';
   resize();
   initVP();
   draw();
