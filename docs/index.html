@@ -587,6 +587,20 @@ function renderTab(){
 // ── PULV ──
 const MONTHS=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
+// Normalize lote name: remove prefix, lowercase, unify separators (_ / . -> -)
+function normLote(str){
+  return str.toLowerCase().replace(/[_\/\.]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').trim();
+}
+function findKey(campoDB, rawNum){
+  if(!campoDB) return null;
+  const norm = normLote(rawNum);
+  for(const k of Object.keys(campoDB)){
+    const kn = normLote(k.replace(/^lote\s*/i,''));
+    if(kn === norm) return k;
+  }
+  return null;
+}
+
 function pulvKey(lote){
   const pfx={fina_la_manga:'lm',fina_la_turca:'lt',fina_san_fermin:'sf',fina_becutti:'b'};
   const p=pfx[lote.layer]||'';
@@ -594,6 +608,8 @@ function pulvKey(lote){
   let num=lote.name.replace(new RegExp('^'+p,'i'),'').replace(/^_/,'')
     .replace(/_bajo$/i,'').replace(/_juncos$/i,'').replace(/_ch$/i,'')
     .replace(/_gr$/i,'').replace(/_ls$/i,'');
+  const found = findKey(campoData, num);
+  if(found) return found;
   if(campoData['LOTE '+num]) return 'LOTE '+num;
   if(campoData['LOTE '+num.toUpperCase()]) return 'LOTE '+num.toUpperCase();
   return 'LOTE '+num.toUpperCase();
@@ -658,14 +674,13 @@ function suelosKey(lote){
   const p=pfx[lote.layer]||'';
   let num=lote.name.replace(new RegExp('^'+p,'i'),'').replace(/^_/,'');
   const campoDB=D.suelos[lote.layer];
-  if(!campoDB)return null;
-  const keys=Object.keys(campoDB);
-  // Try exact
-  if(campoDB[num])return num;
-  const nl=num.toLowerCase();
-  for(const k of keys){
-    const kl=k.toLowerCase().replace(/\s/g,'');
-    if(kl===nl||kl===nl.replace('.',''))return k;
+  if(!campoDB) return null;
+  const found=findKey(campoDB, num);
+  if(found) return found;
+  if(campoDB[num]) return num;
+  const nl=normLote(num);
+  for(const k of Object.keys(campoDB)){
+    if(normLote(k)===nl) return k;
   }
   return null;
 }
@@ -699,12 +714,14 @@ function siembraKey(lote){
   const pfx={fina_la_manga:'lm',fina_la_turca:'lt',fina_san_fermin:'sf',fina_becutti:'b'};
   const p=pfx[lote.layer]||'';
   const campoDB=D.siembra[lote.layer];
-  if(!campoDB)return null;
+  if(!campoDB) return null;
   let num=lote.name.replace(new RegExp('^'+p,'i'),'').replace(/^_/,'')
     .replace(/_bajo$/i,'').replace(/_juncos$/i,'');
-  const nl=num.toLowerCase();
+  const found=findKey(campoDB, num);
+  if(found) return found;
+  const nl=normLote(num);
   for(const k of Object.keys(campoDB)){
-    if(k.replace(/^LOTE\s*/i,'').toLowerCase()===nl)return k;
+    if(normLote(k.replace(/^LOTE\s*/i,''))===nl) return k;
   }
   return null;
 }
