@@ -3,8 +3,8 @@ name: Actualizar datos del campo
 on:
   push:
     paths:
-      - 'data/**'   # se activa cuando cambia cualquier archivo en /data/
-  workflow_dispatch:  # permite correrlo manualmente desde GitHub
+      - 'data/**'
+  workflow_dispatch:
 
 jobs:
   generate:
@@ -23,14 +23,14 @@ jobs:
         run: |
           pip install geopandas pandas openpyxl shapely pyproj fiona
 
-      - name: Generar data.json
+      - name: Generar JSONs
         run: python generate_data.py
 
-      - name: Commitear y pushear data.json
+      - name: Commitear y pushear
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/data/la_alicia.json
-          git diff --staged --quiet || git commit -m "Auto: actualizar data.json"
+          git add docs/data/
+          git diff --staged --quiet || git commit -m "Auto: actualizar datos"
           git pull --rebase origin main
           git push
