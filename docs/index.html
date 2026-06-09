@@ -314,7 +314,7 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 
 <script>
 // CONFIG
-const DBX_TOKEN = 'sl.u.AGg-HfiNLsJe7pwwIG3H1VIZKwDDdytZ5gSSLawrKGZ6KhIBzPhiGAyN5G_x4OQ1SXfkQV2PHR38iu5HPlwfL-b5e1kB-Hoy_WuyY3R8flpnSntjpEGLnCWxlpBofDnIlMzIMm2ckKr-vBBrakgReiOSvpVByzsBvRQhHOWCd0TNQLC2h7Yx-c8XLaH3LpxvXvFFZ3Gm5yy2ak4NlNTdcihh1KEdQ3BQMhGmyP4TFEZnzJPaGsMFNBY_stdkvKM3YoZGjg-lqyFAtjlJLMPbQjGuyuLcxGiJiuxC9TttSP-ppbHircOxgfpgQaPAdF4zlrRsX_3FeNcJLluaU1zuSiKpQ3lLrlaon8uUcUBKzH23nSlD2DeAFE8oVl4PPPM85YRNv4q7OkMMAp4fKguhMJP9D7dyWeGV4FOeafWKGWj2KvrgyxP8RLpQLPIFxlxPlGe9uywRLzBmN3NiqRUUkOAD2MLB8Ttumo4ecg-2Y7KfazXFGxcOedjYh_DBUyOX_u1E8oD388TUYg_Vam8_IeuO4Z1z2ncOdck7yvC1Big4NW3sx9yvfUZBv0x8WWgH0CcD0eBWYIWu7tPCgsE6H9LX-9nS_9GmAV6KcHttzvkp60qbH9iqEbgByVIyXTCh4dIvLFLIk9RJiQljQgi932z-ZNpWSngjKI8KP5pOvGHfM4I7fCU4jlV7VdjRSjJRNx8K7d6zlyT-nP1S6gKWUWbqujoV8HmolE8EhVWrsMGUSYGfmmFoxf86k3UZvEPT80iPrO1UOdfBtTxlfQrOQ3FX3cFjy_dq1fMbjCO5ILyA2edLevh6F5SS8vn1B9UlX7Cn8y7M21XAeHdpMi-3Jtf1gVI2jqxvuNrlceVJVnRJetAL8y4FrokaZF-zOfpL0rlRivuL7d0wUyFVSgTUM3GP7DKhbwFO_vZ_IjMsI-z5p3RoCtXGg2GKRpUaMgLB4gHsNn4XfTy5YG0kFm0XsgvvMUMGl4qOw08OY6mEpRQ5xhvz7Z7b31L-FUsqxDkY4p-QUOAJfQykic96KK8tC_iBBe9xIsxhlwElx5mgE3UjIVBbXd--qf6eZ9I5fRj7aZ80cs_IbwvEqyZpvvNUzmXQWSLHw5bE2oKg2MlbP4Zw8v-JDV-Ujhi0gzQ1zpffOubvHy5oPeU8tglb6H350noiqliAE0rzJlPmPJv0Ma-F_NB7WLoVrLV1_SRyhBbseZjO3lwclbfvu3yp6Wc-gooUhz-ZLiSgnVFSiPVi0Djrl34eO95iT-5Un25mAhCApMEoSdZYW9D1er0zlVgfSyo9JehO6ArhsKf58SPnyZnxpg';
+const DBX_TOKEN = 'PEGAR_TOKEN_DROPBOX_AQUI';
 const SB_URL = 'https://qqzjmhuhuudbanaujncp.supabase.co';
 const SB_KEY = 'sb_publishable_UYUDPQroApuPKy3ARh7nWw_ezeQYVg2';
 const SBH = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
@@ -629,20 +629,20 @@ function recR(){
 function rP(s){rStk.push(s);recR();}
 function recRC(body){
   const cs=SESSION.c[0]==='all'?Object.entries(CFG).map(([k,v])=>({key:k,...v})):SESSION.c.map(k=>({key:k,...CFG[k]}));
-  body.innerHTML='<div class="rsec">Clientes</div>'+cs.map(c=>'<div class="rc" onclick="rP({type:'cam',ck:''+c.key+'',title:''+c.lbl+''})"><div class="rc-n">'+c.lbl+'</div><div class="rc-m">'+Object.keys(c.campos||{}).length+' campos</div></div>').join('');
+  body.innerHTML=`<div class="rsec">Clientes</div>`+cs.map(c=>`<div class="rc" data-ck="${c.key}" data-lbl="${c.lbl}" onclick="rP({type:'cam',ck:this.dataset.ck,title:this.dataset.lbl})"><div class="rc-n">${c.lbl}</div><div class="rc-m">${Object.keys(c.campos||{}).length} campos</div></div>`).join('');
 }
 function recRCam(body,ck2){
   const cfg=CFG[ck2];
   body.innerHTML='<div class="rsec">Campos</div>'+Object.entries(cfg.campos).map(([k,v])=>{
     const ls=D?.lotes.filter(l=>l.layer===k)||[];const ha=ls.reduce((s,l)=>s+(parseFloat(l.area)||0),0);
-    return'<div class="rc" onclick="rP({type:'lots',lk:''+k+'',ck:''+ck2+'',title:''+v.lbl+''})"><div class="rc-n">'+v.lbl+'</div><div class="rc-m"><span>'+ls.length+' lotes</span><span>'+Math.round(ha)+' ha</span></div></div>';
+    return `<div class="rc" data-lk="${k}" data-ck="${ck2}" data-lbl="${v.lbl}" onclick="rP({type:'lots',lk:this.dataset.lk,ck:this.dataset.ck,title:this.dataset.lbl})"><div class="rc-n">${v.lbl}</div><div class="rc-m"><span>${ls.length} lotes</span><span>${Math.round(ha)} ha</span></div></div>`;
   }).join('');
 }
 function recRLots(body,lk,ck2){
   const ls=D?.lotes.filter(l=>l.layer===lk)||[];const hoy=new Date().toISOString().split('T')[0];
   body.innerHTML='<div class="rsec">'+ls.length+' lotes</div>'+ls.map(l=>{
     const obs=rObs[l.name+lk]||[];const th=obs.some(o=>o.fecha===hoy);const val=schGC(l);
-    return'<div class="rc" onclick="rP({type:'lot',lid:''+l.name+'',lk:''+lk+'',title:'Lote '+l.name.toUpperCase()+''})"><div class="rc-n">'+l.name.toUpperCase()+'</div><div class="rc-m"><span>'+l.area+' ha</span><span style="color:'+cc(val)+'">'+cl(val)+'</span>'+(th?'<span class="bh">✓ hoy</span>':'')+'</div></div>';
+    return `<div class="rc" data-lid="${l.name}" data-lk="${lk}" onclick="rP({type:'lot',lid:this.dataset.lid,lk:this.dataset.lk,title:'Lote '+this.dataset.lid.toUpperCase()})"><div class="rc-n">${l.name.toUpperCase()}</div><div class="rc-m"><span>${l.area} ha</span><span style="color:${cc(val)}">${cl(val)}</span>${th?'<span class="bh">✓ hoy</span>':''}</div></div>`;
   }).join('');
 }
 function recRLot(body,lid,lk){
@@ -682,7 +682,7 @@ function retRend(){
 }
 function retRL(body){
   if(!retR.length){body.innerHTML='<div class="empty">Sin recetas</div>';return;}
-  body.innerHTML=retR.map(r=>'<div class="rli" onclick="retStk.push({type:'ver',id:''+r.id+''});retRend()"><div class="rli-top"><div class="rli-n">Rec. '+(r.numero_receta||'—')+' · '+(r.lote_id||'?')+'</div><span class="ep ep-'+(r.estado||'pendiente')+'">'+(r.estado||'pendiente')+'</span></div><div class="rli-m"><span>📅 '+r.fecha+'</span><span>'+(r.cultivo||'—')+'</span><span>'+(r.objetivo||'')+'</span></div></div>').join('');
+  body.innerHTML=retR.map(r=>`<div class="rli" data-id="${r.id}" onclick="retStk.push({type:'ver',id:this.dataset.id});retRend()"><div class="rli-top"><div class="rli-n">Rec. ${r.numero_receta||'—'} · ${r.lote_id||'?'}</div><span class="ep ep-${r.estado||'pendiente'}">${r.estado||'pendiente'}</span></div><div class="rli-m"><span>📅 ${r.fecha}</span><span>${r.cultivo||'—'}</span><span>${r.objetivo||''}</span></div></div>`).join('');
 }
 function retRF(body){
   const copts=Object.entries(CFG).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join('');
