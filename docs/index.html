@@ -1,961 +1,741 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<meta charset="UTF-8">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="Campo">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Twin Suite">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-<title>Campo — Gestión</title>
+<title>Twin Field Suite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,200;9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/shpjs@4.0.4/dist/shp.js"></script>
 <style>
 :root {
-  --bg:#f0f7f0; --surf:#ffffff; --surf2:#e8f2e8; --bord:rgba(0,0,0,0.10);
-  --txt:#1a2e1a; --txt2:#5a7a5a; --acc:#2d7a2d; --grn:#4a9e4a;
+  --bg:#f6f7f4; --surf:#fff; --surf2:#f0f2ed; --surf3:#e6e9e2;
+  --bord:rgba(0,0,0,.07); --bord2:rgba(0,0,0,.13);
+  --txt:#1b2318; --txt2:#697a60; --txt3:#9eac93;
+  --acc:#2b6b2b; --grn:#4a9e4a; --ora:#cc5c08; --red:#b83232; --blu:#2673a8;
+  --f:'DM Sans',system-ui,sans-serif;
+  --r:10px; --r2:6px; --r3:14px;
+  --sh:0 1px 6px rgba(0,0,0,.06);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;background:var(--bg);color:var(--txt)}
-
-/* HEADER */
-#hdr{position:fixed;top:0;left:0;right:0;z-index:100;height:66px;background:var(--bg);border-bottom:1px solid var(--bord);display:flex;align-items:center;padding:0 14px;gap:10px}
-#hdr h1{font-size:17px;font-weight:700;letter-spacing:-0.3px;flex:1}
-#hdr h1 em{font-style:normal;color:var(--acc)}
-#hdr-right{display:flex;gap:6px;align-items:center}
-
-/* CAMPO TABS */
-#ctabs{position:fixed;top:66px;left:0;right:0;z-index:99;background:var(--surf);border-bottom:1px solid var(--bord);display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-#ctabs::-webkit-scrollbar{display:none}
-.ctab{flex:none;padding:8px 16px;font-size:11.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--txt2);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s}
-.ctab.on{color:var(--acc);border-bottom-color:var(--acc)}
-
-/* CANVAS CONTAINER */
-#map-wrap{position:fixed;top:106px;left:0;right:0;bottom:0;overflow:hidden;cursor:grab;touch-action:none}
-#map-wrap.grabbing{cursor:grabbing}
-#cv{display:block;width:100%;height:100%}
-
-/* YEAR PILL */
-#ypill{position:fixed;top:114px;left:10px;z-index:50;background:rgba(13,17,23,.88);backdrop-filter:blur(10px);border:1px solid var(--bord);border-radius:10px;padding:5px 3px;display:flex;flex-direction:column;gap:1px}
-.ybtn{padding:4px 10px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer;border-radius:6px;transition:all .15s;white-space:nowrap}
-.ybtn.on{background:var(--acc);color:#000}
-
-/* LEGEND */
-#leg{position:fixed;bottom:22px;right:10px;z-index:50;background:rgba(13,17,23,.88);backdrop-filter:blur(10px);border:1px solid var(--bord);border-radius:10px;padding:9px 11px;min-width:120px}
-#leg h4{font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--txt2);margin-bottom:6px}
-.li{display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:11px;color:var(--txt)}
-.ld{width:9px;height:9px;border-radius:2px;flex-shrink:0}
-
-/* PANEL */
-#pnl{position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--surf);border-top:1px solid var(--bord);border-radius:16px 16px 0 0;transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.8,.25,1);max-height:80vh;display:flex;flex-direction:column;overflow:hidden}
-#pnl.open{transform:translateY(0)}
-#pnl-handle{width:34px;height:4px;border-radius:2px;background:var(--bord);margin:9px auto 0;flex-shrink:0;cursor:pointer}
-#pclose{position:absolute;top:10px;right:12px;width:26px;height:26px;border-radius:50%;background:var(--surf2);border:1px solid var(--bord);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--txt2);z-index:10}
-#phdr{padding:10px 14px 8px;border-bottom:1px solid var(--bord);flex-shrink:0}
-#ptitle{font-size:17px;font-weight:700;letter-spacing:-.2px}
-#pmeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
-.chip{background:var(--surf2);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--txt2);display:flex;align-items:center;gap:4px}
-.chip .cd{width:7px;height:7px;border-radius:2px}
-/* Panel tabs */
-#ptabs{display:flex;border-bottom:1px solid var(--bord);padding:0 14px;flex-shrink:0}
-.ptab{padding:8px 12px;font-size:11.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;border-radius:0;font-family:inherit;-webkit-appearance:none}
-.ptab.on{color:var(--acc);border-bottom-color:var(--acc)}
-/* Panel body */
-#pbody{flex:1;overflow-y:auto;padding:12px 14px 28px;-webkit-overflow-scrolling:touch}
-
-/* PULV */
-.pg{margin-bottom:16px}
-.pgh{font-size:11.5px;font-weight:700;color:var(--txt2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:7px}
-.pgh::after{content:'';flex:1;height:1px;background:var(--bord)}
-.pc{background:var(--surf2);border-radius:9px;padding:10px 12px;margin-bottom:7px;border-left:3px solid transparent}
-.pc.ok{border-left-color:var(--grn)}.pc.an{border-left-color:#ef5350;opacity:.6}.pc.su{border-left-color:#ff9800;opacity:.7}.pc.pe{border-left-color:#42a5f5}
-.ptop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px}
-.pdate{font-size:13px;font-weight:600}.pcult{font-size:11px;color:var(--txt2);margin-top:1px}
-.badge{font-size:9px;font-weight:700;letter-spacing:.6px;padding:2px 6px;border-radius:4px;text-transform:uppercase}
-.bok{background:rgba(141,196,104,.15);color:var(--grn)}.ban{background:rgba(239,83,80,.15);color:#ef5350}.bsu{background:rgba(255,152,0,.15);color:#ff9800}.bpe{background:rgba(66,165,245,.15);color:#42a5f5}
-.pobs{font-size:11px;color:var(--acc);font-style:italic;margin-bottom:5px}
-.prow{display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px}
-.prname{color:var(--txt)}.prdos{font-size:11px;color:var(--txt2)}
-.prec{font-size:10px;color:var(--txt2);margin-top:4px}
-
-/* SUELOS */
-.sy{margin-bottom:14px}
-.sytitle{font-size:12.5px;font-weight:700;color:var(--acc);margin-bottom:7px;display:flex;align-items:center;gap:7px}
-.sytitle::after{content:'';flex:1;height:1px;background:var(--bord)}
-.stbl{width:100%;border-collapse:collapse;font-size:11.5px}
-.stbl th{text-align:left;font-size:10px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--txt2);padding:4px 7px;border-bottom:1px solid var(--bord)}
-.stbl td{padding:4px 7px;color:var(--txt);border-bottom:1px solid rgba(255,255,255,.04)}
-.stbl tr:last-child td{border-bottom:none}
-.sarch{font-size:10px;color:var(--txt2);margin-top:3px}
-
-/* RESUMEN PANEL */
-#rpnl{position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--surf);border-top:1px solid var(--bord);border-radius:16px 16px 0 0;transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.8,.25,1);max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
-#rpnl.open{transform:translateY(0)}
-#rpnl-handle{width:34px;height:4px;border-radius:2px;background:var(--bord);margin:9px auto 0;flex-shrink:0;cursor:pointer}
-#rpclose{position:absolute;top:10px;right:12px;width:26px;height:26px;border-radius:50%;background:var(--surf2);border:1px solid var(--bord);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--txt2);z-index:10}
-#rphdr{padding:10px 40px 8px 14px;border-bottom:1px solid var(--bord);flex-shrink:0}
-#rptitle{font-size:17px;font-weight:700;letter-spacing:-.2px}
-#rpmeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
-#rpbody{flex:1;overflow-y:auto;padding:12px 14px 28px;-webkit-overflow-scrolling:touch}
-/* Resumen table */
-.rtbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}
-.rtbl th{text-align:left;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--txt2);padding:5px 8px;border-bottom:1px solid var(--bord)}
-.rtbl td{padding:5px 8px;color:var(--txt);border-bottom:1px solid rgba(255,255,255,.04)}
-.rtbl tr:last-child td{border-bottom:none;font-weight:700;color:var(--acc)}
-.rtbl .crop-dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:middle}
-.rtbl .pct{color:var(--txt2);font-size:11px}
-/* Bar chart */
-.rchart-title{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--txt2);margin-bottom:8px}
-.rbar-wrap{margin-bottom:10px}
-.rbar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--txt);margin-bottom:3px}
-.rbar-track{height:20px;background:rgba(255,255,255,.06);border-radius:4px;position:relative;overflow:hidden}
-.rbar-campo{height:100%;border-radius:4px;position:absolute;left:0;top:0;transition:width .4s}
-.rbar-empresa{height:6px;border-radius:2px;position:absolute;left:0;bottom:0;opacity:.5}
-.rbar-legend{display:flex;gap:12px;margin-top:8px;margin-bottom:14px}
-.rbar-leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--txt2)}
-.rbar-leg-dot{width:10px;height:10px;border-radius:2px}
-.rtotals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px}
-.rtotal-item{background:var(--surf2);border-radius:8px;padding:8px 10px}
-.rtotal-label{font-size:9.5px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--txt2);margin-bottom:2px}
-.rtotal-val{font-size:16px;font-weight:700;color:var(--txt)}
-.rtotal-unit{font-size:10px;color:var(--txt2);font-weight:400}
-.rsection-title{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--txt2);margin:14px 0 8px;display:flex;align-items:center;gap:7px}
-.rsection-title::after{content:'';flex:1;height:1px;background:var(--bord)}
-
-.empty{text-align:center;padding:28px 14px;color:var(--txt2);font-size:13px}
-.scard{background:var(--surf2);border-radius:10px;padding:12px 13px;margin-bottom:10px;border-left:3px solid var(--acc)}
-.scard-title{font-size:15px;font-weight:700;color:var(--txt);margin-bottom:8px;display:flex;align-items:center;gap:8px}
-.stag{font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;background:rgba(212,168,83,.15);color:var(--acc);border-radius:4px;padding:2px 7px}
-.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
-.sitem{background:rgba(255,255,255,.04);border-radius:6px;padding:7px 9px}
-.sitem-label{font-size:9.5px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--txt2);margin-bottom:2px}
-.sitem-val{font-size:14px;font-weight:700;color:var(--txt)}
-.sitem-unit{font-size:10px;color:var(--txt2);font-weight:400}
-.sdivider{height:1px;background:var(--bord);margin:8px 0}
-.sseed{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:3px}
-.sseed-label{color:var(--txt2)}.sseed-val{color:var(--txt);font-weight:600}
-.scard{background:var(--surf2);border-radius:10px;padding:12px 13px;margin-bottom:10px;border-left:3px solid var(--acc)}
-.scard-title{font-size:15px;font-weight:700;color:var(--txt);margin-bottom:8px;display:flex;align-items:center;gap:8px}
-.scard-title .stag{font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;background:rgba(212,168,83,.15);color:var(--acc);border-radius:4px;padding:2px 7px}
-.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
-.sitem{background:rgba(255,255,255,.04);border-radius:6px;padding:7px 9px}
-.sitem-label{font-size:9.5px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--txt2);margin-bottom:2px}
-.sitem-val{font-size:14px;font-weight:700;color:var(--txt)}
-.sitem-unit{font-size:10px;color:var(--txt2);font-weight:400}
-.sdivider{height:1px;background:var(--bord);margin:8px 0}
-.sseed{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:3px}
-.sseed-label{color:var(--txt2)}.sseed-val{color:var(--txt);font-weight:600}
+html,body{height:100%;overflow:hidden;font-family:var(--f);background:var(--bg);color:var(--txt);font-size:15px;font-weight:300;-webkit-font-smoothing:antialiased}
+button{font-family:var(--f);cursor:pointer;-webkit-appearance:none}
+input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-fill-color:var(--txt);font-weight:300}
+.screen{position:fixed;inset:0;z-index:10;display:none;flex-direction:column}
+.screen.active{display:flex}
 
 /* LOGIN */
-#login-screen{position:fixed;top:0;left:0;right:0;bottom:0;z-index:2000;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0}
-.login-box{width:100%;max-width:340px;padding:32px 24px;display:flex;flex-direction:column;gap:0}
-.login-logo{font-size:36px;text-align:center;margin-bottom:8px}
-.login-title{font-size:22px;font-weight:700;color:var(--txt);text-align:center;margin-bottom:4px;letter-spacing:-.3px}
-.login-sub{font-size:13px;color:var(--txt2);text-align:center;margin-bottom:28px}
-.login-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
-.login-field label{font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--txt2)}
-.login-field input{background:var(--surf2);border:1px solid var(--bord);border-radius:10px;padding:12px 14px;font-size:15px;color:var(--txt);font-family:inherit;outline:none;-webkit-appearance:none;width:100%;-webkit-text-fill-color:var(--txt)}
-.login-field input:focus{border-color:var(--acc)}
-.login-btn{background:var(--acc);color:#000;font-size:15px;font-weight:700;border:none;border-radius:10px;padding:14px;cursor:pointer;font-family:inherit;margin-top:6px;-webkit-appearance:none;width:100%}
-.login-btn:active{opacity:.85}
-.login-err{color:#ef5350;font-size:13px;text-align:center;margin-top:10px;min-height:18px}
-.login-hidden{display:none!important}
+#s-login{background:var(--bg);align-items:center;justify-content:center;z-index:2000}
+.lw{width:100%;max-width:340px;padding:40px 28px}
+.ll{text-align:center;margin-bottom:32px}
+.ll svg{display:block;margin:0 auto 8px}
+.lt{font-size:9px;font-weight:500;letter-spacing:3px;text-transform:uppercase;color:var(--ora)}
+.ls{font-size:12px;color:var(--txt2);text-align:center;margin-bottom:28px;font-style:italic}
+.lf{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.lf label{font-size:9px;font-weight:500;letter-spacing:.8px;text-transform:uppercase;color:var(--txt3)}
+.lf input{background:var(--surf);border:1px solid var(--bord2);border-radius:var(--r2);padding:11px 13px;font-size:14px;outline:none;width:100%;transition:border-color .2s}
+.lf input:focus{border-color:var(--acc)}
+.lbtn{width:100%;background:var(--txt);color:var(--bg);font-size:13px;font-weight:400;letter-spacing:.3px;border:none;border-radius:var(--r2);padding:13px;margin-top:8px}
+.lbtn:active{opacity:.8}
+.lerr{color:var(--red);font-size:12px;text-align:center;margin-top:10px;min-height:16px}
+
+/* HOME */
+#s-home{background:var(--bg)}
+.hh{padding:52px 22px 18px;background:var(--surf);border-bottom:1px solid var(--bord)}
+.hht{display:flex;align-items:flex-end;justify-content:space-between}
+.hg{font-size:10px;color:var(--txt3);margin-bottom:2px;letter-spacing:.3px}
+.hu{font-size:22px;font-weight:200;letter-spacing:-.5px}
+.hlo{background:none;border:1px solid var(--bord2);border-radius:var(--r2);color:var(--txt2);font-size:11px;padding:5px 10px}
+.hb{flex:1;overflow-y:auto;padding:20px 16px 40px;-webkit-overflow-scrolling:touch}
+.hlbl{font-size:9px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--txt3);margin-bottom:10px}
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mc{background:var(--surf);border-radius:var(--r3);padding:20px 16px 18px;border:1px solid var(--bord);cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:10px;box-shadow:var(--sh)}
+.mc:active{transform:scale(.97);background:var(--surf2)}
+.mac{width:18px;height:1.5px;border-radius:1px;margin-bottom:2px}
+.c-s .mac{background:var(--acc)} .c-r .mac{background:var(--ora)} .c-rec .mac{background:var(--blu)} .c-su .mac{background:#8d6e63}
+.mi{font-size:22px} .mn{font-size:14px;font-weight:400;letter-spacing:-.2px} .md{font-size:11px;color:var(--txt2);line-height:1.4}
+
+/* SHARED HDR */
+.ah{flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bord);padding:0 14px;height:52px;display:flex;align-items:center;gap:12px}
+.ab{background:none;border:none;color:var(--acc);font-size:13px;font-weight:400;padding:4px 0;display:flex;align-items:center;gap:3px;white-space:nowrap}
+.ab::before{content:'←';font-size:14px}
+.at{font-size:15px;font-weight:300;letter-spacing:-.2px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aa{background:var(--txt);color:var(--bg);border:none;border-radius:var(--r2);padding:6px 12px;font-size:11px;font-weight:400;letter-spacing:.3px;flex-shrink:0}
+
+/* SCHEDULE */
+#s-schedule{background:var(--bg)}
+#sct{flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bord);display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#sct::-webkit-scrollbar{display:none}
+.ctab{flex:none;padding:8px 14px;font-size:10px;font-weight:400;letter-spacing:.6px;text-transform:uppercase;color:var(--txt3);border-bottom:1.5px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s}
+.ctab.on{color:var(--acc);border-bottom-color:var(--acc)}
+#smw{flex:1;position:relative;overflow:hidden;cursor:grab;touch-action:none}
+#smw.grabbing{cursor:grabbing}
+#scv{display:block;width:100%;height:100%}
+#syp{position:absolute;top:8px;left:8px;z-index:20;background:rgba(255,255,255,.93);backdrop-filter:blur(12px);border:1px solid var(--bord2);border-radius:8px;padding:4px 3px;display:flex;flex-direction:column;gap:1px}
+.ybtn{padding:4px 9px;font-size:10px;font-weight:400;color:var(--txt2);cursor:pointer;border-radius:5px;transition:all .15s}
+.ybtn.on{background:var(--acc);color:#fff}
+#sleg{position:absolute;bottom:14px;right:8px;z-index:20;background:rgba(255,255,255,.93);backdrop-filter:blur(12px);border:1px solid var(--bord2);border-radius:8px;padding:8px 10px;min-width:100px}
+#sleg h4{font-size:8px;font-weight:500;letter-spacing:.8px;text-transform:uppercase;color:var(--txt3);margin-bottom:5px}
+.li{display:flex;align-items:center;gap:5px;margin-bottom:3px;font-size:10px;color:var(--txt2)}
+.ld{width:7px;height:7px;border-radius:1px;flex-shrink:0}
+#srb{position:absolute;bottom:14px;left:8px;z-index:20;background:rgba(255,255,255,.93);backdrop-filter:blur(12px);border:1px solid var(--bord2);border-radius:8px;padding:7px 11px;font-size:11px;font-weight:400;color:var(--acc);cursor:pointer}
+#slod{position:absolute;inset:0;z-index:30;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px}
+.pnl{position:absolute;bottom:0;left:0;right:0;z-index:40;background:var(--surf);border-top:1px solid var(--bord);border-radius:16px 16px 0 0;transform:translateY(100%);transition:transform .3s cubic-bezier(.25,.8,.25,1);max-height:82vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.08)}
+.pnl.open{transform:translateY(0)}
+.pd{width:32px;height:3px;border-radius:2px;background:var(--bord2);margin:8px auto 0;flex-shrink:0}
+.px{position:absolute;top:9px;right:12px;width:24px;height:24px;border-radius:50%;background:var(--surf2);border:1px solid var(--bord);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--txt2);z-index:5}
+.ph{padding:8px 40px 8px 14px;border-bottom:1px solid var(--bord);flex-shrink:0}
+.pt{font-size:15px;font-weight:300;letter-spacing:-.2px}
+.pm{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.chip{background:var(--surf2);border-radius:4px;padding:2px 7px;font-size:10px;color:var(--txt2);display:flex;align-items:center;gap:3px}
+.chip .cd{width:6px;height:6px;border-radius:1px}
+.ptabs{display:flex;border-bottom:1px solid var(--bord);padding:0 14px;flex-shrink:0;overflow-x:auto;scrollbar-width:none}
+.ptabs::-webkit-scrollbar{display:none}
+.ptab{flex:none;padding:7px 10px;font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);cursor:pointer;border-bottom:1.5px solid transparent;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;border-radius:0;font-family:var(--f);white-space:nowrap}
+.ptab.on{color:var(--acc);border-bottom-color:var(--acc)}
+.pb{flex:1;overflow-y:auto;padding:12px 14px 28px;-webkit-overflow-scrolling:touch}
+
+/* pulv */
+.pg{margin-bottom:14px}
+.pgh{font-size:9px;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.pgh::after{content:'';flex:1;height:1px;background:var(--bord)}
+.pc{background:var(--surf2);border-radius:7px;padding:9px 11px;margin-bottom:6px;border-left:2px solid transparent}
+.pc.ok{border-left-color:var(--grn)}.pc.an{border-left-color:var(--red);opacity:.55}.pc.su{border-left-color:#e67e22;opacity:.65}.pc.pe{border-left-color:var(--blu)}
+.ptop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.pdate{font-size:12px;font-weight:400}.pcult{font-size:10px;color:var(--txt2);margin-top:1px}
+.badge{font-size:8px;font-weight:500;letter-spacing:.4px;padding:2px 5px;border-radius:3px;text-transform:uppercase}
+.bok{background:rgba(74,158,74,.1);color:var(--grn)}.ban{background:rgba(184,50,50,.1);color:var(--red)}.bsu{background:rgba(230,126,34,.1);color:#e67e22}.bpe{background:rgba(38,115,168,.1);color:var(--blu)}
+.pobs{font-size:10px;color:var(--acc);font-style:italic;margin-bottom:4px}
+.prow{display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px}
+.prec{font-size:9px;color:var(--txt3);margin-top:3px}
+
+/* suelos */
+.sy{margin-bottom:12px}
+.sytit{font-size:10px;font-weight:500;letter-spacing:.4px;text-transform:uppercase;color:var(--acc);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.sytit::after{content:'';flex:1;height:1px;background:var(--bord)}
+.stbl{width:100%;border-collapse:collapse;font-size:11px}
+.stbl th{text-align:left;font-size:8px;font-weight:500;letter-spacing:.4px;text-transform:uppercase;color:var(--txt3);padding:3px 5px;border-bottom:1px solid var(--bord)}
+.stbl td{padding:3px 5px;border-bottom:1px solid rgba(0,0,0,.03)}
+.stbl tr:last-child td{border-bottom:none}
+
+/* siembra */
+.scard{background:var(--surf2);border-radius:8px;padding:12px 13px;margin-bottom:8px}
+.scult{font-size:18px;font-weight:200;letter-spacing:-.5px;margin-bottom:1px}
+.svar{font-size:11px;color:var(--txt2);margin-bottom:10px}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px}
+.si{background:var(--surf);border-radius:5px;padding:6px 8px}
+.si-l{font-size:8px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:1px}
+.si-v{font-size:13px;font-weight:300}
+.si-u{font-size:9px;color:var(--txt3)}
+.sdiv{height:1px;background:var(--bord);margin:8px 0}
+.srow{display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:3px}
+.sr-l{color:var(--txt2)}.sr-v{color:var(--txt);font-weight:400}
+.mp{display:inline-flex;align-items:center;font-size:9px;font-weight:500;letter-spacing:.3px;text-transform:uppercase;padding:1px 6px;border-radius:3px;margin-left:4px}
+.mp-v{background:rgba(204,92,8,.08);color:var(--ora)}
+.mp-f{background:rgba(43,107,43,.08);color:var(--acc)}
+.mp-d{background:rgba(38,115,168,.08);color:var(--blu)}
+.mp-c{background:rgba(105,122,96,.08);color:var(--txt2)}
+.empty{text-align:center;padding:24px;color:var(--txt3);font-size:12px}
+
+/* resumen pnl */
+.rtotals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:12px}
+.rti{background:var(--surf2);border-radius:7px;padding:8px 10px}
+.rti-l{font-size:8px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:1px}
+.rti-v{font-size:18px;font-weight:200;letter-spacing:-.5px}
+.rti-u{font-size:9px;color:var(--txt3)}
+.rsect{font-size:9px;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:var(--txt3);margin:12px 0 7px;display:flex;align-items:center;gap:6px}
+.rsect::after{content:'';flex:1;height:1px;background:var(--bord)}
+.rb-wrap{margin-bottom:7px}
+.rb-lbl{display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px}
+.rb-tr{height:12px;background:var(--surf2);border-radius:3px;position:relative;overflow:hidden}
+.rb-fill{height:100%;border-radius:3px;position:absolute;left:0;top:0}
+.rtbl{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:14px}
+.rtbl th{text-align:left;font-size:8px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);padding:4px 6px;border-bottom:1px solid var(--bord)}
+.rtbl td{padding:4px 6px;border-bottom:1px solid rgba(0,0,0,.03)}
+.rtbl tr:last-child td{border-bottom:none;font-weight:400}
+
+/* RECORRIDAS */
+#s-recorridas{background:var(--bg)}
+.rb{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 14px 40px}
+.rsec{font-size:9px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--txt3);margin:14px 0 7px}
+.rc{background:var(--surf);border-radius:var(--r);padding:13px 14px;margin-bottom:7px;border:1px solid var(--bord);cursor:pointer;transition:all .15s;box-shadow:var(--sh)}
+.rc:active{background:var(--surf2)}
+.rc-n{font-size:14px;font-weight:300;letter-spacing:-.2px;margin-bottom:2px}
+.rc-m{font-size:11px;color:var(--txt2);display:flex;gap:8px;flex-wrap:wrap}
+.bh{font-size:9px;font-weight:500;padding:2px 6px;border-radius:3px;background:rgba(74,158,74,.1);color:var(--grn)}
+.lhb{background:var(--acc);padding:14px;flex-shrink:0}
+.lhn{font-size:22px;font-weight:200;letter-spacing:-.8px;color:#fff}
+.lhs{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px}
+.lcp{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.18);border-radius:20px;padding:3px 9px;font-size:11px;color:#fff;margin-top:6px}
+.of{background:var(--surf);border-radius:var(--r);padding:13px;margin-bottom:10px;border:1px solid var(--bord)}
+.of-t{font-size:9px;font-weight:500;letter-spacing:.7px;text-transform:uppercase;color:var(--txt3);margin-bottom:9px}
+.tipos{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.tipo-btn{padding:5px 10px;border-radius:20px;border:1px solid var(--bord2);background:var(--surf2);font-size:11px;color:var(--txt2);cursor:pointer;transition:all .15s}
+.tipo-btn.on{border-color:var(--acc);background:rgba(43,107,43,.07);color:var(--acc)}
+.ota{width:100%;background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r2);padding:9px 11px;font-size:13px;outline:none;resize:none;min-height:72px;line-height:1.4;transition:border-color .2s}
+.ota:focus{border-color:var(--acc)}
+.oacts{display:flex;gap:7px;margin-top:7px;align-items:stretch}
+.omic{background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:0 12px;font-size:16px}
+.omic.rec{border-color:var(--red);animation:pulse 1s infinite}
+.osave{flex:1;background:var(--txt);color:var(--bg);border:none;border-radius:var(--r2);padding:10px;font-size:12px;font-weight:400;letter-spacing:.3px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.oi{border-radius:var(--r2);padding:9px 11px;margin-bottom:5px;border-left:2px solid var(--bord2)}
+.oi.maleza{border-left-color:#e67e22}.oi.plaga{border-left-color:var(--red)}.oi.enfermedad{border-left-color:#8e44ad}.oi.general{border-left-color:var(--blu)}.oi.fertilidad{border-left-color:var(--grn)}
+.oi-top{display:flex;justify-content:space-between;margin-bottom:3px}
+.oi-tipo{font-size:8px;font-weight:500;letter-spacing:.4px;text-transform:uppercase;color:var(--txt3)}
+.oi-fecha{font-size:9px;color:var(--txt3)}
+.oi-txt{font-size:12px;line-height:1.4}
+
+/* RECETAS */
+#s-recetas{background:var(--bg)}
+.rli{background:var(--surf);border-radius:var(--r);padding:12px 14px;margin-bottom:7px;border:1px solid var(--bord);cursor:pointer;box-shadow:var(--sh);transition:all .15s}
+.rli:active{background:var(--surf2)}
+.rli-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px}
+.rli-n{font-size:13px;font-weight:400;letter-spacing:-.1px}
+.rli-m{font-size:10px;color:var(--txt2);display:flex;gap:7px;flex-wrap:wrap}
+.ep{font-size:8px;font-weight:500;letter-spacing:.4px;text-transform:uppercase;padding:2px 6px;border-radius:3px}
+.ep-pendiente{background:rgba(38,115,168,.08);color:var(--blu)}
+.ep-completada{background:rgba(74,158,74,.08);color:var(--grn)}
+.ep-anulada{background:rgba(184,50,50,.08);color:var(--red)}
+.rform{padding:14px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
+.rfs{font-size:9px;font-weight:500;letter-spacing:.7px;text-transform:uppercase;color:var(--txt3);margin:14px 0 8px}
+.rfr{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.rfr.full{grid-template-columns:1fr}
+.rff{display:flex;flex-direction:column;gap:4px}
+.rff label{font-size:8px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3)}
+.rff select,.rff input,.rff textarea{background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r2);padding:9px 11px;font-size:13px;outline:none;width:100%;transition:border-color .2s}
+.rff select:focus,.rff input:focus,.rff textarea:focus{border-color:var(--acc)}
+.pr{display:flex;gap:8px;align-items:center;margin-bottom:6px;background:var(--surf2);border-radius:var(--r2);padding:7px 10px}
+.pr-n{flex:1;font-size:12px}.pr-d{font-size:11px;color:var(--txt2)}.pr-del{background:none;border:none;color:var(--txt3);font-size:14px;padding:2px 5px}
+.apg{display:grid;grid-template-columns:1fr 60px 70px auto;gap:5px;align-items:end;margin-bottom:7px}
+.apb{background:var(--ora);color:#fff;border:none;border-radius:var(--r2);padding:9px 10px;font-size:12px;font-weight:400}
+.rfsave{width:100%;background:var(--txt);color:var(--bg);border:none;border-radius:var(--r2);padding:13px;font-size:12px;font-weight:400;letter-spacing:.4px;margin-top:14px}
+
+/* SUELOS */
+#s-suelos{background:var(--bg)}
+.uz{border:1px dashed var(--bord2);border-radius:var(--r3);padding:28px 20px;text-align:center;cursor:pointer;margin:14px}
+.uz:active{border-color:var(--acc)}
+.uz-i{font-size:28px;margin-bottom:8px}
+.uz-t{font-size:13px;font-weight:300;margin-bottom:3px}
+.uz-s{font-size:11px;color:var(--txt2)}
+.sp{background:var(--surf);border-radius:var(--r);padding:13px;margin:0 14px 14px;border:1px solid var(--bord)}
+.lt{font-size:8px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;padding:2px 6px;border-radius:3px;margin-right:4px}
+.lt-f{background:rgba(43,107,43,.08);color:var(--acc)}
+.lt-s{background:rgba(38,115,168,.08);color:var(--blu)}
+.sc-btn{width:100%;background:var(--txt);color:var(--bg);border:none;border-radius:var(--r2);padding:11px;font-size:12px;font-weight:400;letter-spacing:.3px;margin-top:8px}
+.sc-can{width:100%;background:none;border:1px solid var(--bord2);border-radius:var(--r2);padding:11px;font-size:12px;color:var(--txt2);margin-top:5px}
+
+/* UTILS */
+.spin{width:28px;height:28px;border:1.5px solid var(--bord2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ltxt{font-size:12px;color:var(--txt2)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);z-index:9999;background:var(--txt);color:var(--bg);border-radius:8px;padding:9px 16px;font-size:12px;font-weight:400;transition:transform .25s;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 
-<div id="hdr">
-  <div style="flex:1;min-width:0;display:flex;align-items:center;gap:10px">
-    <div style="display:flex;flex-direction:column;align-items:center;line-height:1">
+<!-- LOGIN -->
+<div id="s-login" class="screen active">
+  <div class="lw">
+    <div class="ll">
       <svg width="80" height="22" viewBox="0 0 80 22" xmlns="http://www.w3.org/2000/svg">
-  <text x="0" y="17" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="800" font-size="18" fill="#e8650a" letter-spacing="1">TW</text>
-  <text x="37" y="17" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="800" font-size="18" fill="#e8650a" letter-spacing="1">N</text>
-  <!-- espiga de maiz en lugar de la i -->
-  <g transform="translate(33,1)">
-    <!-- grano central -->
-    <ellipse cx="3.5" cy="13" rx="2.8" ry="3.5" fill="#e8650a"/>
-    <!-- granos laterales -->
-    <ellipse cx="1" cy="11" rx="2" ry="2.8" fill="#e8650a" transform="rotate(-20,1,11)"/>
-    <ellipse cx="6" cy="11" rx="2" ry="2.8" fill="#e8650a" transform="rotate(20,6,11)"/>
-    <ellipse cx="0.5" cy="8" rx="1.5" ry="2.2" fill="#e8650a" transform="rotate(-35,0.5,8)"/>
-    <ellipse cx="6.5" cy="8" rx="1.5" ry="2.2" fill="#e8650a" transform="rotate(35,6.5,8)"/>
-    <!-- hoja/tallo -->
-    <path d="M3.5,16 Q3.5,19 3.5,21" stroke="#e8650a" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-    <path d="M3.5,18 Q1,17 0,15" stroke="#e8650a" stroke-width="1" fill="none" stroke-linecap="round"/>
-    <path d="M3.5,17 Q6,16 7,14" stroke="#e8650a" stroke-width="1" fill="none" stroke-linecap="round"/>
-  </g>
-</svg>
-      <div style="font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#e8650a;margin-top:1px">Field Schedule</div>
+        <text x="0" y="17" font-family="DM Sans,system-ui" font-weight="200" font-size="18" fill="#cc5c08" letter-spacing="1">TW</text>
+        <text x="37" y="17" font-family="DM Sans,system-ui" font-weight="200" font-size="18" fill="#cc5c08" letter-spacing="1">N</text>
+        <g transform="translate(33,1)"><ellipse cx="3.5" cy="13" rx="2.8" ry="3.5" fill="#cc5c08"/><ellipse cx="1" cy="11" rx="2" ry="2.8" fill="#cc5c08" transform="rotate(-20,1,11)"/><ellipse cx="6" cy="11" rx="2" ry="2.8" fill="#cc5c08" transform="rotate(20,6,11)"/><ellipse cx="0.5" cy="8" rx="1.5" ry="2.2" fill="#cc5c08" transform="rotate(-35,0.5,8)"/><ellipse cx="6.5" cy="8" rx="1.5" ry="2.2" fill="#cc5c08" transform="rotate(35,6.5,8)"/><path d="M3.5,16 Q3.5,19 3.5,21" stroke="#cc5c08" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M3.5,18 Q1,17 0,15" stroke="#cc5c08" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M3.5,17 Q6,16 7,14" stroke="#cc5c08" stroke-width="1" fill="none" stroke-linecap="round"/></g>
+      </svg>
+      <div class="lt">Field Suite</div>
     </div>
-    <div style="width:1px;height:32px;background:var(--bord)"></div>
-    <div>
-      <div id="hdr-client" style="font-size:14px;font-weight:700;letter-spacing:-.2px;color:var(--txt)">—</div>
-      <div style="font-size:9.5px;color:var(--txt2);margin-top:1px">Ing. Agr. Marcos Fernández &nbsp;·&nbsp; (+54) 2983 618926</div>
-    </div>
-  </div>
-  <button onclick="logout()" style="background:none;border:1px solid var(--bord);border-radius:7px;color:var(--txt2);font-size:11px;padding:5px 10px;cursor:pointer;font-family:inherit;-webkit-appearance:none;flex-shrink:0">Salir</button>
-</div>
-
-<div id="ctabs">
-  <!-- populated dynamically by init() -->
-</div>
-
-<div id="ypill">
-  <div class="ybtn on" data-yr="r26">2026</div>
-  <div class="ybtn" data-yr="r25">2025</div>
-  <div class="ybtn" data-yr="r24">2024</div>
-  <div class="ybtn" data-yr="r23">2023</div>
-</div>
-
-<div id="map-wrap">
-  <canvas id="cv"></canvas>
-</div>
-
-
-<div id="login-screen">
-  <div class="login-box">
-    <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:4px">
-      <svg width="80" height="22" viewBox="0 0 80 22" xmlns="http://www.w3.org/2000/svg">
-  <text x="0" y="17" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="800" font-size="18" fill="#e8650a" letter-spacing="1">TW</text>
-  <text x="37" y="17" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="800" font-size="18" fill="#e8650a" letter-spacing="1">N</text>
-  <!-- espiga de maiz en lugar de la i -->
-  <g transform="translate(33,1)">
-    <!-- grano central -->
-    <ellipse cx="3.5" cy="13" rx="2.8" ry="3.5" fill="#e8650a"/>
-    <!-- granos laterales -->
-    <ellipse cx="1" cy="11" rx="2" ry="2.8" fill="#e8650a" transform="rotate(-20,1,11)"/>
-    <ellipse cx="6" cy="11" rx="2" ry="2.8" fill="#e8650a" transform="rotate(20,6,11)"/>
-    <ellipse cx="0.5" cy="8" rx="1.5" ry="2.2" fill="#e8650a" transform="rotate(-35,0.5,8)"/>
-    <ellipse cx="6.5" cy="8" rx="1.5" ry="2.2" fill="#e8650a" transform="rotate(35,6.5,8)"/>
-    <!-- hoja/tallo -->
-    <path d="M3.5,16 Q3.5,19 3.5,21" stroke="#e8650a" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-    <path d="M3.5,18 Q1,17 0,15" stroke="#e8650a" stroke-width="1" fill="none" stroke-linecap="round"/>
-    <path d="M3.5,17 Q6,16 7,14" stroke="#e8650a" stroke-width="1" fill="none" stroke-linecap="round"/>
-  </g>
-</svg>
-      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#e8650a;margin-top:3px">Field Schedule</div>
-    </div>
-    <div class="login-sub" style="margin-top:12px">Gestión de lotes</div>
-    <div class="login-field">
-      <label>Usuario</label>
-      <input type="text" id="login-user" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="usuario">
-    </div>
-    <div class="login-field">
-      <label>Contraseña</label>
-      <input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••••">
-    </div>
-    <button class="login-btn" onclick="doLogin()">Ingresar</button>
-    <div class="login-err" id="login-err"></div>
+    <div class="ls">Ing. Agr. Marcos Fernández</div>
+    <div class="lf"><label>Usuario</label><input type="text" id="li-u" autocapitalize="none" spellcheck="false" placeholder="usuario"></div>
+    <div class="lf"><label>Contraseña</label><input type="password" id="li-p" placeholder="••••••••"></div>
+    <button class="lbtn" onclick="doLogin()">Ingresar</button>
+    <div class="lerr" id="li-e"></div>
   </div>
 </div>
-<div id="loading" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:999;background:#f0f7f0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">
-  <div style="font-size:28px">🌾</div>
-  <div style="color:#2d7a2d;font-size:15px;font-weight:600">Campo</div>
-  <div style="color:#5a7a5a;font-size:13px">Cargando datos...</div>
+
+<!-- HOME -->
+<div id="s-home" class="screen">
+  <div class="hh"><div class="hht"><div><div class="hg">Bienvenido</div><div class="hu" id="h-user">—</div></div><button class="hlo" onclick="doLogout()">Salir</button></div></div>
+  <div class="hb">
+    <div class="hlbl">Módulos</div>
+    <div class="mg">
+      <div class="mc c-s" onclick="openMod('schedule')"><div class="mac"></div><div class="mi">📅</div><div class="mn">Schedule</div><div class="md">Mapa de lotes y cultivos</div></div>
+      <div class="mc c-rec" onclick="openMod('recorridas')"><div class="mac"></div><div class="mi">🚜</div><div class="mn">Recorridas</div><div class="md">Observaciones en campo</div></div>
+      <div class="mc c-r" onclick="openMod('recetas')"><div class="mac"></div><div class="mi">💧</div><div class="mn">Recetas</div><div class="md">Gestión de pulverizaciones</div></div>
+      <div class="mc c-su" onclick="openMod('suelos')"><div class="mac"></div><div class="mi">🌱</div><div class="mn">Suelos</div><div class="md">Análisis de laboratorio</div></div>
+    </div>
+  </div>
 </div>
 
-<div id="leg"><h4>Cultivo</h4><div id="legitems"></div></div>
-
-<button id="resumen-btn" onclick="toggleResumen()" style="position:fixed;bottom:24px;left:10px;z-index:50;background:rgba(13,17,23,.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--bord);border-radius:10px;padding:8px 12px;font-size:12px;font-weight:600;color:var(--acc);cursor:pointer;font-family:inherit;-webkit-appearance:none">📊 Resumen</button>
-
-<!-- RESUMEN PANEL -->
-<div id="rpnl">
-  <div id="rpnl-handle" onclick="toggleResumen()"></div>
-  <div id="rpclose" onclick="toggleResumen()">✕</div>
-  <div id="rphdr">
-    <div id="rptitle">Resumen — <span id="rpcampo"></span></div>
-    <div id="rpmeta"></div>
+<!-- SCHEDULE -->
+<div id="s-schedule" class="screen">
+  <div class="ah"><button class="ab" onclick="closeMod('schedule')">Inicio</button><div class="at" id="s-hcli" style="font-size:13px;color:var(--txt2)">—</div></div>
+  <div id="sct"></div>
+  <div id="smw">
+    <canvas id="scv"></canvas>
+    <div id="syp"><div class="ybtn on" data-yr="r26">2026</div><div class="ybtn" data-yr="r25">2025</div><div class="ybtn" data-yr="r24">2024</div><div class="ybtn" data-yr="r23">2023</div></div>
+    <div id="sleg"><h4>Cultivo</h4><div id="sli"></div></div>
+    <button id="srb" onclick="schTogR()">Resumen</button>
+    <div id="slod"><div class="spin"></div><div class="ltxt">Cargando...</div></div>
+    <div id="srpnl" class="pnl"><div class="pd"></div><div class="px" onclick="schTogR()">✕</div><div class="ph"><div class="pt">Resumen — <span id="srpc"></span></div><div id="srpm" class="pm"></div></div><div id="srpb" class="pb"></div></div>
+    <div id="spnl" class="pnl"><div class="pd"></div><div class="px" onclick="schCP()">✕</div><div class="ph"><div class="pt" id="spt"></div><div class="pm" id="spm"></div></div><div class="ptabs" id="sptabs"><button class="ptab on" data-tab="pulv">Pulverizaciones</button><button class="ptab" data-tab="suelos">Suelos</button><button class="ptab" data-tab="siembra">Siembra</button></div><div class="pb" id="spb"></div></div>
   </div>
-  <div id="rpbody"></div>
 </div>
 
-<div id="pnl">
-  <div id="pclose" onclick="closeP()">✕</div>
-  <div id="phdr">
-    <div id="ptitle"></div>
-    <div id="pmeta"></div>
-  </div>
-  <div id="ptabs">
-    <button class="ptab on" data-tab="pulv">💧 Pulverizaciones</button>
-    <button class="ptab" data-tab="suelos">🌱 Suelos</button>
-    <button class="ptab" data-tab="siembra">🌾 Siembra</button>
-  </div>
-  <div id="pbody"></div>
+<!-- RECORRIDAS -->
+<div id="s-recorridas" class="screen">
+  <div class="ah"><button class="ab" onclick="recBack()">Inicio</button><div class="at" id="r-title">Recorridas</div></div>
+  <div class="rb" id="r-body"></div>
 </div>
+
+<!-- RECETAS -->
+<div id="s-recetas" class="screen">
+  <div class="ah"><button class="ab" onclick="retBack()">Inicio</button><div class="at" id="ret-title">Recetas</div><button class="aa" id="ret-add" onclick="retNueva()" style="display:none">+ Nueva</button></div>
+  <div id="ret-body" style="flex:1;overflow-y:auto;padding:10px 14px 40px;-webkit-overflow-scrolling:touch"></div>
+</div>
+
+<!-- SUELOS -->
+<div id="s-suelos" class="screen">
+  <div class="ah"><button class="ab" onclick="closeMod('suelos')">Inicio</button><div class="at">Suelos</div></div>
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div class="uz" onclick="document.getElementById('si').click()"><div class="uz-i">📄</div><div class="uz-t">Subir informe de laboratorio</div><div class="uz-s">FERTILAB · SUELOFERTIL · PDF o Excel</div></div>
+    <input type="file" id="si" accept=".pdf,.xlsx,.xls" style="display:none" onchange="sueloFile(this)">
+    <div id="sprev"></div>
+    <div style="padding:0 14px"><div class="rsec">Historial</div><div id="shist"><div class="empty">Sin análisis cargados</div></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
-// Data loaded from external data.json
+// CONFIG
+const DBX_TOKEN = 'PEGAR_TOKEN_DROPBOX_AQUI';
+const SB_URL = 'https://qqzjmhuhuudbanaujncp.supabase.co';
+const SB_KEY = 'sb_publishable_UYUDPQroApuPKy3ARh7nWw_ezeQYVg2';
+const SBH = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
+const TF = '/TwinField';
 
-// ── USERS ──
+// USUARIOS
 const USERS = {
-  "marcos":    {hash:"801a302dae665c427b70d1d56f78ca729579bdc3a4f68ef8351942ab928ea43c", clients:["all"]},
-  "la_alicia": {hash:"e9b71991b7f947a3467fff8aeb5f6944a34cb9c5f9ab9e605411dd3655190c6c", clients:["la_alicia"]},
-  "alan":      {hash:"85a5d410dc0cde3bbeccf5409a0bd462a1eed914bd586b27220a0702bf26d09f", clients:["alan"]},
-  "mauricio":  {hash:"75d64af6c0d20231bf1b887eaef7d420eabfc25266a95b8c00db16c5aa13efe9", clients:["mauricio"]},
-  "el_puntal": {hash:"350853890fb39f0fcfdd9d754bf3536b4c2a28a14818fc6da9f357218b1ed7fb", clients:["el_puntal"]},
-  "la_chicha": {hash:"dc4513e5e59b19f255710c9db029e6b54f2bac4a4afae12b1efb780566dbefff", clients:["la_chicha"]}
+  "marcos":    {h:"801a302dae665c427b70d1d56f78ca729579bdc3a4f68ef8351942ab928ea43c",r:"admin",c:["all"]},
+  "la_alicia": {h:"e9b71991b7f947a3467fff8aeb5f6944a34cb9c5f9ab9e605411dd3655190c6c",r:"cliente",c:["la_alicia"]},
+  "alan":      {h:"85a5d410dc0cde3bbeccf5409a0bd462a1eed914bd586b27220a0702bf26d09f",r:"cliente",c:["dam"]},
+  "mauricio":  {h:"75d64af6c0d20231bf1b887eaef7d420eabfc25266a95b8c00db16c5aa13efe9",r:"cliente",c:["mauricio"]},
+  "hollender": {h:"350853890fb39f0fcfdd9d754bf3536b4c2a28a14818fc6da9f357218b1ed7fb",r:"cliente",c:["hollender"]},
+  "almarmat":  {h:"dc4513e5e59b19f255710c9db029e6b54f2bac4a4afae12b1efb780566dbefff",r:"cliente",c:["almarmat"]},
+  // nueva_empresa: {h:"HASH_SHA256_PASSWORD",r:"cliente",c:["nueva_empresa"]},
 };
-let currentUser = null;
 
-async function sha256(str){
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
+// CLIENTES CONFIG — agregar nuevo cliente acá + carpeta en Dropbox/TwinField/shp/
+const CFG = {
+  la_alicia:{lbl:'La Alicia',campos:{la_manga:{lbl:'La Manga',shp:'la_manga.zip'},la_turca:{lbl:'La Turca',shp:'la_turca.zip'},san_fermin:{lbl:'San Fermín',shp:'san_fermin.zip'},becutti:{lbl:'Becutti',shp:'becutti.zip'},monte_alegre:{lbl:'Monte Alegre',shp:'monte_alegre.zip'},'4_de_enero':{lbl:'4 de Enero',shp:'4_de_enero.zip'},dona_maria:{lbl:'Doña María',shp:'dona_maria.zip'}},pulv:'la_alicia.xlsx',pm:{'LA MANGA':'la_manga','LA TURCA':'la_turca','SAN FERMIN':'san_fermin','BECUTTI':'becutti','MONTE ALEGRE':'monte_alegre','4 DE ENERO':'4_de_enero','DONA MARIA':'dona_maria','DOÑA MARIA':'dona_maria'}},
+  dam:{lbl:'DAM (Alan)',campos:{don_axel:{lbl:'Don Axel',shp:'don_axel.zip'},don_eduardo:{lbl:'Don Eduardo',shp:'don_eduardo.zip'},seeber:{lbl:'Seeber',shp:'seeber.zip'},posborg:{lbl:'Posborg',shp:'posborg.zip'},gasparini:{lbl:'Gasparini',shp:'gasparini.zip'},gonzales:{lbl:'Gonzales',shp:'gonzales.zip'},fuentes:{lbl:'Fuentes',shp:'fuentes.zip'},pedone:{lbl:'Pedone',shp:'pedone.zip'},sorensen:{lbl:'Sorensen',shp:'sorensen.zip'}},pulv:'dam.xlsx',pm:{'DON AXEL':'don_axel','DON EDUARDO':'don_eduardo','SEEBER':'seeber','POSBORG':'posborg','GASPARINI':'gasparini','GONZALES':'gonzales','FUENTES':'fuentes','PEDONE':'pedone','SORENSEN':'sorensen'}},
+  hollender:{lbl:'Hollender',campos:{el_puntal:{lbl:'El Puntal',shp:'el_puntal.zip'},galarregui:{lbl:'Galarregui',shp:'galarregui.zip'},la_concepcion:{lbl:'La Concepción',shp:'la_concepcion.zip'},la_fanny:{lbl:'La Fanny',shp:'la_fanny.zip'},larbiou:{lbl:'Larbiou',shp:'larbiou.zip'},las_totoras:{lbl:'Las Totoras',shp:'las_totoras.zip'},marcovechio:{lbl:'Marcovechio',shp:'marcovechio.zip'},merino:{lbl:'Merino',shp:'merino.zip'},vicente:{lbl:'Vicente',shp:'vicente.zip'}},pulv:'hollender.xlsx',pm:{}},
+  mauricio:{lbl:'Mauricio',campos:{el_socorro:{lbl:'El Socorro',shp:'el_socorro.zip'},inca_huasi:{lbl:'Inca Huasi',shp:'inca_huasi.zip'},lin_calel:{lbl:'Lin Calel',shp:'lin_calel.zip'}},pulv:'mauricio.xlsx',pm:{}},
+  almarmat:{lbl:'Almarmat',campos:{el_cholo:{lbl:'El Cholo',shp:'el_cholo.zip'},la_chicha:{lbl:'La Chicha',shp:'la_chicha.zip'}},pulv:'almarmat.xlsx',pm:{}},
+};
 
+// STATE
+let SESSION=null, D=null;
+
+// UTILS
+async function sha256(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+function SS(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('s-'+id).classList.add('active');}
+function toast(m,ms=2400){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),ms);}
+async function dbxDL(p){const r=await fetch('https://content.dropboxapi.com/2/files/download',{method:'POST',headers:{'Authorization':'Bearer '+DBX_TOKEN,'Dropbox-API-Arg':JSON.stringify({path:p}),'Content-Type':'text/plain'}});if(!r.ok)throw new Error('DBX '+r.status+': '+p);return r.arrayBuffer();}
+async function sbG(t,p=''){const r=await fetch(SB_URL+'/rest/v1/'+t+'?'+p,{headers:SBH});if(!r.ok)throw new Error('SB '+r.status);return r.json();}
+async function sbI(t,b){const r=await fetch(SB_URL+'/rest/v1/'+t,{method:'POST',headers:SBH,body:JSON.stringify(b)});if(!r.ok)throw new Error('SBI '+r.status);return r.json();}
+
+// AUTH
 async function doLogin(){
-  const user = document.getElementById('login-user').value.trim().toLowerCase();
-  const pass = document.getElementById('login-pass').value;
-  const err  = document.getElementById('login-err');
-  err.textContent = '';
-  if(!user||!pass){err.textContent='Completá usuario y contraseña.';return;}
-  const h = await sha256(pass);
-  const u = USERS[user];
-  if(!u||u.hash!==h){err.textContent='Usuario o contraseña incorrectos.';return;}
-  currentUser = {name:user, clients:u.clients};
-  // Save session
-  sessionStorage.setItem('campo_user', JSON.stringify(currentUser));
-  document.getElementById('login-screen').classList.add('login-hidden');
-  loadData();
+  const u=document.getElementById('li-u').value.trim().toLowerCase();
+  const p=document.getElementById('li-p').value;
+  const e=document.getElementById('li-e');e.textContent='';
+  if(!u||!p){e.textContent='Completá los campos.';return;}
+  const h=await sha256(p),ud=USERS[u];
+  if(!ud||ud.h!==h){e.textContent='Usuario o contraseña incorrectos.';return;}
+  SESSION={u,r:ud.r,c:ud.c};sessionStorage.setItem('ts',JSON.stringify(SESSION));goHome();
+}
+function doLogout(){sessionStorage.removeItem('ts');SESSION=null;D=null;SS('login');}
+function chkS(){const s=sessionStorage.getItem('ts');if(s){SESSION=JSON.parse(s);return true;}document.getElementById('li-p').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});return false;}
+function goHome(){document.getElementById('h-user').textContent=SESSION.u==='marcos'?'Marcos Fernández':SESSION.u;SS('home');}
+
+// NAV
+function openMod(m){SS(m);if(m==='schedule')schInit();else if(m==='recorridas')recInit();else if(m==='recetas')retInit();else if(m==='suelos')suelInit();}
+function closeMod(m){SS('home');if(m==='schedule'){schCP();schCR();}}
+
+// CROP COLORS
+const CC={trigo:'#e8856a',cebada:'#e8a0b4',girasol:'#e8c84a',maiz:'#7bba4a','maíz':'#7bba4a',soja:'#5aad7e',cn:'#7a9e6a',avena:'#b8c98a',sorgo:'#c4783a',pisingallo:'#e8a840',rye:'#9ab87a',pastura:'#8fbc8f',default:'#9aab90'};
+const CL={trigo:'Trigo',cebada:'Cebada',girasol:'Girasol',maiz:'Maíz','maíz':'Maíz',soja:'Soja',cn:'Campo Nat.',avena:'Avena',sorgo:'Sorgo',pisingallo:'Pisingallo',rye:'Rye Grass',pastura:'Pastura',default:'Sin datos'};
+function ck(v){if(!v||!String(v).trim()||v==='null')return'default';const s=v.toLowerCase().trim();if(s.includes('trigo'))return'trigo';if(s.includes('cebad'))return'cebada';if(s.includes('girasol'))return'girasol';if(s.includes('maiz')||s.includes('maíz'))return'maiz';if(s.includes('soja'))return'soja';if(s.includes('cn')||s.includes('campo nat')||s.includes('pastura'))return'cn';if(s.includes('avena'))return'avena';if(s.includes('sorgo'))return'sorgo';if(s.includes('pisingallo'))return'pisingallo';if(s.includes('rye'))return'rye';return'default';}
+const cc=v=>CC[ck(v)]||CC.default, cl=v=>CL[ck(v)]||v||'—';
+
+// SCHEDULE
+let sYr='r26',sCmp='',sSel=null,sTab='pulv',sRO=false;
+let sVp={cx:0,cy:0,scale:1},sDrg={on:false},sPnch={on:false};
+const sCV=document.getElementById('scv'),sCX=sCV.getContext('2d');
+
+function schInit(){if(D){schBT();schR();schIV();schDraw();document.getElementById('slod').style.display='none';return;}schLoad();}
+async function schLoad(){
+  document.getElementById('slod').style.display='flex';
+  try{
+    const ck2=SESSION.c[0]==='all'?'la_alicia':SESSION.c[0];
+    const cfg=CFG[ck2];if(!cfg)throw new Error('Cliente no configurado');
+    const sr=await Promise.all(Object.entries(cfg.campos).map(async([k,ci])=>{
+      try{
+        const buf=await dbxDL(TF+'/shp/'+ck2+'/'+ci.shp);
+        const gj=await shp(buf);
+        return(gj.features||[]).map(f=>{
+          const p=f.properties||{};
+          const nc=Object.keys(p).find(k2=>k2.toLowerCase()==='lote')||Object.keys(p).find(k2=>k2.toLowerCase()==='name')||Object.keys(p)[0];
+          const g=f.geometry;const rr=[];
+          const ar=c=>rr.push(c.map(([a,b])=>[Math.round(a*1e5)/1e5,Math.round(b*1e5)/1e5]));
+          if(g.type==='Polygon')ar(g.coordinates[0]);else if(g.type==='MultiPolygon')g.coordinates.forEach(pg=>ar(pg[0]));
+          return{name:String(p[nc]||''),layer:k,campo:ci.lbl,area:String(p.area||''),r26:String(p.recurso26||''),r25:String(p.recurso25||''),r24:String(p.recurso24||''),r23:String(p.recurso23||''),rings:rr};
+        });
+      }catch(e){console.warn('SHP skip:',k,e.message);return[];}
+    }));
+    const xl=async path=>{try{return await dbxDL(path);}catch(e){return null;}};
+    const[pb,sb,sib]=await Promise.all([cfg.pulv?xl(TF+'/xlsx/pulv/'+cfg.pulv):null,xl(TF+'/xlsx/analisis_suelos.xlsx'),xl(TF+'/xlsx/siembras.xlsx')]);
+    D={lotes:sr.flat(),pulv:pb?pPulv(pb,cfg.pm):{},suelos:sb?pSuelos(sb,ck2):{},siembra:sib?pSiembra(sib,ck2):{},ck:ck2};
+    document.getElementById('s-hcli').textContent=cfg.lbl;
+    document.getElementById('slod').style.display='none';
+    schBT();schR();schIV();schDraw();
+  }catch(e){document.getElementById('slod').innerHTML='<div style="color:var(--red);text-align:center;padding:20px;font-size:12px">Error cargando datos<br><span style="color:var(--txt3)">'+e.message+'</span></div>';console.error(e);}
 }
 
-function checkSession(){
-  const saved = sessionStorage.getItem('campo_user');
-  if(saved){
-    currentUser = JSON.parse(saved);
-    document.getElementById('login-screen').classList.add('login-hidden');
-    return true;
+function pPulv(buf,pm){
+  const wb=XLSX.read(buf,{type:'array',cellDates:true});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,dateNF:'dd/mm/yyyy'});
+  const pulv={};const hr=rows[4]||{};const pc={};
+  for(let i=14;i<hr.length;i++){const h=String(hr[i]||'').trim();if(h&&h!=='nan')pc[i]=h;}
+  for(let ri=7;ri<rows.length;ri++){
+    const r=rows[ri];if(!r||!r[1])continue;
+    const ck2=pm[String(r[1]).trim().toUpperCase()];if(!ck2)continue;
+    const lr=String(r[2]||'').trim();if(!lr||lr==='nan')continue;
+    const lk=lr.toUpperCase().startsWith('LOTE')?lr.toUpperCase():'LOTE '+lr.toUpperCase();
+    const prods=Object.entries(pc).map(([i,n])=>({n,d:String(r[i]||'').trim()})).filter(p=>p.d&&p.d!=='nan'&&p.d!=='0');
+    if(!prods.length)continue;
+    pulv[ck2]=pulv[ck2]||{};pulv[ck2][lk]=pulv[ck2][lk]||[];
+    pulv[ck2][lk].push({f:String(r[0]||'').trim(),c:String(r[3]||'').trim(),e:String(r[5]||'').trim(),r:String(r[6]||'').trim(),o:String(r[7]||'').trim(),p:prods});
   }
-  // Enter on password field
-  document.getElementById('login-pass').addEventListener('keydown', e=>{
-    if(e.key==='Enter') doLogin();
-  });
-  return false;
+  return pulv;
 }
-
-function logout(){
-  sessionStorage.removeItem('campo_user');
-  location.reload();
-}
-
-let D = null;
-
-async function loadData(){
-  try {
-    // Determine which data file to load
-    const clientKey = currentUser.clients[0]==='all' ? 'la_alicia' : currentUser.clients[0];
-    const resp = await fetch(`data/${clientKey}.json`);
-    D = await resp.json();
-    // Update title with client name
-    const clientLabels = {la_alicia:'La Alicia',alan:'Alan',mauricio:'Mauricio',el_puntal:'El Puntal',la_chicha:'La Chicha'};
-    const clientName = clientLabels[clientKey]||clientKey;
-    const hdrClient = document.getElementById('hdr-client');
-    if(hdrClient) hdrClient.textContent = clientName;
-    document.getElementById('loading').style.display='none';
-    init();
-  } catch(e) {
-    document.getElementById('loading').innerHTML='<div style="color:#ef5350;padding:20px">Error cargando datos.<br>Verificá conexión.</div>';
+function pSuelos(buf,ck2){
+  const PARAMS=['N-NO3','Fósforo','N Min.','S-Sulfato','MO','Zinc','pH','Humedad','Boro'];
+  const wb=XLSX.read(buf,{type:'array'});
+  const ws=wb.Sheets['Datos Completos']||wb.Sheets[wb.SheetNames[0]];if(!ws)return{};
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1});
+  const hdrs=rows[0]||{};const ci={};hdrs.forEach((h,i)=>{ci[String(h).trim()]=i;});
+  const su={};
+  for(let ri=1;ri<rows.length;ri++){
+    const r=rows[ri];
+    const cli=String(r[ci['Cliente']]||'').trim().toLowerCase();if(cli&&cli!==ck2)continue;
+    const campo=String(r[ci['Campo']]||'').trim();const lote=String(r[ci['Lote']]||'').trim();if(!campo||!lote)continue;
+    const ck3=campo.toLowerCase().replace(/ /g,'_');
+    const anio=r[ci['Año']]?String(Math.round(Number(r[ci['Año']]))):'?';
+    const arch=String(r[ci['Archivo']]||'').trim();
+    su[ck3]=su[ck3]||{};su[ck3][lote]=su[ck3][lote]||{};
+    if(!su[ck3][lote][anio])su[ck3][lote][anio]={arch,perfiles:[]};
+    const perf={prof:String(r[ci['Prof.']]||'').trim()};
+    PARAMS.forEach(p=>{const v=r[ci[p]];if(v!==undefined&&v!==null&&v!=='')perf[p]=parseFloat(v);});
+    su[ck3][lote][anio].perfiles.push(perf);
   }
+  return su;
 }
-
-// ── CROP CONFIG ──
-const CC={
-  trigo:'#ef6c6c',cebada:'#f48fb1',cebad:'#f48fb1',girasol:'#fdd835',
-  maiz:'#7bba4a',maíz:'#7bba4a',soja:'#4aad6e',
-  cn:'#6b8f5e',avena:'#b8c98a',sorgo:'#c4783a',
-  pisingallo:'#e8a840','rye grass':'#9ab87a','rye':'#9ab87a',default:'#607d8b'
-};
-const CL={
-  trigo:'Trigo',cebada:'Cebada',cebad:'Cebada',girasol:'Girasol',
-  maiz:'Maíz',maíz:'Maíz',soja:'Soja',cn:'Campo Nat.',
-  avena:'Avena',sorgo:'Sorgo',pisingallo:'Pisingallo',
-  'rye grass':'Rye Grass','rye':'Rye Grass',default:'Sin datos'
-};
-function ck(v){
-  if(!v||v==='null'||v==='None'||v===null)return'default';
-  const s=v.toLowerCase().trim();
-  if(s.includes('trigo'))return'trigo';
-  if(s.includes('cebad'))return'cebada';
-  if(s.includes('girasol'))return'girasol';
-  if(s.includes('maiz')||s.includes('maíz'))return'maiz';
-  if(s.includes('soja'))return'soja';
-  if(s.includes('cn')||s.includes('campo nat')||s.includes('pastura'))return'cn';
-  if(s.includes('avena'))return'avena';
-  if(s.includes('sorgo'))return'sorgo';
-  if(s.includes('pisingallo'))return'pisingallo';
-  if(s.includes('rye'))return'rye';
-  return'default';
-}
-const cc=v=>CC[ck(v)]||CC.default;
-const cl=v=>CL[ck(v)]||v||'—';
-
-// ── STATE ──
-let yr='r26', campo='', selLote=null, activeTab='pulv';
-
-// ── MAP STATE ──
-const cv=document.getElementById('cv');
-const ctx=cv.getContext('2d');
-let vp={x:0,y:0,scale:1}; // viewport offset in geo units, scale px/deg
-
-// Compute initial transform from all lotes
-function initVP(){
-  const lotes=visLotes();
-  if(!lotes.length)return;
-  let minLon=Infinity,maxLon=-Infinity,minLat=Infinity,maxLat=-Infinity;
-  lotes.forEach(l=>l.rings.forEach(r=>r.forEach(([lon,lat])=>{
-    if(Math.abs(lon)<1)return;
-    if(lon<minLon)minLon=lon; if(lon>maxLon)maxLon=lon;
-    if(lat<minLat)minLat=lat; if(lat>maxLat)maxLat=lat;
-  })));
-  const W=cv.width,H=cv.height;
-  const pad=40;
-  const sx=(W-pad*2)/(maxLon-minLon);
-  const sy=(H-pad*2)/(maxLat-minLat);
-  vp.scale=Math.min(sx,sy);
-  vp.cx=(minLon+maxLon)/2;
-  vp.cy=(minLat+maxLat)/2;
-}
-
-function lonLatToXY(lon,lat){
-  const W=cv.width,H=cv.height;
-  const x=W/2+(lon-vp.cx)*vp.scale;
-  const y=H/2-(lat-vp.cy)*vp.scale;
-  return[x,y];
-}
-function xyToLonLat(x,y){
-  const W=cv.width,H=cv.height;
-  return[(x-W/2)/vp.scale+vp.cx,(H/2-y)/vp.scale+vp.cy];
-}
-
-// ── RESIZE ──
-function resize(){
-  const w=cv.parentElement.clientWidth;
-  const h=cv.parentElement.clientHeight;
-  if(cv.width!==w||cv.height!==h){
-    cv.width=w; cv.height=h;
-    if(D){initVP(); draw();}
+function pSiembra(buf,ck2){
+  const wb=XLSX.read(buf,{type:'array'});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1});
+  const hdrs=rows[0]||{};const ci={};hdrs.forEach((h,i)=>{ci[String(h).trim()]=i;});
+  const res={};
+  for(let ri=1;ri<rows.length;ri++){
+    const r=rows[ri];
+    const ckey=String(r[ci['cliente_key']]||'').trim().toLowerCase();if(ckey&&ckey!==ck2)continue;
+    const cmk=String(r[ci['campo_key']]||'').trim().toLowerCase();
+    const lraw=String(r[ci['Lote']]||'').trim();if(!cmk||!lraw)continue;
+    const lk=lraw.toUpperCase().startsWith('LOTE')?lraw.toUpperCase():'LOTE '+lraw.toUpperCase();
+    res[cmk]=res[cmk]||{};
+    res[cmk][lk]={
+      cultivo:String(r[ci['Cultivo 1ra']]||'').trim(),variedad:String(r[ci['Variedad']]||'').trim(),
+      kg_ha:parseFloat(r[ci['Kg_ha']])||0,p_fuente:String(r[ci['P_fuente']]||'').trim(),p_dosis:parseFloat(r[ci['P_dosis']])||0,
+      ant:String(r[ci['Antecesor']]||'').trim(),pg:parseFloat(r[ci['PG']])||0,p1000:parseFloat(r[ci['P1000']])||0,
+      analisis:String(r[ci['Analisis']]||'').trim(),curasemilla:String(r[ci['Curasemilla']]||'').trim(),
+      siembra_modo:String(r[ci['Siembra_modo']]||'').trim(),ferti_modo:String(r[ci['ferti_modo']]||'').trim(),
+      semilla_modo:String(r[ci['semilla_modo']]||'').trim(),
+      n1_fuente:String(r[ci['N1_fuente']]||'').trim(),n1_dosis:parseFloat(r[ci['N1_dosis']])||0,
+      n1_fecha:String(r[ci['N1_fecha']]||'').trim(),n1_modo:String(r[ci['N1_modo']]||'').trim(),
+      n2_fuente:String(r[ci['N2_fuente']]||'').trim(),n2_dosis:parseFloat(r[ci['N2_dosis']])||0,
+      n2_fecha:String(r[ci['N2_fecha']]||'').trim(),n2_modo:String(r[ci['N2_modo']]||'').trim(),
+    };
   }
+  return res;
 }
 
-// ── FILTER ──
-function visLotes(){
-  if(!D) return [];
-  return D.lotes.filter(l=>l.layer===campo);
+// MAP
+function schBT(){
+  if(!D)return;
+  const layers=[...new Set(D.lotes.map(l=>l.layer))];
+  document.getElementById('sct').innerHTML=layers.map((l,i)=>{
+    const lab=D.lotes.find(x=>x.layer===l)?.campo||l;
+    return'<div class="ctab '+(i===0?'on':'')+'" data-campo="'+l+'" onclick="schSC(this)">'+lab+'</div>';
+  }).join('');
+  sCmp=layers[0]||'';
 }
-
-// ── DRAW ──
-function draw(){
-  const W=cv.width,H=cv.height;
-  ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#e8f5e8';
-  ctx.fillRect(0,0,W,H);
-
-  const lotes=visLotes();
-  lotes.forEach(l=>{
-    const val=getCultivo(l);
-    const fill=cc(val);
-    const isSel=selLote&&selLote.name===l.name&&selLote.layer===l.layer;
-
+function schVL(){return D?D.lotes.filter(l=>l.layer===sCmp):[]}
+function schIV(){
+  const ls=schVL();if(!ls.length)return;
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  ls.forEach(l=>l.rings.forEach(r=>r.forEach(([a,b])=>{if(Math.abs(a)<1)return;if(a<x0)x0=a;if(a>x1)x1=a;if(b<y0)y0=b;if(b>y1)y1=b;})));
+  const W=sCV.width,H=sCV.height,p=44;
+  sVp.scale=Math.min((W-p*2)/(x1-x0),(H-p*2)/(y1-y0));sVp.cx=(x0+x1)/2;sVp.cy=(y0+y1)/2;
+}
+function schXY(lon,lat){const W=sCV.width,H=sCV.height;return[W/2+(lon-sVp.cx)*sVp.scale,H/2-(lat-sVp.cy)*sVp.scale];}
+function schLL(x,y){const W=sCV.width,H=sCV.height;return[(x-W/2)/sVp.scale+sVp.cx,(H/2-y)/sVp.scale+sVp.cy];}
+function schR(){const w=sCV.parentElement.clientWidth,h=sCV.parentElement.clientHeight;if(sCV.width!==w||sCV.height!==h){sCV.width=w;sCV.height=h;if(D){schIV();schDraw();}}}
+function schGC(l){if(sYr==='r26'&&D?.siembra){const k=schSK(l);if(k){const s=D.siembra[l.layer]?.[k];if(s?.cultivo)return s.cultivo;}}return l[sYr]||'';}
+function schDraw(){
+  const W=sCV.width,H=sCV.height;sCX.clearRect(0,0,W,H);sCX.fillStyle='#edf0e8';sCX.fillRect(0,0,W,H);
+  schVL().forEach(l=>{
+    const val=schGC(l),fill=cc(val),isSel=sSel?.name===l.name&&sSel?.layer===l.layer;
     l.rings.forEach(ring=>{
-      ctx.beginPath();
-      ring.forEach(([lon,lat],i)=>{
-        if(Math.abs(lon)<1)return;
-        const[x,y]=lonLatToXY(lon,lat);
-        i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-      });
-      ctx.closePath();
-      ctx.fillStyle=fill+(isSel?'ee':'99');
-      ctx.fill();
-      ctx.strokeStyle=isSel?'#fff':'rgba(255,255,255,0.35)';
-      ctx.lineWidth=isSel?2.5:1;
-      ctx.stroke();
+      sCX.beginPath();ring.forEach(([lon,lat],i)=>{if(Math.abs(lon)<1)return;const[x,y]=schXY(lon,lat);i===0?sCX.moveTo(x,y):sCX.lineTo(x,y);});
+      sCX.closePath();sCX.fillStyle=fill+(isSel?'ee':'88');sCX.fill();
+      sCX.strokeStyle=isSel?'rgba(255,255,255,.9)':'rgba(255,255,255,.4)';sCX.lineWidth=isSel?2:1;sCX.stroke();
     });
-
-    // Label: lote name + cultivo
-    const[cx2,cy2]=ringCentroid(l.rings[0]);
-    if(cx2){
-      const[px,py]=lonLatToXY(cx2,cy2);
-      const areaHa=parseFloat(l.area)||0;
-      const minArea=vp.scale<200?30:10;
-      if(areaHa>=minArea){
-        ctx.save();
-        ctx.fillStyle='rgba(0,0,0,0.5)';
-        const nm=l.name.toUpperCase();
-        ctx.font=`bold ${Math.max(9,Math.min(13,areaHa/8+7))}px -apple-system,sans-serif`;
-        const tw=ctx.measureText(nm).width;
-        const rx=px-tw/2-3,ry=py-8,rw=tw+6,rh=12,rr=3;
-        ctx.beginPath();ctx.moveTo(rx+rr,ry);ctx.lineTo(rx+rw-rr,ry);ctx.arcTo(rx+rw,ry,rx+rw,ry+rr,rr);ctx.lineTo(rx+rw,ry+rh-rr);ctx.arcTo(rx+rw,ry+rh,rx+rw-rr,ry+rh,rr);ctx.lineTo(rx+rr,ry+rh);ctx.arcTo(rx,ry+rh,rx,ry+rh-rr,rr);ctx.lineTo(rx,ry+rr);ctx.arcTo(rx,ry,rx+rr,ry,rr);ctx.closePath();ctx.fill();
-        ctx.fillStyle='#fff';
-        ctx.textAlign='center';
-        ctx.textBaseline='middle';
-        ctx.fillText(nm,px,py-2);
-        if(val&&val!=='null'&&val!==null){
-          ctx.font=`${Math.max(8,Math.min(11,areaHa/10+6))}px -apple-system,sans-serif`;
-          ctx.fillStyle='rgba(255,255,255,0.7)';
-          ctx.fillText(cl(val),px,py+8);
-        }
-        ctx.restore();
-      }
+    const[cx,cy]=schCen(l.rings[0]);if(!cx)return;
+    const[px,py]=schXY(cx,cy);const ha=parseFloat(l.area)||0;
+    if(ha>=10||sVp.scale>200){
+      sCX.save();
+      const nm=l.name.toUpperCase();
+      sCX.font='300 '+Math.max(9,Math.min(12,ha/10+8))+'px DM Sans,sans-serif';
+      const tw=sCX.measureText(nm).width;
+      sCX.fillStyle='rgba(0,0,0,.32)';
+      sCX.beginPath();const rx=px-tw/2-3,ry=py-7,rw=tw+6,rh=11,rr=2;sCX.moveTo(rx+rr,ry);sCX.lineTo(rx+rw-rr,ry);sCX.arcTo(rx+rw,ry,rx+rw,ry+rr,rr);sCX.lineTo(rx+rw,ry+rh-rr);sCX.arcTo(rx+rw,ry+rh,rx+rw-rr,ry+rh,rr);sCX.lineTo(rx+rr,ry+rh);sCX.arcTo(rx,ry+rh,rx,ry+rh-rr,rr);sCX.lineTo(rx,ry+rr);sCX.arcTo(rx,ry,rx+rr,ry,rr);sCX.closePath();sCX.fill();
+      sCX.fillStyle='rgba(255,255,255,.9)';sCX.textAlign='center';sCX.textBaseline='middle';sCX.fillText(nm,px,py-1);
+      if(val){sCX.font='300 '+Math.max(7,Math.min(10,ha/12+6))+'px DM Sans,sans-serif';sCX.fillStyle='rgba(255,255,255,.6)';sCX.fillText(cl(val),px,py+8);}
+      sCX.restore();
     }
   });
-  buildLegend();
+  schBLeg();
 }
+function schCen(ring){if(!ring?.length)return[null,null];let sx=0,sy=0,n=0;ring.forEach(([a,b])=>{if(Math.abs(a)>1){sx+=a;sy+=b;n++;}});return n?[sx/n,sy/n]:[null,null];}
+function schHit(px,py){const[lon,lat]=schLL(px,py);const ls=schVL();for(let i=ls.length-1;i>=0;i--){const l=ls[i];for(const r of l.rings)if(schPIR(lon,lat,r))return l;}return null;}
+function schPIR(x,y,ring){let inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const[xi,yi]=ring[i],[xj,yj]=ring[j];if(Math.abs(xi)<1||Math.abs(xj)<1)continue;if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)inside=!inside;}return inside;}
+function schBLeg(){const seen=new Set();schVL().forEach(l=>{const k=ck(schGC(l));if(k!=='default')seen.add(k);});document.getElementById('sli').innerHTML=[...seen].map(k=>'<div class="li"><div class="ld" style="background:'+CC[k]+'"></div>'+CL[k]+'</div>').join('');}
 
-function ringCentroid(ring){
-  if(!ring||!ring.length)return[null,null];
-  let sx=0,sy=0,n=0;
-  ring.forEach(([lon,lat])=>{if(Math.abs(lon)>1){sx+=lon;sy+=lat;n++;}});
-  return n?[sx/n,sy/n]:[null,null];
-}
+document.querySelectorAll('#syp .ybtn').forEach(b=>b.addEventListener('click',()=>{sYr=b.dataset.yr;document.querySelectorAll('#syp .ybtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');schDraw();}));
+document.getElementById('sptabs').addEventListener('click',e=>{const b=e.target.closest('.ptab');if(!b)return;sTab=b.dataset.tab;document.querySelectorAll('#sptabs .ptab').forEach(x=>x.classList.remove('on'));b.classList.add('on');schRT();});
+function schSC(el){sCmp=el.dataset.campo;document.querySelectorAll('#sct .ctab').forEach(x=>x.classList.remove('on'));el.classList.add('on');sSel=null;schCP();if(sRO)schRR();schIV();schDraw();}
+function schOP(l){sSel=l;document.getElementById('spt').textContent=l.name.toUpperCase()+' — '+l.campo;const yl={r26:'2026',r25:'2025',r24:'2024',r23:'2023'}[sYr];const val=schGC(l);document.getElementById('spm').innerHTML='<div class="chip"><div class="cd" style="background:'+cc(val)+'"></div>'+cl(val)+' '+yl+'</div><div class="chip">📐 '+l.area+' ha</div>'+(l.r25?'<div class="chip">↩ '+cl(l.r25)+' 25</div>':'');document.getElementById('spnl').classList.add('open');schDraw();schRT();}
+function schCP(){document.getElementById('spnl').classList.remove('open');sSel=null;schDraw();}
+function schRT(){if(sTab==='pulv')schRPulv();else if(sTab==='siembra')schRSiembra();else schRSuelos();}
 
-// ── HIT TEST ──
-function hitTest(px,py){
-  const[lon,lat]=xyToLonLat(px,py);
-  const lotes=visLotes();
-  for(let i=lotes.length-1;i>=0;i--){
-    const l=lotes[i];
-    for(const ring of l.rings){
-      if(pointInRing(lon,lat,ring))return l;
-    }
-  }
-  return null;
-}
+function nk(s){return s.toLowerCase().replace(/[_\/\.]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').trim();}
+function fK(db,raw){if(!db)return null;const n=nk(raw);for(const k of Object.keys(db)){if(nk(k.replace(/^lote\s*/i,''))===n)return k;}return null;}
+const PFX={la_manga:'lm',la_turca:'lt',san_fermin:'sf',becutti:'b',dona_maria:'dm',monte_alegre:'ma','4_de_enero':'4e'};
+function schPK(l){const d=D.pulv[l.layer]||{};const p=PFX[l.layer]||'';let n=l.name.replace(new RegExp('^'+p,'i'),'').replace(/^_/,'').replace(/_(bajo|juncos|ch|gr|ls)$/i,'');return fK(d,n)||'LOTE '+n.toUpperCase();}
+function schSK(l){const d=D.siembra?.[l.layer];if(!d)return null;const p=PFX[l.layer]||'';let n=l.name.replace(new RegExp('^'+p,'i'),'').replace(/^_/,'').replace(/_(bajo|juncos)$/i,'');return fK(d,n)||null;}
+function schSuK(l){const d=D.suelos?.[l.layer];if(!d)return null;const p=PFX[l.layer]||'';let n=l.name.replace(new RegExp('^'+p,'i'),'').replace(/^_/,'');return fK(d,n)||null;}
 
-function pointInRing(x,y,ring){
-  let inside=false;
-  for(let i=0,j=ring.length-1;i<ring.length;j=i++){
-    const[xi,yi]=ring[i],[xj,yj]=ring[j];
-    if(Math.abs(xi)<1||Math.abs(xj)<1)continue;
-    if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)inside=!inside;
-  }
-  return inside;
-}
-
-// ── LEGEND ──
-function buildLegend(){
-  const seen=new Set();
-  visLotes().forEach(l=>{const k=ck(getCultivo(l));if(k!=='default')seen.add(k);});
-  document.getElementById('legitems').innerHTML=[...seen].map(k=>
-    `<div class="li"><div class="ld" style="background:${CC[k]||CC.default}"></div>${CL[k]||k}</div>`
-  ).join('');
-}
-
-// ── TABS ──
-// ctab switching handled by inline onclick via switchCampo()
-document.querySelectorAll('.ybtn').forEach(b=>b.addEventListener('click',()=>{
-  yr=b.dataset.yr;
-  document.querySelectorAll('.ybtn').forEach(x=>x.classList.remove('on'));
-  b.classList.add('on');
-  draw();
-}));
-// ptab switching — event delegation on container (works on iOS)
-document.getElementById('ptabs').addEventListener('click',function(e){
-  const btn=e.target.closest('.ptab');
-  if(!btn)return;
-  activeTab=btn.dataset.tab;
-  document.querySelectorAll('.ptab').forEach(x=>x.classList.remove('on'));
-  btn.classList.add('on');
-  renderTab();
-});
-function switchPTab(el){
-  activeTab=el.dataset.tab;
-  document.querySelectorAll('.ptab').forEach(x=>x.classList.remove('on'));
-  el.classList.add('on');
-  renderTab();
-}
-
-// ── PANEL ──
-function openP(lote){
-  selLote=lote;
-  const CL2={fina_la_manga:'La Manga',fina_la_turca:'La Turca',fina_san_fermin:'San Fermín',fina_becutti:'Becutti'};
-  document.getElementById('ptitle').textContent=lote.name.toUpperCase()+' — '+(CL2[lote.layer]||lote.layer);
-  const yrLabel={r26:'2026',r25:'2025',r24:'2024',r23:'2023'}[yr];
-  const val=getCultivo(lote);
-  document.getElementById('pmeta').innerHTML=
-    `<div class="chip"><div class="cd" style="background:${cc(val)}"></div>${cl(val)} ${yrLabel}</div>`+
-    `<div class="chip">📐 ${lote.area} ha</div>`+
-    (lote.r25?`<div class="chip">↩ ${cl(lote.r25)} 2025</div>`:'');
-  document.getElementById('pnl').classList.add('open');
-  draw();
-  renderTab();
-}
-function closeP(){
-  document.getElementById('pnl').classList.remove('open');
-  selLote=null; draw();
-}
-function renderTab(){
-  if(activeTab==='pulv')renderPulv();
-  else if(activeTab==='siembra')renderSiembra();
-  else renderSuelos();
-}
-
-// ── PULV ──
-const MONTHS=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-
-// Normalize lote name: remove prefix, lowercase, unify separators (_ / . -> -)
-function normLote(str){
-  return str.toLowerCase().replace(/[_\/\.]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').trim();
-}
-function findKey(campoDB, rawNum){
-  if(!campoDB) return null;
-  const norm = normLote(rawNum);
-  for(const k of Object.keys(campoDB)){
-    const kn = normLote(k.replace(/^lote\s*/i,''));
-    if(kn === norm) return k;
-  }
-  return null;
-}
-
-function getCultivo(lote){
-  // Use siembra data if available for current year (r26), else fallback to SHP
-  if(yr==='r26' && D.siembra){
-    const key=siembraKey(lote);
-    if(key){
-      const s=D.siembra[lote.layer]?.[key];
-      if(s&&s.cultivo) return s.cultivo;
-    }
-  }
-  return lote[yr]||'';
-}
-
-function pulvKey(lote){
-  const pfx={fina_la_manga:'lm',fina_la_turca:'lt',fina_san_fermin:'sf',fina_becutti:'b'};
-  const p=pfx[lote.layer]||'';
-  const campoData=D.pulv[lote.layer]||{};
-  let num=lote.name.replace(new RegExp('^'+p,'i'),'').replace(/^_/,'')
-    .replace(/_bajo$/i,'').replace(/_juncos$/i,'').replace(/_ch$/i,'')
-    .replace(/_gr$/i,'').replace(/_ls$/i,'');
-  const found = findKey(campoData, num);
-  if(found) return found;
-  if(campoData['LOTE '+num]) return 'LOTE '+num;
-  if(campoData['LOTE '+num.toUpperCase()]) return 'LOTE '+num.toUpperCase();
-  return 'LOTE '+num.toUpperCase();
-}
-
-function renderPulv(){
-  const body=document.getElementById('pbody');
-  const campoData=D.pulv[selLote.layer];
-  if(!campoData){body.innerHTML=`<div class="empty">Sin datos de pulverizaciones</div>`;return;}
-
-  const key=pulvKey(selLote);
-  let apps=campoData[key];
-
-  // Fallback: try stripped number matching
-  if(!apps||!apps.length){
-    const num=key.replace('LOTE ','').trim().toLowerCase();
-    for(const[k,v] of Object.entries(campoData)){
-      if(k.replace('LOTE ','').trim().toLowerCase()===num){apps=v;break;}
-    }
-  }
-  if(!apps||!apps.length){
-    body.innerHTML=`<div class="empty">Sin pulverizaciones registradas para ${key}</div>`;
-    return;
-  }
-
-  const groups={};
-  apps.forEach(a=>{
-    const pts=a.f.split('/');
-    const mk=pts[1]+'/'+pts[2];
-    if(!groups[mk])groups[mk]=[];
-    groups[mk].push(a);
-  });
-
+const MOS=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function schRPulv(){
+  const body=document.getElementById('spb');
+  const cd=D.pulv[sSel.layer];if(!cd){body.innerHTML='<div class="empty">Sin datos de pulverizaciones</div>';return;}
+  const key=schPK(sSel);let apps=cd[key];
+  if(!apps?.length){const n=key.replace('LOTE ','').trim().toLowerCase();for(const[k,v] of Object.entries(cd)){if(k.replace('LOTE ','').trim().toLowerCase()===n){apps=v;break;}}}
+  if(!apps?.length){body.innerHTML='<div class="empty">Sin registros para '+key+'</div>';return;}
+  const gr={};apps.forEach(a=>{const pts=a.f.split('/');const mk=(pts[1]||'?')+'/'+(pts[2]||'?');if(!gr[mk])gr[mk]=[];gr[mk].push(a);});
   let html='';
-  for(const[mk,list] of Object.entries(groups)){
-    const[m,y2]=mk.split('/');
-    html+=`<div class="pg"><div class="pgh">${MONTHS[+m]||m} ${y2}</div>`;
-    list.forEach(a=>{
-      const est=(a.e||'').toLowerCase();
-      let cls='ok',bc='bok';
-      if(est.includes('anulado')){cls='an';bc='ban';}
-      else if(est.includes('suspendido')){cls='su';bc='bsu';}
-      else if(est.includes('pendiente')){cls='pe';bc='bpe';}
-      html+=`<div class="pc ${cls}">
-        <div class="ptop">
-          <div><div class="pdate">${a.f}</div><div class="pcult">${a.c||''}</div></div>
-          <span class="badge ${bc}">${a.e||''}</span>
-        </div>
-        ${a.o?`<div class="pobs">📝 ${a.o}</div>`:''}
-        <div>${(a.p||[]).map(p=>`<div class="prow"><span class="prname">• ${p.n}</span><span class="prdos">${p.d} l/ha</span></div>`).join('')}</div>
-        ${a.r?`<div class="prec">Rec. N° ${a.r}</div>`:''}
-      </div>`;
-    });
+  for(const[mk,list] of Object.entries(gr)){
+    const[m,y2]=mk.split('/');html+='<div class="pg"><div class="pgh">'+MOS[+m]+' '+y2+'</div>';
+    list.forEach(a=>{const e=(a.e||'').toLowerCase();let c='ok',b='bok';if(e.includes('anulado')){c='an';b='ban';}else if(e.includes('suspendido')){c='su';b='bsu';}else if(e.includes('pendiente')){c='pe';b='bpe';}
+    html+='<div class="pc '+c+'"><div class="ptop"><div><div class="pdate">'+a.f+'</div><div class="pcult">'+a.c+'</div></div><span class="badge '+b+'">'+a.e+'</span></div>'+(a.o?'<div class="pobs">'+a.o+'</div>':'')+'<div>'+(a.p||[]).map(p=>'<div class="prow"><span>'+p.n+'</span><span style="color:var(--txt3)">'+p.d+' l/ha</span></div>').join('')+'</div>'+(a.r?'<div class="prec">Rec. '+a.r+'</div>':'')+'</div>';});
     html+='</div>';
   }
-  body.innerHTML=html||`<div class="empty">Sin registros</div>`;
+  body.innerHTML=html||'<div class="empty">Sin registros</div>';
 }
-
-// ── SUELOS ──
-function suelosKey(lote){
-  const pfx={fina_la_manga:'lm',fina_la_turca:'lt',fina_san_fermin:'sf',fina_becutti:'b'};
-  const p=pfx[lote.layer]||'';
-  let num=lote.name.replace(new RegExp('^'+p,'i'),'').replace(/^_/,'');
-  const campoDB=D.suelos[lote.layer];
-  if(!campoDB) return null;
-  const found=findKey(campoDB, num);
-  if(found) return found;
-  if(campoDB[num]) return num;
-  const nl=normLote(num);
-  for(const k of Object.keys(campoDB)){
-    if(normLote(k)===nl) return k;
-  }
-  return null;
-}
-
-function renderSuelos(){
-  const body=document.getElementById('pbody');
-  const campoDB=D.suelos[selLote.layer];
-  if(!campoDB){body.innerHTML=`<div class="empty">Sin análisis de suelos para este campo</div>`;return;}
-  const key=suelosKey(selLote);
-  if(!key){body.innerHTML=`<div class="empty">Sin análisis de suelos para este lote</div>`;return;}
-  const analisis=campoDB[key];
-  if(!analisis){body.innerHTML=`<div class="empty">Sin datos</div>`;return;}
-
+function schRSuelos(){
+  const body=document.getElementById('spb');
+  const key=schSuK(sSel);if(!key){body.innerHTML='<div class="empty">Sin análisis para este lote</div>';return;}
+  const an=D.suelos[sSel.layer]?.[key];if(!an){body.innerHTML='<div class="empty">Sin datos</div>';return;}
   const PARAMS=['N-NO3','Fósforo','N Min.','S-Sulfato','MO','Zinc','pH','Humedad','Boro'];
   let html='';
-  Object.keys(analisis).sort((a,b)=>b-a).forEach(yr2=>{
-    const an=analisis[yr2];
-    const perf=an.perfiles||[];
-    if(!perf.length)return;
+  Object.keys(an).sort((a,b)=>b-a).forEach(yr2=>{
+    const a=an[yr2];const perf=a.perfiles||[];if(!perf.length)return;
     const cols=PARAMS.filter(p=>perf.some(r=>r[p]!==undefined));
-    html+=`<div class="sy"><div class="sytitle">Análisis ${yr2}</div>
-      <table class="stbl"><thead><tr><th>Prof.</th>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
-      <tbody>${perf.map(r=>`<tr><td><b>${r.prof}</b></td>${cols.map(c=>`<td>${r[c]!==undefined?r[c]:'—'}</td>`).join('')}</tr>`).join('')}</tbody>
-      </table><div class="sarch">${an.archivo}</div></div>`;
+    html+='<div class="sy"><div class="sytit">Análisis '+yr2+'</div><table class="stbl"><thead><tr><th>Prof.</th>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+perf.map(r=>'<tr><td><b>'+r.prof+'</b></td>'+cols.map(c=>'<td>'+(r[c]!==undefined?r[c]:'—')+'</td>').join('')+'</tr>').join('')+'</tbody></table><div style="font-size:9px;color:var(--txt3);margin-top:3px">'+a.arch+'</div></div>';
   });
-  body.innerHTML=html||`<div class="empty">Sin datos</div>`;
+  body.innerHTML=html||'<div class="empty">Sin datos</div>';
+}
+function mpill(v,isVar){if(!v)return'';return'<span class="mp '+(isVar?'mp-v':'mp-f')+'">'+v+'</span>';}
+function schRSiembra(){
+  const body=document.getElementById('spb');
+  const key=schSK(sSel);if(!key){body.innerHTML='<div class="empty">Sin datos de siembra para este lote</div>';return;}
+  const s=D.siembra[sSel.layer]?.[key];if(!s){body.innerHTML='<div class="empty">Sin datos</div>';return;}
+  const antL={'GR':'Girasol','TR':'Trigo','CB':'Cebada','MZ':'Maíz','SJ':'Soja'}[s.ant]||s.ant||'—';
+  const mp=(v)=>{if(!v)return'';const lv=v.toLowerCase();return'<span class="mp '+(lv==='variable'?'mp-v':lv==='directa'?'mp-d':lv==='conv'||lv==='convencional'?'mp-c':'mp-f')+'">'+v+'</span>';};
+  let fert='';
+  if(s.p_dosis>0)fert+='<div class="srow"><span class="sr-l">Fósforo ('+s.p_fuente+')</span><span class="sr-v">'+s.p_dosis+' kg/ha '+mp(s.ferti_modo)+'</span></div>';
+  if(s.n1_dosis>0)fert+='<div class="srow"><span class="sr-l">N1 — '+s.n1_fuente+(s.n1_fecha?' · '+s.n1_fecha:'')+'</span><span class="sr-v">'+s.n1_dosis+' kg/ha '+mp(s.n1_modo)+'</span></div>';
+  if(s.n2_dosis>0)fert+='<div class="srow"><span class="sr-l">N2 — '+s.n2_fuente+(s.n2_fecha?' · '+s.n2_fecha:'')+'</span><span class="sr-v">'+s.n2_dosis+' kg/ha '+mp(s.n2_modo)+'</span></div>';
+  body.innerHTML='<div class="scard"><div class="scult">'+cl(s.cultivo)+'</div><div class="svar">'+(s.variedad||'—')+'</div><div class="sgrid"><div class="si"><div class="si-l">Semilla</div><div class="si-v">'+(s.kg_ha||'—')+' <span class="si-u">kg/ha</span> '+mp(s.semilla_modo)+'</div></div><div class="si"><div class="si-l">Siembra</div><div class="si-v">'+mp(s.siembra_modo||'—')+'</div></div><div class="si"><div class="si-l">Antecesor</div><div class="si-v">'+antL+'</div></div>'+(s.curasemilla?'<div class="si"><div class="si-l">Curasemilla</div><div class="si-v" style="font-size:11px">'+s.curasemilla+'</div></div>':'')+'</div>'+(fert?'<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Fertilización</div>'+fert:'')+'<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Calidad semilla</div><div class="srow"><span class="sr-l">Poder germinativo</span><span class="sr-v">'+(s.pg?(s.pg*100).toFixed(0)+'%':'—')+'</span></div><div class="srow"><span class="sr-l">Peso mil semillas</span><span class="sr-v">'+(s.p1000||'—')+' g</span></div><div class="srow"><span class="sr-l">N° análisis</span><span class="sr-v">'+(s.analisis||'—')+'</span></div></div>';
 }
 
-// ── SIEMBRA ──
-function siembraKey(lote){
-  const pfx={fina_la_manga:'lm',fina_la_turca:'lt',fina_san_fermin:'sf',fina_becutti:'b'};
-  const p=pfx[lote.layer]||'';
-  const campoDB=D.siembra[lote.layer];
-  if(!campoDB) return null;
-  let num=lote.name.replace(new RegExp('^'+p,'i'),'').replace(/^_/,'')
-    .replace(/_bajo$/i,'').replace(/_juncos$/i,'');
-  const found=findKey(campoDB, num);
-  if(found) return found;
-  const nl=normLote(num);
-  for(const k of Object.keys(campoDB)){
-    if(normLote(k.replace(/^LOTE\s*/i,''))===nl) return k;
-  }
-  return null;
-}
-
-function renderSiembra(){
-  const body=document.getElementById('pbody');
-  const campoDB=D.siembra[selLote.layer];
-  if(!campoDB){body.innerHTML=`<div class="empty">Sin datos de siembra para este campo</div>`;return;}
-  const key=siembraKey(selLote);
-  if(!key){body.innerHTML=`<div class="empty">Sin datos de siembra para este lote</div>`;return;}
-  const s=campoDB[key];
-  const antLabel={'GR':'Girasol','TR':'Trigo','CB':'Cebada','MZ':'Maíz','SJ':'Soja'}[s.ant]||s.ant;
-  const fertHTML=(s.map_ha>0?`<div class="sitem"><div class="sitem-label">MAP 11-52-0</div><div class="sitem-val">${s.map_ha} <span class="sitem-unit">kg/ha</span></div></div>`:'')+
-    (s.dap_ha>0?`<div class="sitem"><div class="sitem-label">DAP 18-46-0</div><div class="sitem-val">${s.dap_ha} <span class="sitem-unit">kg/ha</span></div></div>`:'');
-  body.innerHTML=`<div class="scard">
-    <div class="scard-title">${s.variedad} <span class="stag">${s.cultivo}</span></div>
-    <div class="sgrid">
-      <div class="sitem"><div class="sitem-label">Semilla</div><div class="sitem-val">${s.kg_ha} <span class="sitem-unit">kg/ha</span></div></div>
-      <div class="sitem"><div class="sitem-label">Antecesor</div><div class="sitem-val">${antLabel}</div></div>
-      ${fertHTML}
-    </div>
-    <div class="sdivider"></div>
-    <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--txt2);margin-bottom:6px">Calidad de semilla</div>
-    <div class="sseed"><span class="sseed-label">PG (Poder germinativo)</span><span class="sseed-val">${(s.pg*100).toFixed(0)}%</span></div>
-    <div class="sseed"><span class="sseed-label">P1000 (Peso mil semillas)</span><span class="sseed-val">${s.p1000} g</span></div>
-    <div class="sseed"><span class="sseed-label">N° análisis</span><span class="sseed-val">${s.analisis||'—'}</span></div>
-  </div>`;
-}
-
-// ── RESUMEN ──
-let resumenOpen=false;
-function toggleResumen(){
-  resumenOpen=!resumenOpen;
-  if(resumenOpen){closeP();renderResumen();document.getElementById('rpnl').classList.add('open');}
-  else document.getElementById('rpnl').classList.remove('open');
-}
-function renderResumen(){
+function schTogR(){sRO=!sRO;if(sRO){schCP();schRR();document.getElementById('srpnl').classList.add('open');}else schCR();}
+function schCR(){sRO=false;document.getElementById('srpnl').classList.remove('open');}
+function schRR(){
   if(!D)return;
-  const CL2={fina_la_manga:'La Manga',fina_la_turca:'La Turca',fina_san_fermin:'San Fermín',fina_becutti:'Becutti'};
-  document.getElementById('rpcampo').textContent=CL2[campo]||campo;
-  function esFina(v){return['trigo','cebada','avena','rye'].includes(ck(v));}
-  function esGruesa(v){return['maiz','soja','girasol','sorgo','pisingallo'].includes(ck(v));}
-  function computeStats(lotes){
-    const byCrop={},tot={total:0,fina:0,gruesa:0,cn:0};
-    lotes.forEach(l=>{
-      const ha=parseFloat(l.area)||0;const val=getCultivo(l);const k2=ck(val);const lbl=cl(val);
-      if(!byCrop[lbl])byCrop[lbl]={ha:0,key:k2};
-      byCrop[lbl].ha+=ha;tot.total+=ha;
-      if(esFina(val))tot.fina+=ha;else if(esGruesa(val))tot.gruesa+=ha;else tot.cn+=ha;
-    });
-    return{byCrop,tot};
-  }
-  const cL=D.lotes.filter(l=>l.layer===campo);
-  const eL=D.lotes;
-  const cS=computeStats(cL);const eS=computeStats(eL);
-  document.getElementById('rpmeta').innerHTML=
-    `<div class="chip">📐 ${Math.round(cS.tot.total)} ha campo</div>`+
-    `<div class="chip">🏢 ${Math.round(eS.tot.total)} ha empresa</div>`;
-  const maxHa=eS.tot.total||1;
-  let html=`<div class="rtotals">
-    <div class="rtotal-item"><div class="rtotal-label">Total campo</div><div class="rtotal-val">${Math.round(cS.tot.total)} <span class="rtotal-unit">ha</span></div></div>
-    <div class="rtotal-item"><div class="rtotal-label">Fina</div><div class="rtotal-val">${Math.round(cS.tot.fina)} <span class="rtotal-unit">ha</span></div></div>
-    <div class="rtotal-item"><div class="rtotal-label">Gruesa</div><div class="rtotal-val">${Math.round(cS.tot.gruesa)} <span class="rtotal-unit">ha</span></div></div>
-  </div>`;
-  // Table
-  html+=`<div class="rsection-title">Detalle por lote</div>
-  <table class="rtbl"><thead><tr><th>Lote</th><th>Cultivo</th><th>Tipo</th><th>Ha</th><th>%</th></tr></thead><tbody>`;
-  [...cL].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true})).forEach(l=>{
-    const ha=parseFloat(l.area)||0;const val=l[yr];const k2=ck(val);
-    const tipo=esFina(val)?'Fina':esGruesa(val)?'Gruesa':'C.N.';
-    const pct=cS.tot.total>0?(ha/cS.tot.total*100).toFixed(0):'0';
-    html+=`<tr><td><b>${l.name.toUpperCase()}</b></td><td><span class="crop-dot" style="background:${CC[k2]||CC.default}"></span>${cl(val)}</td><td>${tipo}</td><td>${ha}</td><td class="pct">${pct}%</td></tr>`;
-  });
-  html+=`<tr><td colspan="3"><b>TOTAL</b></td><td><b>${Math.round(cS.tot.total)}</b></td><td class="pct">100%</td></tr></tbody></table>`;
-  // Bar chart
-  html+=`<div class="rsection-title">Campo vs Empresa</div>
-  <div class="rbar-legend">
-    <div class="rbar-leg-item"><div class="rbar-leg-dot" style="background:var(--acc)"></div>Este campo</div>
-    <div class="rbar-leg-item"><div class="rbar-leg-dot" style="background:#4a90d9;opacity:.6"></div>Total empresa (= 100%)</div>
-  </div>`;
-  const allCrops=[...new Set([...Object.keys(cS.byCrop),...Object.keys(eS.byCrop)])]
-    .sort((a,b)=>(cS.byCrop[b]?.ha||0)-(cS.byCrop[a]?.ha||0));
-  allCrops.forEach(lbl=>{
-    const cHa=cS.byCrop[lbl]?.ha||0;const eHa=eS.byCrop[lbl]?.ha||0;
-    const k2=cS.byCrop[lbl]?.key||eS.byCrop[lbl]?.key||'default';
-    const color=CC[k2]||CC.default;
-    const maxBar=eHa||1; // empresa total for this crop = 100%
-    const pct=(eHa>0?(cHa/eHa*100).toFixed(0):0);
-    html+=`<div class="rbar-wrap">
-      <div class="rbar-label"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle;background:${color}"></span>${lbl}</span>
-      <span style="color:var(--txt2);font-size:11px">${Math.round(cHa)} de ${Math.round(eHa)} ha (${pct}%)</span></div>
-      <div class="rbar-track">
-        <div class="rbar-empresa" style="width:100%;background:#4a90d9"></div>
-        <div class="rbar-campo" style="width:${(cHa/maxBar*100).toFixed(1)}%;background:${color}"></div>
-      </div>
-    </div>`;
-  });
-  // Fina/Gruesa summary
-  html+=`<div class="rsection-title">Fina vs Gruesa</div>`;
-  [['Fina',Math.round(cS.tot.fina),Math.round(eS.tot.fina),'#ef6c6c'],
-   ['Gruesa',Math.round(cS.tot.gruesa),Math.round(eS.tot.gruesa),'#66bb6a'],
-   ['Campo Natural',Math.round(cS.tot.cn),Math.round(eS.tot.cn),'#8d6e63']].forEach(([lbl,c,e,color])=>{
-    const maxBar=e||1;
-    const pct=(e>0?(c/e*100).toFixed(0):0);
-    html+=`<div class="rbar-wrap">
-      <div class="rbar-label"><span>${lbl}</span><span style="color:var(--txt2);font-size:11px">${c} de ${e} ha (${pct}%)</span></div>
-      <div class="rbar-track">
-        <div class="rbar-empresa" style="width:100%;background:#4a90d9"></div>
-        <div class="rbar-campo" style="width:${(c/maxBar*100).toFixed(1)}%;background:${color}"></div>
-      </div>
-    </div>`;
-  });
-  document.getElementById('rpbody').innerHTML=html;
-}
-function switchCampo(el){
-  campo=el.dataset.campo;
-  document.querySelectorAll('.ctab').forEach(x=>x.classList.remove('on'));
-  el.classList.add('on');
-  selLote=null;closeP();
-  if(resumenOpen)renderResumen();
-  initVP();draw();
+  document.getElementById('srpc').textContent=D.lotes.find(l=>l.layer===sCmp)?.campo||sCmp;
+  const ef=v=>['trigo','cebada','avena','rye'].includes(ck(v));
+  const eg=v=>['maiz','soja','girasol','sorgo','pisingallo'].includes(ck(v));
+  const stats=ls=>{const bc={},t={total:0,fina:0,gruesa:0,cn:0};ls.forEach(l=>{const ha=parseFloat(l.area)||0;const val=schGC(l);const k2=ck(val);const lb=cl(val);if(!bc[lb])bc[lb]={ha:0,key:k2};bc[lb].ha+=ha;t.total+=ha;if(ef(val))t.fina+=ha;else if(eg(val))t.gruesa+=ha;else t.cn+=ha;});return{bc,t};};
+  const cL=D.lotes.filter(l=>l.layer===sCmp);const{bc,t}=stats(cL);
+  document.getElementById('srpm').innerHTML='<div class="chip">📐 '+Math.round(t.total)+' ha</div>';
+  let html='<div class="rtotals"><div class="rti"><div class="rti-l">Total</div><div class="rti-v">'+Math.round(t.total)+'<span class="rti-u"> ha</span></div></div><div class="rti"><div class="rti-l">Fina</div><div class="rti-v">'+Math.round(t.fina)+'<span class="rti-u"> ha</span></div></div><div class="rti"><div class="rti-l">Gruesa</div><div class="rti-v">'+Math.round(t.gruesa)+'<span class="rti-u"> ha</span></div></div></div>';
+  html+='<div class="rsect">Por cultivo</div>';
+  Object.entries(bc).sort((a,b)=>b[1].ha-a[1].ha).forEach(([lb,d])=>{const pct=t.total>0?(d.ha/t.total*100).toFixed(0):0;html+='<div class="rb-wrap"><div class="rb-lbl"><span><span style="display:inline-block;width:7px;height:7px;border-radius:1px;margin-right:4px;vertical-align:middle;background:'+CC[d.key]+'"></span>'+lb+'</span><span style="color:var(--txt3)">'+Math.round(d.ha)+' ha · '+pct+'%</span></div><div class="rb-tr"><div class="rb-fill" style="width:'+pct+'%;background:'+CC[d.key]+'"></div></div></div>';});
+  html+='<div class="rsect">Lotes</div><table class="rtbl"><thead><tr><th>Lote</th><th>Cultivo</th><th>Ha</th></tr></thead><tbody>';
+  [...cL].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true})).forEach(l=>{const ha=parseFloat(l.area)||0;const val=schGC(l);html+='<tr><td><b>'+l.name.toUpperCase()+'</b></td><td><span style="display:inline-block;width:6px;height:6px;border-radius:1px;margin-right:4px;vertical-align:middle;background:'+cc(val)+'"></span>'+cl(val)+'</td><td>'+ha+'</td></tr>';});
+  html+='<tr><td colspan="2" style="font-weight:400">Total</td><td style="font-weight:400">'+Math.round(t.total)+'</td></tr></tbody></table>';
+  document.getElementById('srpb').innerHTML=html;
 }
 
-// ── PAN & ZOOM (pointer events) ──
-let drag={on:false,sx:0,sy:0,scx:0,scy:0};
-let pinch={on:false,d0:0,sc0:0};
+sCV.addEventListener('pointerdown',e=>{if(e.isPrimary){sDrg={on:true,sx:e.clientX,sy:e.clientY,scx:sVp.cx,scy:sVp.cy};sCV.setPointerCapture(e.pointerId);sCV.parentElement.classList.add('grabbing');}});
+sCV.addEventListener('pointermove',e=>{if(sDrg.on&&e.isPrimary){sVp.cx=sDrg.scx-(e.clientX-sDrg.sx)/sVp.scale;sVp.cy=sDrg.scy+(e.clientY-sDrg.sy)/sVp.scale;schDraw();}});
+sCV.addEventListener('pointerup',e=>{if(e.isPrimary){const mv=Math.abs(e.clientX-sDrg.sx)>5||Math.abs(e.clientY-sDrg.sy)>5;sDrg.on=false;sCV.parentElement.classList.remove('grabbing');if(!mv){const rect=sCV.getBoundingClientRect();const h=schHit(e.clientX-rect.left,e.clientY-rect.top);if(h)schOP(h);else schCP();}}});
+sCV.addEventListener('touchstart',e=>{if(e.touches.length===2)sPnch={on:true,d0:Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY),sc0:sVp.scale};},{passive:true});
+sCV.addEventListener('touchmove',e=>{if(sPnch.on&&e.touches.length===2){sVp.scale=sPnch.sc0*(Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY)/sPnch.d0);schDraw();}},{passive:true});
+sCV.addEventListener('touchend',()=>{sPnch.on=false;},{passive:true});
+sCV.addEventListener('wheel',e=>{e.preventDefault();const rect=sCV.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;const[lon,lat]=schLL(mx,my);sVp.scale*=e.deltaY<0?1.15:1/1.15;const[nx,ny]=schXY(lon,lat);sVp.cx+=(nx-mx)/sVp.scale;sVp.cy-=(ny-my)/sVp.scale;schDraw();},{passive:false});
+window.addEventListener('resize',()=>{if(document.getElementById('s-schedule').classList.contains('active'))schR();});
+let sTs=0;document.getElementById('spnl').addEventListener('touchstart',e=>{sTs=e.touches[0].clientY;},{passive:true});document.getElementById('spnl').addEventListener('touchend',e=>{if(e.changedTouches[0].clientY-sTs>60)schCP();},{passive:true});
 
-function ptrDist(e){
-  const pts=[...e.touches];
-  if(pts.length<2)return 0;
-  const dx=pts[1].clientX-pts[0].clientX,dy=pts[1].clientY-pts[0].clientY;
-  return Math.sqrt(dx*dx+dy*dy);
+// RECORRIDAS
+let rStk=[],rObs={},rMic=false;
+function recInit(){rStk=[];recR();}
+function recBack(){if(!rStk.length){closeMod('recorridas');return;}rStk.pop();recR();}
+function recR(){
+  const body=document.getElementById('r-body');
+  document.getElementById('r-title').textContent=rStk.length?rStk[rStk.length-1].title:'Recorridas';
+  if(!rStk.length){recRC(body);}else{const t=rStk[rStk.length-1];if(t.type==='cam')recRCam(body,t.ck);else if(t.type==='lots')recRLots(body,t.lk,t.ck);else if(t.type==='lot')recRLot(body,t.lid,t.lk);}
 }
-
-cv.addEventListener('pointerdown',e=>{
-  if(e.isPrimary){
-    drag={on:true,sx:e.clientX,sy:e.clientY,scx:vp.cx,scy:vp.cy};
-    cv.setPointerCapture(e.pointerId);
-    document.getElementById('map-wrap').classList.add('grabbing');
-  }
-});
-cv.addEventListener('pointermove',e=>{
-  if(drag.on&&e.isPrimary){
-    const dx=(e.clientX-drag.sx)/vp.scale;
-    const dy=(e.clientY-drag.sy)/vp.scale;
-    vp.cx=drag.scx-dx;
-    vp.cy=drag.scy+dy;
-    draw();
-  }
-});
-cv.addEventListener('pointerup',e=>{
-  if(e.isPrimary){
-    const moved=Math.abs(e.clientX-drag.sx)>5||Math.abs(e.clientY-drag.sy)>5;
-    drag.on=false;
-    document.getElementById('map-wrap').classList.remove('grabbing');
-    if(!moved){
-      const rect=cv.getBoundingClientRect();
-      const px=e.clientX-rect.left,py=e.clientY-rect.top;
-      const hit=hitTest(px,py);
-      if(hit)openP(hit);
-      else closeP();
-    }
-  }
-});
-
-// Touch pinch zoom
-cv.addEventListener('touchstart',e=>{
-  if(e.touches.length===2){
-    pinch={on:true,d0:ptrDist(e),sc0:vp.scale};
-  }
-},{passive:true});
-cv.addEventListener('touchmove',e=>{
-  if(pinch.on&&e.touches.length===2){
-    const d=ptrDist(e);
-    vp.scale=pinch.sc0*(d/pinch.d0);
-    draw();
-  }
-},{passive:true});
-cv.addEventListener('touchend',()=>{pinch.on=false;});
-
-// Mouse wheel zoom
-cv.addEventListener('wheel',e=>{
-  e.preventDefault();
-  const rect=cv.getBoundingClientRect();
-  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
-  const[lon,lat]=xyToLonLat(mx,my);
-  const factor=e.deltaY<0?1.15:1/1.15;
-  vp.scale*=factor;
-  // Keep mouse position fixed
-  const[nx,ny]=lonLatToXY(lon,lat);
-  vp.cx+=(nx-mx)/vp.scale;
-  vp.cy-=(ny-my)/vp.scale;
-  draw();
-},{passive:false});
-
-// Panel swipe down
-let ts=0;
-document.getElementById('pnl').addEventListener('touchstart',e=>{ts=e.touches[0].clientY;},{passive:true});
-document.getElementById('pnl').addEventListener('touchend',e=>{
-  if(e.changedTouches[0].clientY-ts>60)closeP();
-},{passive:true});
-
-// ── INIT ──
-function init(){
-  // Build tabs dynamically from loaded data
-  const layers = [...new Set(D.lotes.map(l=>l.layer))];
-  const ctabs = document.getElementById('ctabs');
-  ctabs.innerHTML = layers.map((l,i)=>{
-    const label = D.lotes.find(x=>x.layer===l)?.campo || l;
-    return `<div class="ctab ${i===0?'on':''}" data-campo="${l}" onclick="switchCampo(this)">${label}</div>`;
+function rP(s){rStk.push(s);recR();}
+function recRC(body){
+  const cs=SESSION.c[0]==='all'?Object.entries(CFG).map(([k,v])=>({key:k,...v})):SESSION.c.map(k=>({key:k,...CFG[k]}));
+  body.innerHTML='<div class="rsec">Clientes</div>'+cs.map(c=>'<div class="rc" onclick="rP({type:'cam',ck:''+c.key+'',title:''+c.lbl+''})"><div class="rc-n">'+c.lbl+'</div><div class="rc-m">'+Object.keys(c.campos||{}).length+' campos</div></div>').join('');
+}
+function recRCam(body,ck2){
+  const cfg=CFG[ck2];
+  body.innerHTML='<div class="rsec">Campos</div>'+Object.entries(cfg.campos).map(([k,v])=>{
+    const ls=D?.lotes.filter(l=>l.layer===k)||[];const ha=ls.reduce((s,l)=>s+(parseFloat(l.area)||0),0);
+    return'<div class="rc" onclick="rP({type:'lots',lk:''+k+'',ck:''+ck2+'',title:''+v.lbl+''})"><div class="rc-n">'+v.lbl+'</div><div class="rc-m"><span>'+ls.length+' lotes</span><span>'+Math.round(ha)+' ha</span></div></div>';
   }).join('');
-  campo = layers[0] || 'fina_la_turca';
-  resize();
-  initVP();
-  draw();
 }
-window.addEventListener('resize',()=>{resize();});
-if(!checkSession()) {
-  // Show login - user needs to log in
-} else {
-  loadData();
+function recRLots(body,lk,ck2){
+  const ls=D?.lotes.filter(l=>l.layer===lk)||[];const hoy=new Date().toISOString().split('T')[0];
+  body.innerHTML='<div class="rsec">'+ls.length+' lotes</div>'+ls.map(l=>{
+    const obs=rObs[l.name+lk]||[];const th=obs.some(o=>o.fecha===hoy);const val=schGC(l);
+    return'<div class="rc" onclick="rP({type:'lot',lid:''+l.name+'',lk:''+lk+'',title:'Lote '+l.name.toUpperCase()+''})"><div class="rc-n">'+l.name.toUpperCase()+'</div><div class="rc-m"><span>'+l.area+' ha</span><span style="color:'+cc(val)+'">'+cl(val)+'</span>'+(th?'<span class="bh">✓ hoy</span>':'')+'</div></div>';
+  }).join('');
 }
+function recRLot(body,lid,lk){
+  const l=D?.lotes.find(x=>x.name===lid&&x.layer===lk);
+  const val=schGC(l||{});const ok=lid+lk;const obs=rObs[ok]||[];
+  const TIPOS=['Maleza','Plaga','Enfermedad','Fertilidad','General'];
+  body.innerHTML='<div class="lhb"><div class="lhn">'+lid.toUpperCase()+'</div><div class="lhs">'+(l?.campo||'')+' · '+(l?.area||'?')+' ha</div>'+(val?'<div class="lcp"><span style="display:inline-block;width:7px;height:7px;border-radius:1px;background:'+cc(val)+'"></span>'+cl(val)+'</div>':'')+'</div><div style="padding:12px 14px"><div class="of"><div class="of-t">Nueva observación</div><div class="tipos">'+TIPOS.map(t=>'<div class="tipo-btn" id="ot-'+t.toLowerCase()+'" onclick="recST(''+t.toLowerCase()+'')">'+t+'</div>').join('')+'</div><textarea class="ota" id="ota" rows="3" placeholder="Describí lo que observás..."></textarea><div class="oacts"><button class="omic" id="omic" onclick="recMicT()">🎤</button><button class="osave" onclick="recSave(''+lid+'',''+lk+'')">Guardar</button></div></div><div class="rsec">Anteriores</div><div id="ol">'+(obs.length?obs.map(o=>'<div class="oi '+(o.tipo||'general')+'"><div class="oi-top"><span class="oi-tipo">'+(o.tipo||'general')+'</span><span class="oi-fecha">'+(o.fecha||'')+'</span></div><div class="oi-txt">'+o.texto+'</div></div>').join(''):'<div class="empty">Sin observaciones</div>')+'</div></div>';
+}
+let rTipo='general';
+function recST(t){rTipo=t;document.querySelectorAll('.tipo-btn').forEach(b=>b.classList.toggle('on',b.id==='ot-'+t));}
+async function recSave(lid,lk){
+  const txt=document.getElementById('ota')?.value?.trim();if(!txt){toast('Escribí una observación');return;}
+  const ob={lote_id:lid,campo_id:lk,tipo:rTipo,texto:txt,fecha:new Date().toISOString().split('T')[0],usuario:SESSION.u};
+  try{await sbI('observaciones',ob);}catch(e){console.warn('offline');}
+  const k=lid+lk;if(!rObs[k])rObs[k]=[];rObs[k].unshift({...ob});
+  toast('Guardado ✓');recRLot(document.getElementById('r-body'),lid,lk);
+}
+function recMicT(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('Dictado no disponible');return;}
+  const btn=document.getElementById('omic');if(rMic){rMic=false;btn.textContent='🎤';btn.classList.remove('rec');return;}
+  const sr=new SR();sr.lang='es-AR';sr.continuous=false;sr.interimResults=false;
+  sr.onresult=e=>{const t=e.results[0][0].transcript;const ta=document.getElementById('ota');if(ta)ta.value=(ta.value?ta.value+' ':'')+t;};
+  sr.onerror=sr.onend=()=>{rMic=false;const b=document.getElementById('omic');if(b){b.textContent='🎤';b.classList.remove('rec');}};
+  sr.start();rMic=true;btn.textContent='🔴';btn.classList.add('rec');
+}
+
+// RECETAS
+let retStk=[],retP=[],retR=[];
+async function retInit(){retStk=[];document.getElementById('ret-title').textContent='Recetas';document.getElementById('ret-add').style.display=SESSION.r==='admin'?'block':'none';try{retR=await sbG('recetas','order=created_at.desc&limit=100');}catch(e){retR=[];}retRend();}
+function retBack(){if(!retStk.length){closeMod('recetas');return;}retStk.pop();retRend();}
+function retNueva(){retStk.push({type:'nueva'});retP=[];retRend();}
+function retRend(){
+  const body=document.getElementById('ret-body');const t=retStk[retStk.length-1];
+  document.getElementById('ret-add').style.display=(!t&&SESSION.r==='admin')?'block':'none';
+  document.getElementById('ret-title').textContent=t?(t.type==='nueva'?'Nueva receta':'Detalle'):'Recetas';
+  if(!t){retRL(body);}else if(t.type==='nueva'){retRF(body);}else{retRD(body,t.id);}
+}
+function retRL(body){
+  if(!retR.length){body.innerHTML='<div class="empty">Sin recetas</div>';return;}
+  body.innerHTML=retR.map(r=>'<div class="rli" onclick="retStk.push({type:'ver',id:''+r.id+''});retRend()"><div class="rli-top"><div class="rli-n">Rec. '+(r.numero_receta||'—')+' · '+(r.lote_id||'?')+'</div><span class="ep ep-'+(r.estado||'pendiente')+'">'+(r.estado||'pendiente')+'</span></div><div class="rli-m"><span>📅 '+r.fecha+'</span><span>'+(r.cultivo||'—')+'</span><span>'+(r.objetivo||'')+'</span></div></div>').join('');
+}
+function retRF(body){
+  const copts=Object.entries(CFG).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join('');
+  body.innerHTML='<div class="rform"><div class="rfs">Ubicación</div><div class="rfr"><div class="rff"><label>Cliente</label><select id="rc" onchange="retUC()"><option value="">—</option>'+copts+'</select></div><div class="rff"><label>Campo</label><select id="rcm" onchange="retUL()"><option value="">—</option></select></div></div><div class="rfr"><div class="rff"><label>Lote</label><select id="rl" onchange="retUA()"><option value="">—</option></select></div><div class="rff"><label>Ha</label><input type="number" id="rha" placeholder="0"></div></div><div class="rfs">Detalle</div><div class="rfr"><div class="rff"><label>Cultivo</label><select id="rcu"><option value="">—</option><option>Trigo</option><option>Cebada</option><option>Girasol</option><option>Maíz</option><option>Soja</option><option>Avena</option><option>Sorgo</option></select></div><div class="rff"><label>Urgencia</label><select id="ru"><option value="">—</option><option>Alta</option><option>Media</option><option>Baja</option></select></div></div><div class="rfr"><div class="rff"><label>Destino</label><select id="rd"><option value="">—</option><option>Aéreo</option><option>Terrestre</option></select></div><div class="rff"><label>Caudal (L/ha)</label><input type="number" id="rcau" placeholder="100"></div></div><div class="rfr full"><div class="rff"><label>Objetivo</label><input type="text" id="rob" placeholder="Ej: Control malezas"></div></div><div class="rfs">Productos</div><div class="apg"><div class="rff"><label>Producto</label><input type="text" id="rpn" placeholder="Nombre"></div><div class="rff"><label>Dosis</label><input type="number" id="rpd" placeholder="0"></div><div class="rff"><label>Unidad</label><select id="rpu"><option>L/ha</option><option>kg/ha</option><option>cc/ha</option><option>g/ha</option></select></div><div class="rff"><label>&nbsp;</label><button class="apb" onclick="retAP()">+</button></div></div><div id="rpl"></div><div class="rfr full"><div class="rff"><label>Observaciones</label><textarea id="robs" rows="3" placeholder="Notas..."></textarea></div></div><button class="rfsave" onclick="retG()">Guardar receta</button></div>';
+}
+function retUC(){const cfg=CFG[document.getElementById('rc').value];document.getElementById('rcm').innerHTML='<option value="">—</option>'+(cfg?Object.entries(cfg.campos).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join(''):'');document.getElementById('rl').innerHTML='<option value="">—</option>';}
+function retUL(){const cm=document.getElementById('rcm').value;document.getElementById('rl').innerHTML='<option value="">—</option>'+(D?.lotes.filter(l=>l.layer===cm)||[]).map(l=>'<option value="'+l.name+'">'+l.name.toUpperCase()+' ('+l.area+' ha)</option>').join('');}
+function retUA(){const cm=document.getElementById('rcm').value,lo=document.getElementById('rl').value;const l=D?.lotes.find(x=>x.layer===cm&&x.name===lo);if(l)document.getElementById('rha').value=l.area;}
+function retAP(){const n=document.getElementById('rpn').value.trim();if(!n){toast('Nombre requerido');return;}retP.push({nombre:n,dosis:document.getElementById('rpd').value,unidad:document.getElementById('rpu').value});document.getElementById('rpn').value='';document.getElementById('rpd').value='';retRP();}
+function retRP(){const el=document.getElementById('rpl');if(!el)return;el.innerHTML=retP.map((p,i)=>'<div class="pr"><div class="pr-n">'+p.nombre+'</div><div class="pr-d">'+p.dosis+' '+p.unidad+'</div><button class="pr-del" onclick="retP.splice('+i+',1);retRP()">✕</button></div>').join('');}
+async function retG(){
+  const lo=document.getElementById('rl').value;if(!lo){toast('Seleccioná un lote');return;}if(!retP.length){toast('Agregá al menos un producto');return;}
+  const rec={lote_id:lo,campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,fecha:new Date().toISOString().split('T')[0],cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('rob').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rcau').value)||100,observaciones:document.getElementById('robs').value,usuario:SESSION.u,estado:'pendiente',productos:retP};
+  try{await sbI('recetas',rec);toast('Receta guardada ✓');retStk=[];retInit();}catch(e){toast('Error: '+e.message);}
+}
+function retRD(body,id){
+  const r=retR.find(x=>x.id===id);if(!r){body.innerHTML='<div class="empty">No encontrada</div>';return;}
+  body.innerHTML='<div class="rform"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><div style="font-size:22px;font-weight:200;letter-spacing:-.5px">Rec. '+(r.numero_receta||'—')+'</div><div style="font-size:11px;color:var(--txt2)">'+r.fecha+'</div></div><span class="ep ep-'+(r.estado||'pendiente')+'" style="font-size:10px;padding:4px 8px">'+(r.estado||'pendiente')+'</span></div><div class="sgrid"><div class="si"><div class="si-l">Lote</div><div class="si-v" style="font-size:12px">'+(r.lote_id||'—')+'</div></div><div class="si"><div class="si-l">Cultivo</div><div class="si-v" style="font-size:12px">'+(r.cultivo||'—')+'</div></div><div class="si"><div class="si-l">Urgencia</div><div class="si-v" style="font-size:12px">'+(r.urgencia||'—')+'</div></div><div class="si"><div class="si-l">Caudal</div><div class="si-v" style="font-size:12px">'+(r.caudal||'—')+' L/ha</div></div></div>'+(r.objetivo?'<div style="background:var(--surf2);border-radius:6px;padding:9px 11px;margin:8px 0;font-size:12px"><span style="font-size:8px;font-weight:500;text-transform:uppercase;color:var(--txt3);display:block;margin-bottom:2px">Objetivo</span>'+r.objetivo+'</div>':'')+'<div class="rfs">Productos</div>'+(r.productos||[]).map(p=>'<div class="pr"><div class="pr-n">'+(p.nombre||p.n||'—')+'</div><div class="pr-d">'+(p.dosis||p.d||'—')+' '+(p.unidad||p.u||'')+'</div></div>').join('')+(r.observaciones?'<div class="rfs">Obs.</div><div style="font-size:12px;line-height:1.5">'+r.observaciones+'</div>':'')+'</div>';
+}
+
+// SUELOS
+let sHist=[];
+function suelInit(){document.getElementById('shist').innerHTML='<div class="empty">Sin análisis cargados</div>';}
+async function sueloFile(input){
+  const file=input.files[0];if(!file)return;
+  const prev=document.getElementById('sprev');
+  prev.innerHTML='<div style="padding:20px;text-align:center"><div class="spin" style="margin:0 auto 10px"></div><div class="ltxt">Procesando con IA...</div></div>';
+  try{
+    const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+    const isPdf=file.name.toLowerCase().endsWith('.pdf');
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:[isPdf?{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}}:{type:'text',text:'no pdf'},{type:'text',text:'Extraé los datos de este informe de análisis de suelos argentino. Solo JSON sin markdown: {"laboratorio":"FERTILAB o SUELOFERTIL o OTRO","productor":"","establecimiento":"","lote":"","fecha":"DD/MM/YYYY","numero_analisis":"","muestras":[{"ambiente":"P3 o Loma etc","perfiles":[{"profundidad":"0-20","fosforo":null,"mo":null,"n_no3":null,"n_min":null,"s_sulfato":null,"zinc":null,"boro":null,"ph":null,"cic":null}]}]}'}]}]})});
+    const data=await resp.json();
+    const txt=data.content?.find(c=>c.type==='text')?.text||'{}';
+    const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    sueloPreview(parsed,file.name);
+  }catch(e){prev.innerHTML='<div style="padding:20px;text-align:center;color:var(--red);font-size:12px">Error: '+e.message+'</div>';}
+  input.value='';
+}
+function sueloPreview(data,fn){
+  const prev=document.getElementById('sprev');
+  const lc=data.laboratorio==='FERTILAB'?'lt-f':data.laboratorio==='SUELOFERTIL'?'lt-s':'';
+  const mh=(data.muestras||[]).map(m=>'<div style="margin-bottom:8px"><div style="font-size:11px;font-weight:400;margin-bottom:3px;color:var(--txt2)">'+m.ambiente+'</div><table class="stbl"><thead><tr><th>Prof.</th><th>P</th><th>MO%</th><th>N-NO3</th><th>S</th><th>Zn</th><th>pH</th></tr></thead><tbody>'+(m.perfiles||[]).map(p=>'<tr><td>'+p.profundidad+'</td><td>'+(p.fosforo??'—')+'</td><td>'+(p.mo??'—')+'</td><td>'+(p.n_no3??'—')+'</td><td>'+(p.s_sulfato??'—')+'</td><td>'+(p.zinc??'—')+'</td><td>'+(p.ph??'—')+'</td></tr>').join('')+'</tbody></table></div>').join('');
+  const ds=JSON.stringify(data).replace(/\/g,'\\').replace(/'/g,"\'");
+  prev.innerHTML='<div class="sp"><div style="display:flex;align-items:center;gap:4px;margin-bottom:8px"><span class="lt '+lc+'">'+(data.laboratorio||'?')+'</span><span style="font-size:11px;color:var(--txt3)">'+fn+'</span></div><div style="font-size:13px;margin-bottom:2px"><strong style="font-weight:400">'+(data.establecimiento||'—')+'</strong> · Lote <strong style="font-weight:400">'+(data.lote||'—')+'</strong></div><div style="font-size:11px;color:var(--txt2);margin-bottom:10px">'+(data.productor||'')+' · '+(data.fecha||'')+' · '+(data.numero_analisis||'')+'</div>'+mh+'<button class="sc-btn" onclick='sueloConf('+ds+',\"'+fn+'\")'>Confirmar y guardar</button><button class="sc-can" onclick="document.getElementById('sprev').innerHTML=''">Cancelar</button></div>';
+}
+async function sueloConf(data,fn){
+  try{for(const m of(data.muestras||[])){for(const p of(m.perfiles||[])){await sbI('analisis_suelos',{establecimiento:data.establecimiento,lote:data.lote,ambiente:m.ambiente,profundidad:p.profundidad,fecha:data.fecha,laboratorio:data.laboratorio,archivo:fn,fosforo:p.fosforo,mo:p.mo,n_no3:p.n_no3,s_sulfato:p.s_sulfato,zinc:p.zinc,boro:p.boro,ph:p.ph,cic:p.cic,n_min:p.n_min,usuario:SESSION.u});}}}catch(e){console.warn(e);}
+  toast('Análisis guardado ✓');sHist.push({...data,fn});document.getElementById('sprev').innerHTML='';
+  document.getElementById('shist').innerHTML=sHist.map(s=>'<div class="rc" style="cursor:default"><div class="rc-n">'+(s.establecimiento||'—')+' · Lote '+(s.lote||'—')+'</div><div class="rc-m"><span>'+s.laboratorio+'</span><span>'+s.fecha+'</span><span>'+s.fn+'</span></div></div>').join('');
+}
+
+// INIT
+if(!chkS()){SS('login');}else{goHome();setTimeout(()=>{if(document.getElementById('s-schedule').classList.contains('active'))schLoad();},300);}
 </script>
 </body>
 </html>
