@@ -883,8 +883,7 @@ function retRF(body){
 <option>Dentro de los prox 10 dias</option>
 <option>Dentro de 15 dias</option>
 <option>A definir</option></select></div></div>
-<div class="rfr"><div class="rff"><label>Destino</label><select id="rd"><option value="">—</option><option>Terrestre</option>
-<option>Aéreo</option></select></div><div class="rff"><label>Caudal (L/ha)</label><input type="number" id="rcau" placeholder="—"></div></div>
+<div class="rfr"><div class="rff"><label>Destino</label><select id="rd"><option value="">—</option><option>Terrestre</option><option>Aéreo</option></select></div><div class="rff"><label>Caudal (L/ha)</label><input type="number" id="rcau" placeholder="—"></div></div>
 <div class="rfr full"><div class="rff"><label>Objetivo / Observaciones</label><textarea id="rob" rows="2" placeholder="Notas adicionales..."></textarea></div></div>
 <div class="rfs">Productos</div>
 <div style="margin-bottom:8px">
@@ -904,8 +903,29 @@ function retRF(body){
 <button class="rfsave" onclick="retG()">Guardar receta</button>
 </div>`;
 }
-function retUC(){const cfg=CFG[document.getElementById('rc').value];document.getElementById('rcm').innerHTML='<option value="">—</option>'+(cfg?Object.entries(cfg.campos).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join(''):'');document.getElementById('rl').innerHTML='<option value="">—</option>';}
-function retUL(){const cm=document.getElementById('rcm').value;document.getElementById('rl').innerHTML='<option value="">—</option>'+(D?.lotes.filter(l=>l.layer===cm)||[]).map(l=>'<option value="'+l.name+'">'+l.name.toUpperCase()+' ('+l.area+' ha)</option>').join('');}
+function retUC(){
+  const ck2=document.getElementById('rc').value;
+  const cfg=CFG[ck2];
+  document.getElementById('rcm').innerHTML='<option value="">—</option>'+(cfg?Object.entries(cfg.campos).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join(''):'');
+  document.getElementById('rl').innerHTML='<option value="">—</option>';
+  // Si el cliente seleccionado no es el que está cargado en D, precargar siembra
+  if(ck2&&(!D||D.ck!==ck2)){
+    dbxDL(TF+'/xlsx/siembras.xlsx').then(buf=>{
+      if(!D)D={lotes:[],pulv:{},suelos:{},siembra:{},ck:ck2};
+      D.siembra=pSiembra(buf,ck2);
+    }).catch(()=>{});
+  }
+}
+function retUL(){
+  const cm=document.getElementById('rcm').value;
+  // Usar lotes del SHP si están cargados, sino usar lista maestra de siembra
+  let lotes=D?.lotes.filter(l=>l.layer===cm)||[];
+  if(!lotes.length&&D?.siembra?.[cm]){
+    // Fallback: lotes desde siembra
+    lotes=Object.keys(D.siembra[cm]).map(k=>({name:k.replace(/^LOTE\s*/i,''),layer:cm,area:''}));
+  }
+  document.getElementById('rl').innerHTML='<option value="">—</option>'+lotes.map(l=>'<option value="'+l.name+'">'+l.name.toUpperCase()+(l.area?' ('+l.area+' ha)':'')+'</option>').join('');
+}
 function retUA(){
   const cm=document.getElementById('rcm').value,lo=document.getElementById('rl').value;
   const l=D?.lotes.find(x=>x.layer===cm&&x.name===lo);
@@ -925,7 +945,14 @@ function retUA(){
 }
 function retFiltrarProd(q){
   const box=document.getElementById('rpn-sugg');if(!box)return;
-  if(!q||q.length<1){box.style.display='none';return;}
+  if(!q||q.length<1){
+    if(!PRODUCTOS.length){box.style.display='none';return;}
+    // Mostrar categorías al hacer foco sin texto
+    const cats=[...new Set(PRODUCTOS.map(p=>p.categoria))].filter(Boolean);
+    box.style.display='block';
+    box.innerHTML=cats.map(c=>`<div onclick="retFiltrarProd('${c}');document.getElementById('rpn').value='${c}'" style="padding:7px 10px;font-size:11px;cursor:pointer;border-bottom:1px solid var(--bord);color:var(--txt2);font-weight:500;letter-spacing:.3px">${c}</div>`).join('');
+    return;
+  }
   const ql=q.toLowerCase();
   const matches=PRODUCTOS.filter(p=>p.nombre.toLowerCase().includes(ql)).slice(0,8);
   if(!matches.length){box.style.display='none';return;}
