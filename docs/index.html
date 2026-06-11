@@ -836,23 +836,42 @@ async function retGenPDF(){
   const cliLabel=CFG[cliente]?.lbl||cliente||'';
   const hoy=new Date().toLocaleDateString('es-AR');
 
-  // Header
-  doc.setFillColor(43,107,43);
-  doc.rect(0,0,W,18,'F');
-  doc.setTextColor(255,255,255);
-  doc.setFontSize(14);doc.setFont('helvetica','bold');
-  doc.text('TWIN FIELD',M,10);
-  doc.setFontSize(8);doc.setFont('helvetica','normal');
-  doc.text('Ing. Agr. Marcos Fernández (MP 737)  |  Tel: 2983-618926  |  marcosf009@gmail.com',M,15);
-  doc.setFontSize(10);doc.setFont('helvetica','bold');
-  doc.text(cliLabel.toUpperCase(),W-M,10,{align:'right'});
-  doc.setFontSize(8);doc.setFont('helvetica','normal');
-  doc.text('Generado: '+hoy,W-M,15,{align:'right'});
+  // Header fondo blanco con línea verde inferior
+  doc.setDrawColor(43,107,43);
+  doc.setLineWidth(0.8);
+  doc.line(0,20,W,20);
 
-  // Título
+  // TWIN (naranja) + FIELD (verde) — izquierda
+  doc.setFontSize(18);doc.setFont('helvetica','bold');
+  doc.setTextColor(204,92,8); // naranja
+  doc.text('TWIN',M,13);
+  const twinW=doc.getTextWidth('TWIN');
+  doc.setTextColor(204,92,8); // naranja
+  doc.text(' FIELD',M+twinW,13);
+
+  // Datos asesor — derecha
+  doc.setFontSize(7.5);doc.setFont('helvetica','normal');
+  doc.setTextColor(60,60,60);
+  doc.text('Ing. Agr. Marcos Fernández',W-M,7,{align:'right'});
+  doc.text('(+54) 2983 618926  |  CIAFBA n°737',W-M,12,{align:'right'});
+  doc.text('marcosf009@gmail.com',W-M,17,{align:'right'});
+
+  // Cliente + campos — centro
+  const campos=[...new Set(recetas.map(r=>CFG[r.cliente_id]?.campos[r.campo_id]?.lbl||r.campo_id||''))].filter(Boolean).join(' · ');
+  doc.setFontSize(8.5);doc.setFont('helvetica','bold');
   doc.setTextColor(30,30,30);
-  doc.setFontSize(11);doc.setFont('helvetica','bold');
-  doc.text('ORDEN DE APLICACIÓN',M,26);
+  doc.text(cliLabel.toUpperCase(),W/2,8,{align:'center'});
+  doc.setFontSize(7);doc.setFont('helvetica','normal');
+  doc.setTextColor(80,80,80);
+  doc.text(campos,W/2,14,{align:'center'});
+
+  // Título + fecha
+  doc.setFontSize(10);doc.setFont('helvetica','bold');
+  doc.setTextColor(30,30,30);
+  doc.text('ORDEN DE APLICACIÓN',M,29);
+  doc.setFontSize(7.5);doc.setFont('helvetica','normal');
+  doc.setTextColor(100,100,100);
+  doc.text('Generado: '+hoy,W-M,29,{align:'right'});
 
   // Recolectar todos los productos únicos
   const allProds=new Set();
@@ -881,7 +900,7 @@ async function retGenPDF(){
   }),'',''];
 
   doc.autoTable({
-    startY:30,
+    startY:33,
     head,
     body:[...body,totRow],
     styles:{fontSize:7,cellPadding:2,font:'helvetica'},
