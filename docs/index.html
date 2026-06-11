@@ -274,7 +274,7 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 
 <!-- SCHEDULE -->
 <div id="s-schedule" class="screen">
-  <div class="ah"><button class="ab" onclick="closeMod('schedule')">Inicio</button><div class="at" id="s-hcli" style="font-size:13px;color:var(--txt2)">—</div></div>
+  <div class="ah"><button class="ab" onclick="closeMod('schedule')">Inicio</button><div class="at" id="s-hcli" style="font-size:13px;color:var(--txt2)">—</div><select id="s-cli-sel" onchange="schCambioCli(this.value)" style="display:none;font-family:var(--f);font-size:11px;font-weight:300;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:4px 8px;color:var(--txt);outline:none"></select></div>
   <div id="sct"></div>
   <div id="smw">
     <canvas id="scv"></canvas>
@@ -382,9 +382,39 @@ function openMod(m){SS(m);if(m==='schedule')schInit();else if(m==='recorridas')r
 function closeMod(m){SS('home');if(m==='schedule'){schCP();schCR();}}
 
 // CROP COLORS
-const CC={trigo:'#e8856a',cebada:'#e8a0b4',girasol:'#e8c84a',maiz:'#7bba4a','maíz':'#7bba4a',soja:'#5aad7e',cn:'#7a9e6a',avena:'#b8c98a',sorgo:'#c4783a',pisingallo:'#e8a840',rye:'#9ab87a',pastura:'#8fbc8f',default:'#9aab90'};
-const CL={trigo:'Trigo',cebada:'Cebada',girasol:'Girasol',maiz:'Maíz','maíz':'Maíz',soja:'Soja',cn:'Campo Nat.',avena:'Avena',sorgo:'Sorgo',pisingallo:'Pisingallo',rye:'Rye Grass',pastura:'Pastura',default:'Sin datos'};
-function ck(v){if(!v||!String(v).trim()||v==='null')return'default';const s=v.toLowerCase().trim();if(s.includes('trigo'))return'trigo';if(s.includes('cebad'))return'cebada';if(s.includes('girasol'))return'girasol';if(s.includes('maiz')||s.includes('maíz'))return'maiz';if(s.includes('soja'))return'soja';if(s.includes('cn')||s.includes('campo nat')||s.includes('pastura'))return'cn';if(s.includes('avena'))return'avena';if(s.includes('sorgo'))return'sorgo';if(s.includes('pisingallo'))return'pisingallo';if(s.includes('rye'))return'rye';return'default';}
+const CC={
+  trigo:'#2d7a2d',cebada:'#7ec850',
+  girasol:'#f5d800',maiz:'#f57c00','maíz':'#f57c00',
+  soja:'#7b2fa8',
+  cn:'#1565c0',avena:'#1e88e5',av_vi:'#42a5f5',
+  sorgo:'#e64a19',pisingallo:'#ff8f00',
+  rye:'#0288d1',pastura:'#039be5',pastura_i:'#29b6f6',
+  default:'#9aab90'
+};
+const CL={
+  trigo:'Trigo',cebada:'Cebada',
+  girasol:'Girasol',maiz:'Maíz','maíz':'Maíz',
+  soja:'Soja',
+  cn:'Campo Nat.',avena:'Avena',av_vi:'Av. Vicia',
+  sorgo:'Sorgo',pisingallo:'Pisingallo',
+  rye:'Rye Grass',pastura:'Pastura',pastura_i:'Pastura I.',
+  default:'Sin datos'
+};
+function ck(v){if(!v||!String(v).trim()||v==='null')return'default';const s=v.toLowerCase().trim();
+  if(s.includes('trigo'))return'trigo';
+  if(s.includes('cebad'))return'cebada';
+  if(s.includes('girasol'))return'girasol';
+  if(s.includes('maiz')||s.includes('maíz'))return'maiz';
+  if(s.includes('soja'))return'soja';
+  if(s.includes('av_vi')||s.includes('av. v')||s.includes('avena vicia')||s.includes('av vi'))return'av_vi';
+  if(s.includes('avena'))return'avena';
+  if(s.includes('sorgo'))return'sorgo';
+  if(s.includes('pisingallo'))return'pisingallo';
+  if(s.includes('rye')||s.includes('rye grass'))return'rye';
+  if(s.includes('pastura_i')||s.includes('pastura i'))return'pastura_i';
+  if(s.includes('pastura')||s.includes('cn')||s.includes('campo nat'))return'cn';
+  return'default';
+}
 const cc=v=>CC[ck(v)]||CC.default, cl=v=>CL[ck(v)]||v||'—';
 
 // SCHEDULE
@@ -392,12 +422,23 @@ let sYr='r26',sCmp='',sSel=null,sTab='pulv',sRO=false;
 let sVp={cx:0,cy:0,scale:1},sDrg={on:false},sPnch={on:false};
 const sCV=document.getElementById('scv'),sCX=sCV.getContext('2d');
 
-function schInit(){if(D){schBT();schR();schIV();schDraw();document.getElementById('slod').style.display='none';return;}schLoad();}
-async function schLoad(){
+function schInit(){
+  // poblar selector si es admin
+  const sel=document.getElementById('s-cli-sel');
+  if(SESSION.c[0]==='all'){
+    sel.style.display='block';
+    sel.innerHTML=Object.entries(CFG).map(([k,v])=>`<option value="${k}">${v.lbl}</option>`).join('');
+  }
+  if(D){schBT();schR();schIV();schDraw();document.getElementById('slod').style.display='none';return;}
+  schLoad();
+}
+function schCambioCli(ck2){D=null;sSel=null;schLoad(ck2);}
+async function schLoad(clienteKey){
   await dbxRefreshToken();
   document.getElementById('slod').style.display='flex';
+  D=null;
   try{
-    const ck2=SESSION.c[0]==='all'?'la_alicia':SESSION.c[0];
+    const ck2=clienteKey||(SESSION.c[0]==='all'?'la_alicia':SESSION.c[0]);
     const cfg=CFG[ck2];if(!cfg)throw new Error('Cliente no configurado');
     const sr=await Promise.all(Object.entries(cfg.campos).map(async([k,ci])=>{
       try{
