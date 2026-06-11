@@ -798,7 +798,8 @@ function retDashboard(){
   </div>`;
 }
 function retRL(body){
-  if(!retR.length){body.innerHTML='<div class="empty">Sin recetas</div>';return;}
+  const dash=retDashboard();
+  if(!retR.length){body.innerHTML=dash+'<div class="empty">Sin recetas</div>';return;}
   if(retOrdenMode){
     body.innerHTML=dash+`<div style="padding:10px 14px 0;font-size:11px;color:var(--txt2)">Seleccioná las recetas para incluir en la orden</div>`+
     retR.map(r=>{
