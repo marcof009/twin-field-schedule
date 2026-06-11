@@ -216,6 +216,21 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 .apg{display:grid;grid-template-columns:1fr 60px 70px auto;gap:5px;align-items:end;margin-bottom:7px}
 .apb{background:var(--ora);color:#fff;border:none;border-radius:var(--r2);padding:9px 10px;font-size:12px;font-weight:400}
 .rfsave{width:100%;background:var(--txt);color:var(--bg);border:none;border-radius:var(--r2);padding:13px;font-size:12px;font-weight:400;letter-spacing:.4px;margin-top:14px}
+.draw-modal{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.7);display:flex;flex-direction:column}
+.draw-bar{background:var(--surf);padding:10px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0;border-bottom:1px solid var(--bord)}
+.draw-bar-title{flex:1;font-size:13px;font-weight:300}
+.draw-cv{flex:1;display:block;width:100%;touch-action:none;cursor:crosshair}
+.draw-tools{background:var(--surf);padding:8px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex-shrink:0;border-top:1px solid var(--bord)}
+.dtool{background:var(--surf2);border:1.5px solid var(--bord2);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:400;color:var(--txt2);cursor:pointer;font-family:var(--f)}
+.dtool.on{border-color:var(--acc);background:rgba(43,107,43,.07);color:var(--acc)}
+.dcolor{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0}
+.dcolor.on{border-color:var(--txt)}
+.draw-confirm{background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:7px 14px;font-size:12px;font-weight:400;font-family:var(--f);cursor:pointer}
+.draw-cancel{background:none;border:1px solid var(--bord2);border-radius:var(--r2);padding:7px 12px;font-size:12px;color:var(--txt2);font-family:var(--f);cursor:pointer}
+.lote-draw-btn{background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:7px 10px;font-size:11px;font-weight:400;color:var(--acc);font-family:var(--f);cursor:pointer;width:100%;margin-top:5px}
+.lote-thumb{width:100%;height:80px;border-radius:var(--r2);background:var(--surf2);border:1px solid var(--bord);margin-top:5px;position:relative;overflow:hidden;cursor:pointer}
+.lote-thumb canvas{width:100%;height:100%;display:block}
+.lote-thumb-label{position:absolute;bottom:4px;right:6px;font-size:9px;color:var(--txt3);font-weight:300}
 
 /* SUELOS */
 #s-suelos{background:var(--bg)}
@@ -312,6 +327,26 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
   </div>
 </div>
 
+<div id="draw-modal" style="display:none" class="draw-modal">
+  <div class="draw-bar">
+    <button class="draw-cancel" onclick="drawClose()">✕</button>
+    <div class="draw-bar-title" id="draw-title">Lote —</div>
+    <button class="draw-confirm" onclick="drawConfirm()">Guardar</button>
+  </div>
+  <canvas id="draw-cv" class="draw-cv"></canvas>
+  <div class="draw-tools">
+    <button class="dtool on" id="dt-pen" onclick="drawTool('pen')">✏️ Dibujar</button>
+    <button class="dtool" id="dt-erase" onclick="drawTool('erase')">⬜ Borrar</button>
+    <button class="dtool" id="dt-clear" onclick="drawClear()">🗑 Limpiar</button>
+    <div style="flex:1"></div>
+    <div class="dcolor on" style="background:#e53935" data-c="#e53935" onclick="drawColor(this)"></div>
+    <div class="dcolor" style="background:#f57c00" data-c="#f57c00" onclick="drawColor(this)"></div>
+    <div class="dcolor" style="background:#1565c0" data-c="#1565c0" onclick="drawColor(this)"></div>
+    <div class="dcolor" style="background:#2d7a2d" data-c="#2d7a2d" onclick="drawColor(this)"></div>
+    <div class="dcolor" style="background:#000000" data-c="#000000" onclick="drawColor(this)"></div>
+    <input type="range" id="draw-size" min="2" max="20" value="4" style="width:70px">
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -343,6 +378,8 @@ const USERS = {
   "hollender": {h:"350853890fb39f0fcfdd9d754bf3536b4c2a28a14818fc6da9f357218b1ed7fb",r:"cliente",c:["hollender"]},
   "almarmat":  {h:"dc4513e5e59b19f255710c9db029e6b54f2bac4a4afae12b1efb780566dbefff",r:"cliente",c:["almarmat"]},
   // nueva_empresa: {h:"HASH_SHA256_PASSWORD",r:"cliente",c:["nueva_empresa"]},
+  // aplicadores — agregar uno por cliente con password propio
+  "aplicador_la_alicia": {h:"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",r:"aplicador",c:["la_alicia"]},
 };
 
 // CLIENTES CONFIG — agregar nuevo cliente acá + carpeta en Dropbox/TwinField/shp/
@@ -735,19 +772,35 @@ function recMicT(){
 // RECETAS
 let retStk=[],retP=[],retR=[];
 let retOrdenMode=false,retSel=new Set();
-async function retInit(){retStk=[];retOrdenMode=false;retSel=new Set();document.getElementById('ret-title').textContent='Recetas';document.getElementById('ret-add').style.display=SESSION.r==='admin'?'block':'none';document.getElementById('ret-orden-btn').style.display='block';try{retR=await sbG('recetas','order=created_at.desc&limit=100');}catch(e){retR=[];}retRend();}
+async function retInit(){retStk=[];retOrdenMode=false;retSel=new Set();document.getElementById('ret-title').textContent='Recetas';document.getElementById('ret-add').style.display=SESSION.r==='admin'?'block':'none';document.getElementById('ret-orden-btn').style.display='block';try{const q=SESSION.r==='aplicador'?'cliente_id=eq.'+SESSION.c[0]+'&order=fecha.desc&limit=200':'order=created_at.desc&limit=200';retR=await sbG('recetas',q);}catch(e){retR=[];}retRend();}
 function retBack(){if(!retStk.length){closeMod('recetas');return;}retStk.pop();retRend();}
-function retNueva(){retStk.push({type:'nueva'});retP=[];retRend();}
+function retNueva(){retStk.push({type:'nueva'});retP=[];drawState.annotation=null;retRend();}
 function retRend(){
   const body=document.getElementById('ret-body');const t=retStk[retStk.length-1];
   document.getElementById('ret-add').style.display=(!t&&SESSION.r==='admin')?'block':'none';
   document.getElementById('ret-title').textContent=t?(t.type==='nueva'?'Nueva receta':'Detalle'):'Recetas';
   if(!t){retRL(body);}else if(t.type==='nueva'){retRF(body);}else{retRD(body,t.id);}
 }
+function retDashboard(){
+  const pend=retR.filter(r=>r.estado==='pendiente').length;
+  const ok=retR.filter(r=>r.estado==='ok').length;
+  const anul=retR.filter(r=>r.estado==='anulada').length;
+  return `<div style="display:flex;gap:8px;padding:10px 14px 0;flex-wrap:wrap">
+    <div style="background:rgba(38,115,168,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center">
+      <div style="font-size:22px;font-weight:200;color:var(--blu)">${pend}</div>
+      <div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--blu)">Pendientes</div>
+    </div>
+    <div style="background:rgba(74,158,74,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center">
+      <div style="font-size:22px;font-weight:200;color:var(--grn)">${ok}</div>
+      <div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--grn)">Aplicadas</div>
+    </div>
+    ${anul?`<div style="background:rgba(184,50,50,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center"><div style="font-size:22px;font-weight:200;color:var(--red)">${anul}</div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--red)">Anuladas</div></div>`:''}
+  </div>`;
+}
 function retRL(body){
   if(!retR.length){body.innerHTML='<div class="empty">Sin recetas</div>';return;}
   if(retOrdenMode){
-    body.innerHTML=`<div style="padding:10px 14px 0;font-size:11px;color:var(--txt2)">Seleccioná las recetas para incluir en la orden</div>`+
+    body.innerHTML=dash+`<div style="padding:10px 14px 0;font-size:11px;color:var(--txt2)">Seleccioná las recetas para incluir en la orden</div>`+
     retR.map(r=>{
       const sel=retSel.has(r.id);
       return `<div class="rli" data-id="${r.id}" onclick="retToggleSel(this)" style="display:flex;align-items:center;gap:10px;${sel?'border-color:var(--acc);background:rgba(43,107,43,.04)':''}">
@@ -759,7 +812,7 @@ function retRL(body){
     `<div style="padding:10px 14px"><button onclick="retGenPDF()" style="width:100%;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:12px;font-size:13px;font-weight:400;font-family:var(--f)">Generar PDF (${retSel.size} receta${retSel.size!==1?'s':''})</button></div>`;
     return;
   }
-  body.innerHTML=retR.map(r=>`<div class="rli" data-id="${r.id}" onclick="retStk.push({type:'ver',id:this.dataset.id});retRend()"><div class="rli-top"><div class="rli-n">Rec. ${r.numero_receta||'—'} · ${r.lote_id||'?'}</div><span class="ep ep-${r.estado||'pendiente'}">${r.estado||'pendiente'}</span></div><div class="rli-m"><span>📅 ${r.fecha}</span><span>${r.cultivo||'—'}</span><span>${r.objetivo||''}</span></div></div>`).join('');
+  body.innerHTML=dash+retR.map(r=>`<div class="rli" data-id="${r.id}" onclick="retStk.push({type:'ver',id:this.dataset.id});retRend()"><div class="rli-top"><div class="rli-n">Rec. ${r.numero_receta||'—'} · ${r.lote_id||'?'}</div><span class="ep ep-${r.estado||'pendiente'}">${r.estado||'pendiente'}</span></div><div class="rli-m"><span>📅 ${r.fecha}</span><span>${r.cultivo||'—'}</span><span>${r.objetivo||''}</span></div></div>`).join('');
 }
 function retRF(body){
   const copts=Object.entries(CFG).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join('');
@@ -767,17 +820,47 @@ function retRF(body){
 }
 function retUC(){const cfg=CFG[document.getElementById('rc').value];document.getElementById('rcm').innerHTML='<option value="">—</option>'+(cfg?Object.entries(cfg.campos).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join(''):'');document.getElementById('rl').innerHTML='<option value="">—</option>';}
 function retUL(){const cm=document.getElementById('rcm').value;document.getElementById('rl').innerHTML='<option value="">—</option>'+(D?.lotes.filter(l=>l.layer===cm)||[]).map(l=>'<option value="'+l.name+'">'+l.name.toUpperCase()+' ('+l.area+' ha)</option>').join('');}
-function retUA(){const cm=document.getElementById('rcm').value,lo=document.getElementById('rl').value;const l=D?.lotes.find(x=>x.layer===cm&&x.name===lo);if(l)document.getElementById('rha').value=l.area;}
+function retUA(){
+  const cm=document.getElementById('rcm').value,lo=document.getElementById('rl').value;
+  const l=D?.lotes.find(x=>x.layer===cm&&x.name===lo);
+  if(l){
+    document.getElementById('rha').value=l.area;
+    // Mostrar botón dibujar y thumbnail
+    const existing=document.getElementById('ret-draw-wrap');
+    if(existing)existing.remove();
+    const wrap=document.createElement('div');wrap.id='ret-draw-wrap';
+    wrap.innerHTML=`<button class="lote-draw-btn" onclick="drawOpen('${cm}','${lo}')">🗺 Anotar sobre el lote</button>
+    <div id="ret-thumb" class="lote-thumb" onclick="drawOpen('${cm}','${lo}')" style="display:none">
+      <canvas id="ret-thumb-cv"></canvas>
+      <div class="lote-thumb-label">Toca para editar</div>
+    </div>`;
+    document.getElementById('rl').closest('.rfr').after(wrap);
+  }
+}
 function retAP(){const n=document.getElementById('rpn').value.trim();if(!n){toast('Nombre requerido');return;}retP.push({nombre:n,dosis:document.getElementById('rpd').value,unidad:document.getElementById('rpu').value});document.getElementById('rpn').value='';document.getElementById('rpd').value='';retRP();}
 function retRP(){const el=document.getElementById('rpl');if(!el)return;el.innerHTML=retP.map((p,i)=>'<div class="pr"><div class="pr-n">'+p.nombre+'</div><div class="pr-d">'+p.dosis+' '+p.unidad+'</div><button class="pr-del" onclick="retP.splice('+i+',1);retRP()">✕</button></div>').join('');}
 async function retG(){
   const lo=document.getElementById('rl').value;if(!lo){toast('Seleccioná un lote');return;}if(!retP.length){toast('Agregá al menos un producto');return;}
-  const rec={lote_id:lo,campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,fecha:new Date().toISOString().split('T')[0],cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('rob').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rcau').value)||100,observaciones:document.getElementById('robs').value,usuario:SESSION.u,estado:'pendiente',productos:retP};
+  const rec={lote_id:lo,campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,anotacion:drawState.annotation||null,fecha:new Date().toISOString().split('T')[0],cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('rob').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rcau').value)||100,observaciones:document.getElementById('robs').value,usuario:SESSION.u,estado:'pendiente',productos:retP};
   try{await sbI('recetas',rec);toast('Receta guardada ✓');retStk=[];retInit();}catch(e){toast('Error: '+e.message);}
 }
 function retRD(body,id){
   const r=retR.find(x=>x.id===id);if(!r){body.innerHTML='<div class="empty">No encontrada</div>';return;}
-  body.innerHTML='<div class="rform"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><div style="font-size:22px;font-weight:200;letter-spacing:-.5px">Rec. '+(r.numero_receta||'—')+'</div><div style="font-size:11px;color:var(--txt2)">'+r.fecha+'</div></div><span class="ep ep-'+(r.estado||'pendiente')+'" style="font-size:10px;padding:4px 8px">'+(r.estado||'pendiente')+'</span></div><div class="sgrid"><div class="si"><div class="si-l">Lote</div><div class="si-v" style="font-size:12px">'+(r.lote_id||'—')+'</div></div><div class="si"><div class="si-l">Cultivo</div><div class="si-v" style="font-size:12px">'+(r.cultivo||'—')+'</div></div><div class="si"><div class="si-l">Urgencia</div><div class="si-v" style="font-size:12px">'+(r.urgencia||'—')+'</div></div><div class="si"><div class="si-l">Caudal</div><div class="si-v" style="font-size:12px">'+(r.caudal||'—')+' L/ha</div></div></div>'+(r.objetivo?'<div style="background:var(--surf2);border-radius:6px;padding:9px 11px;margin:8px 0;font-size:12px"><span style="font-size:8px;font-weight:500;text-transform:uppercase;color:var(--txt3);display:block;margin-bottom:2px">Objetivo</span>'+r.objetivo+'</div>':'')+'<div class="rfs">Productos</div>'+(r.productos||[]).map(p=>'<div class="pr"><div class="pr-n">'+(p.nombre||p.n||'—')+'</div><div class="pr-d">'+(p.dosis||p.d||'—')+' '+(p.unidad||p.u||'')+'</div></div>').join('')+(r.observaciones?'<div class="rfs">Obs.</div><div style="font-size:12px;line-height:1.5">'+r.observaciones+'</div>':'')+'</div>';
+  body.innerHTML='<div class="rform"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><div style="font-size:22px;font-weight:200;letter-spacing:-.5px">Rec. '+(r.numero_receta||'—')+'</div><div style="font-size:11px;color:var(--txt2)">'+r.fecha+'</div></div><span class="ep ep-'+(r.estado||'pendiente')+'" style="font-size:10px;padding:4px 8px">'+(r.estado||'pendiente')+'</span></div><div class="sgrid"><div class="si"><div class="si-l">Lote</div><div class="si-v" style="font-size:12px">'+(r.lote_id||'—')+'</div></div><div class="si"><div class="si-l">Cultivo</div><div class="si-v" style="font-size:12px">'+(r.cultivo||'—')+'</div></div><div class="si"><div class="si-l">Urgencia</div><div class="si-v" style="font-size:12px">'+(r.urgencia||'—')+'</div></div><div class="si"><div class="si-l">Caudal</div><div class="si-v" style="font-size:12px">'+(r.caudal||'—')+' L/ha</div></div></div>'+(r.objetivo?'<div style="background:var(--surf2);border-radius:6px;padding:9px 11px;margin:8px 0;font-size:12px"><span style="font-size:8px;font-weight:500;text-transform:uppercase;color:var(--txt3);display:block;margin-bottom:2px">Objetivo</span>'+r.objetivo+'</div>':'')+'<div class="rfs">Productos</div>'+(r.productos||[]).map(p=>'<div class="pr"><div class="pr-n">'+(p.nombre||p.n||'—')+'</div><div class="pr-d">'+(p.dosis||p.d||'—')+' '+(p.unidad||p.u||'')+'</div></div>').join('')+(r.observaciones?'<div class="rfs">Obs.</div><div style="font-size:12px;line-height:1.5">'+r.observaciones+'</div>':'')
+    +(r.anotacion?'<div class="rfs">Anotación</div><img src="'+r.anotacion+'" style="width:100%;border-radius:var(--r);border:1px solid var(--bord);margin-top:4px">':'')+
+    ((SESSION.r==='aplicador'||SESSION.r==='admin')&&r.estado==='pendiente'?`
+    <div class="rfs">Acción</div>
+    <div style="background:var(--surf2);border-radius:var(--r);padding:12px 13px;margin-bottom:8px">
+      <div style="font-size:9px;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:var(--txt3);margin-bottom:8px">Marcar como aplicado</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div class="rff"><label>Fecha aplicación</label><input type="date" id="apl-fecha" value="${new Date().toISOString().split('T')[0]}"></div>
+        <div class="rff"><label>Operador</label><input type="text" id="apl-op" placeholder="Nombre operador"></div>
+      </div>
+      <div class="rff" style="margin-bottom:8px"><label>Observación</label><textarea id="apl-obs" rows="2" style="background:var(--surf);border:1px solid var(--bord);border-radius:var(--r2);padding:8px 10px;font-size:12px;width:100%;outline:none;resize:none;font-family:var(--f)" placeholder="Condiciones, equipo, etc..."></textarea></div>
+      <button onclick="retMarcarAplicado('${r.id}')" style="width:100%;background:var(--grn);color:#fff;border:none;border-radius:var(--r2);padding:11px;font-size:12px;font-weight:400;font-family:var(--f)">✓ Marcar como aplicado</button>
+    </div>`
+    :r.estado==='ok'&&r.fecha_aplicacion?`<div style="background:rgba(74,158,74,.08);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--grn)">✓ Aplicado el ${r.fecha_aplicacion}${r.operador?' por '+r.operador:''}</div>`:'')
+    +'</div>';
 }
 
 // SUELOS
@@ -931,6 +1014,120 @@ async function retGenPDF(){
   doc.save('orden_'+cliLabel.toLowerCase().replace(/ /g,'_')+'_'+fecha+'.pdf');
   retToggleOrden();
 }
+
+async function retMarcarAplicado(id){
+  const fecha=document.getElementById('apl-fecha')?.value||new Date().toISOString().split('T')[0];
+  const op=document.getElementById('apl-op')?.value||'';
+  const obs=document.getElementById('apl-obs')?.value||'';
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/recetas?id=eq.'+id,{
+      method:'PATCH',
+      headers:{...SBH,'Prefer':'return=representation'},
+      body:JSON.stringify({estado:'ok',fecha_aplicacion:fecha,operador:op,obs_aplicacion:obs})
+    });
+    if(!r.ok)throw new Error(await r.text());
+    toast('Marcado como aplicado ✓');
+    retR=await sbG('recetas','order=created_at.desc&limit=100');
+    retStk.pop();retRend();
+  }catch(e){toast('Error: '+e.message);}
+}
+
+// ══════════════════════════════════════════════════════
+// DRAW — Canvas de anotación sobre lote
+// ══════════════════════════════════════════════════════
+let drawState={tool:'pen',color:'#e53935',size:4,drawing:false,campoKey:'',loteId:'',annotation:null};
+
+function drawOpen(campoKey,loteId){
+  const modal=document.getElementById('draw-modal');
+  const cv=document.getElementById('draw-cv');
+  modal.style.display='flex';
+  drawState.campoKey=campoKey;drawState.loteId=loteId;
+  document.getElementById('draw-title').textContent='Lote '+loteId.toUpperCase()+' — '+( D?.lotes.find(l=>l.layer===campoKey&&l.name===loteId)?.campo||'');
+  // Dimensionar canvas
+  requestAnimationFrame(()=>{
+    cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;
+    drawRenderLote(cv);
+    // Restaurar anotación previa
+    if(drawState.annotation){
+      const img=new Image();img.onload=()=>cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);img.src=drawState.annotation;
+    }
+  });
+}
+
+function drawRenderLote(cv){
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  ctx.fillStyle='#c8dfc0';ctx.fillRect(0,0,W,H);
+  const lote=D?.lotes.find(l=>l.layer===drawState.campoKey&&l.name===drawState.loteId);
+  if(!lote||!lote.rings.length)return;
+  // Calcular bounds del lote
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  lote.rings.forEach(r=>r.forEach(([a,b])=>{if(Math.abs(a)<1)return;if(a<x0)x0=a;if(a>x1)x1=a;if(b<y0)y0=b;if(b>y1)y1=b;}));
+  const pad=30;
+  const sc=Math.min((W-pad*2)/(x1-x0),(H-pad*2)/(y1-y0));
+  const cx=(x0+x1)/2,cy=(y0+y1)/2;
+  const toXY=(lon,lat)=>[W/2+(lon-cx)*sc,H/2-(lat-cy)*sc];
+  // Dibujar lote
+  lote.rings.forEach(ring=>{
+    ctx.beginPath();
+    ring.forEach(([lon,lat],i)=>{if(Math.abs(lon)<1)return;const[x,y]=toXY(lon,lat);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+    ctx.closePath();
+    ctx.fillStyle='rgba(74,158,74,.35)';ctx.fill();
+    ctx.strokeStyle='rgba(43,107,43,.8)';ctx.lineWidth=1.5;ctx.stroke();
+  });
+  // Guardar imagen base (lote sin dibujo)
+  drawState.baseImg=cv.toDataURL();
+}
+
+function drawClose(){document.getElementById('draw-modal').style.display='none';}
+
+function drawConfirm(){
+  const cv=document.getElementById('draw-cv');
+  drawState.annotation=cv.toDataURL();
+  // Mostrar thumbnail
+  const thumb=document.getElementById('ret-thumb');
+  const thumbCv=document.getElementById('ret-thumb-cv');
+  if(thumb&&thumbCv){
+    thumb.style.display='block';
+    thumbCv.width=thumb.offsetWidth;thumbCv.height=thumb.offsetHeight;
+    const img=new Image();
+    img.onload=()=>{thumbCv.getContext('2d').drawImage(img,0,0,thumbCv.width,thumbCv.height);};
+    img.src=drawState.annotation;
+  }
+  drawClose();
+  toast('Anotación guardada ✓');
+}
+
+function drawClear(){
+  const cv=document.getElementById('draw-cv');
+  drawRenderLote(cv);
+  drawState.annotation=null;
+}
+
+function drawTool(t){
+  drawState.tool=t;
+  document.querySelectorAll('.dtool').forEach(b=>b.classList.remove('on'));
+  document.getElementById('dt-'+t)?.classList.add('on');
+}
+
+function drawColor(el){
+  drawState.color=el.dataset.c;
+  document.querySelectorAll('.dcolor').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+}
+
+// Eventos dibujo
+(()=>{
+  const cv=document.getElementById('draw-cv');
+  const getPos=e=>{const r=cv.getBoundingClientRect();const src=e.touches?e.touches[0]:e;return[src.clientX-r.left,src.clientY-r.top];};
+  const start=e=>{e.preventDefault();drawState.drawing=true;const ctx=cv.getContext('2d');const[x,y]=getPos(e);ctx.beginPath();ctx.moveTo(x,y);};
+  const move=e=>{e.preventDefault();if(!drawState.drawing)return;const ctx=cv.getContext('2d');const sz=parseInt(document.getElementById('draw-size').value)||4;const[x,y]=getPos(e);if(drawState.tool==='erase'){ctx.clearRect(x-sz*2,y-sz*2,sz*4,sz*4);// redraw base under erased area
+  const img=new Image();img.onload=()=>{const tmp=document.createElement('canvas');tmp.width=cv.width;tmp.height=cv.height;const tc=tmp.getContext('2d');tc.drawImage(img,0,0);const d=tc.getImageData(x-sz*2,y-sz*2,sz*4,sz*4);ctx.putImageData(d,x-sz*2,y-sz*2);};img.src=drawState.baseImg;}else{ctx.lineTo(x,y);ctx.strokeStyle=drawState.color;ctx.lineWidth=sz;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();}};
+  const end=()=>{drawState.drawing=false;};
+  cv.addEventListener('mousedown',start);cv.addEventListener('mousemove',move);cv.addEventListener('mouseup',end);
+  cv.addEventListener('touchstart',start,{passive:false});cv.addEventListener('touchmove',move,{passive:false});cv.addEventListener('touchend',end,{passive:false});
+})();
+
 
 // INIT
 if(!chkS()){SS('login');}else{goHome();setTimeout(()=>{if(document.getElementById('s-schedule').classList.contains('active'))schLoad();},300);}
