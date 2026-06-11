@@ -11,6 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,200;9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://unpkg.com/shpjs@4.0.4/dist/shp.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root {
   --bg:#f6f7f4; --surf:#fff; --surf2:#f0f2ed; --surf3:#e6e9e2;
@@ -295,7 +297,7 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 
 <!-- RECETAS -->
 <div id="s-recetas" class="screen">
-  <div class="ah"><button class="ab" onclick="retBack()">Inicio</button><div class="at" id="ret-title">Recetas</div><button class="aa" id="ret-add" onclick="retNueva()" style="display:none">+ Nueva</button></div>
+  <div class="ah"><button class="ab" onclick="retBack()">Inicio</button><div class="at" id="ret-title">Recetas</div><button class="aa" id="ret-orden-btn" onclick="retToggleOrden()" style="display:none;background:var(--acc);margin-right:5px">Orden</button><button class="aa" id="ret-add" onclick="retNueva()" style="display:none">+ Nueva</button></div>
   <div id="ret-body" style="flex:1;overflow-y:auto;padding:10px 14px 40px;-webkit-overflow-scrolling:touch"></div>
 </div>
 
@@ -348,7 +350,7 @@ const CFG = {
   la_alicia:{lbl:'La Alicia',campos:{la_manga:{lbl:'La Manga',shp:'la_manga.zip'},la_turca:{lbl:'La Turca',shp:'la_turca.zip'},san_fermin:{lbl:'San Fermín',shp:'san_fermin.zip'},becutti:{lbl:'Becutti',shp:'becutti.zip'},monte_alegre:{lbl:'Monte Alegre',shp:'monte_alegre.zip'},'4_de_enero':{lbl:'4 de Enero',shp:'4_de_enero.zip'},dona_maria:{lbl:'Doña María',shp:'dona_maria.zip'}},pulv:'la_alicia.xlsx',pm:{'LA MANGA':'la_manga','LA TURCA':'la_turca','SAN FERMIN':'san_fermin','BECUTTI':'becutti','MONTE ALEGRE':'monte_alegre','4 DE ENERO':'4_de_enero','DONA MARIA':'dona_maria','DOÑA MARIA':'dona_maria'}},
   dam:{lbl:'DAM (Alan)',campos:{don_axel:{lbl:'Don Axel',shp:'don_axel.zip'},don_eduardo:{lbl:'Don Eduardo',shp:'don_eduardo.zip'},seeber:{lbl:'Seeber',shp:'seeber.zip'},posborg:{lbl:'Posborg',shp:'posborg.zip'},gasparini:{lbl:'Gasparini',shp:'gasparini.zip'},gonzales:{lbl:'Gonzales',shp:'gonzales.zip'},fuentes:{lbl:'Fuentes',shp:'fuentes.zip'},pedone:{lbl:'Pedone',shp:'pedone.zip'},sorensen:{lbl:'Sorensen',shp:'sorensen.zip'}},pulv:'dam.xlsx',pm:{'DON AXEL':'don_axel','DON EDUARDO':'don_eduardo','SEEBER':'seeber','POSBORG':'posborg','GASPARINI':'gasparini','GONZALES':'gonzales','FUENTES':'fuentes','PEDONE':'pedone','SORENSEN':'sorensen'}},
   hollender:{lbl:'Hollender',campos:{el_puntal:{lbl:'El Puntal',shp:'el_puntal.zip'},galarregui:{lbl:'Galarregui',shp:'galarregui.zip'},la_concepcion:{lbl:'La Concepción',shp:'la_concepcion.zip'},la_fanny:{lbl:'La Fanny',shp:'la_fanny.zip'},larbiou:{lbl:'Larbiou',shp:'larbiou.zip'},las_totoras:{lbl:'Las Totoras',shp:'las_totoras.zip'},marcovechio:{lbl:'Marcovechio',shp:'marcovechio.zip'},merino:{lbl:'Merino',shp:'merino.zip'},vicente:{lbl:'Vicente',shp:'vicente.zip'}},pulv:'hollender.xlsx',pm:{}},
-  mauricio:{lbl:'Mauricio',campos:{el_socorro:{lbl:'El Socorro',shp:'el_socorro.zip'},inca_huasi:{lbl:'Inca Huasi',shp:'inca_huasi.zip'},lin_calel:{lbl:'Lin Calel',shp:'lin_calel.zip'}},pulv:'mauricio.xlsx',pm:{}},
+  mauricio:{lbl:'Mauricio',campos:{el_socorro:{lbl:'El Socorro',shp:'el_socorro.zip'},inca_huasi:{lbl:'Inca Huasi',shp:'inca_huasi.zip'},lin_calel:{lbl:'Lin Calel',shp:'lin_calel.zip'}},pulv:'mauricio.xlsx',pm:{'EL SOCORRO':'el_socorro','INCA HUASI':'inca_huasi','LIN CALEL':'lin_calel','LA ESPAÑOLA':'lin_calel'}},
   almarmat:{lbl:'Almarmat',campos:{el_cholo:{lbl:'El Cholo',shp:'el_cholo.zip'},la_chicha:{lbl:'La Chicha',shp:'la_chicha.zip'}},pulv:'almarmat.xlsx',pm:{}},
 };
 
@@ -732,7 +734,8 @@ function recMicT(){
 
 // RECETAS
 let retStk=[],retP=[],retR=[];
-async function retInit(){retStk=[];document.getElementById('ret-title').textContent='Recetas';document.getElementById('ret-add').style.display=SESSION.r==='admin'?'block':'none';try{retR=await sbG('recetas','order=created_at.desc&limit=100');}catch(e){retR=[];}retRend();}
+let retOrdenMode=false,retSel=new Set();
+async function retInit(){retStk=[];retOrdenMode=false;retSel=new Set();document.getElementById('ret-title').textContent='Recetas';document.getElementById('ret-add').style.display=SESSION.r==='admin'?'block':'none';document.getElementById('ret-orden-btn').style.display='block';try{retR=await sbG('recetas','order=created_at.desc&limit=100');}catch(e){retR=[];}retRend();}
 function retBack(){if(!retStk.length){closeMod('recetas');return;}retStk.pop();retRend();}
 function retNueva(){retStk.push({type:'nueva'});retP=[];retRend();}
 function retRend(){
@@ -743,6 +746,19 @@ function retRend(){
 }
 function retRL(body){
   if(!retR.length){body.innerHTML='<div class="empty">Sin recetas</div>';return;}
+  if(retOrdenMode){
+    body.innerHTML=`<div style="padding:10px 14px 0;font-size:11px;color:var(--txt2)">Seleccioná las recetas para incluir en la orden</div>`+
+    retR.map(r=>{
+      const sel=retSel.has(r.id);
+      return `<div class="rli" data-id="${r.id}" onclick="retToggleSel(this)" style="display:flex;align-items:center;gap:10px;${sel?'border-color:var(--acc);background:rgba(43,107,43,.04)':''}">
+        <div style="width:20px;height:20px;border-radius:4px;border:1.5px solid ${sel?'var(--acc)':'var(--bord2)'};background:${sel?'var(--acc)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${sel?'<span style="color:#fff;font-size:12px">✓</span>':''}</div>
+        <div style="flex:1"><div class="rli-top"><div class="rli-n">Rec. ${r.numero_receta||'—'} · ${r.lote_id||'?'}</div><span class="ep ep-${r.estado||'pendiente'}">${r.estado||'pendiente'}</span></div>
+        <div class="rli-m"><span>📅 ${r.fecha}</span><span>${r.cultivo||'—'}</span></div></div>
+      </div>`;
+    }).join('')+
+    `<div style="padding:10px 14px"><button onclick="retGenPDF()" style="width:100%;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:12px;font-size:13px;font-weight:400;font-family:var(--f)">Generar PDF (${retSel.size} receta${retSel.size!==1?'s':''})</button></div>`;
+    return;
+  }
   body.innerHTML=retR.map(r=>`<div class="rli" data-id="${r.id}" onclick="retStk.push({type:'ver',id:this.dataset.id});retRend()"><div class="rli-top"><div class="rli-n">Rec. ${r.numero_receta||'—'} · ${r.lote_id||'?'}</div><span class="ep ep-${r.estado||'pendiente'}">${r.estado||'pendiente'}</span></div><div class="rli-m"><span>📅 ${r.fecha}</span><span>${r.cultivo||'—'}</span><span>${r.objetivo||''}</span></div></div>`).join('');
 }
 function retRF(body){
@@ -794,6 +810,107 @@ async function sueloConf(data,fn){
   try{for(const m of(data.muestras||[])){for(const p of(m.perfiles||[])){await sbI('analisis_suelos',{establecimiento:data.establecimiento,lote:data.lote,ambiente:m.ambiente,profundidad:p.profundidad,fecha:data.fecha,laboratorio:data.laboratorio,archivo:fn,fosforo:p.fosforo,mo:p.mo,n_no3:p.n_no3,s_sulfato:p.s_sulfato,zinc:p.zinc,boro:p.boro,ph:p.ph,cic:p.cic,n_min:p.n_min,usuario:SESSION.u});}}}catch(e){console.warn(e);}
   toast('Análisis guardado ✓');sHist.push({...data,fn});document.getElementById('sprev').innerHTML='';
   document.getElementById('shist').innerHTML=sHist.map(s=>'<div class="rc" style="cursor:default"><div class="rc-n">'+(s.establecimiento||'—')+' · Lote '+(s.lote||'—')+'</div><div class="rc-m"><span>'+s.laboratorio+'</span><span>'+s.fecha+'</span><span>'+s.fn+'</span></div></div>').join('');
+}
+
+
+function retToggleOrden(){
+  retOrdenMode=!retOrdenMode;
+  retSel=new Set();
+  const btn=document.getElementById('ret-orden-btn');
+  btn.textContent=retOrdenMode?'Cancelar':'Orden';
+  btn.style.background=retOrdenMode?'var(--red)':'var(--acc)';
+  retRend();
+}
+function retToggleSel(el){
+  const id=el.dataset.id;
+  if(retSel.has(id))retSel.delete(id);else retSel.add(id);
+  retRend();
+}
+async function retGenPDF(){
+  if(!retSel.size){alert('Seleccioná al menos una receta');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const W=297,M=14;
+  const recetas=retR.filter(r=>retSel.has(r.id));
+  const cliente=recetas[0]?.cliente_id||'';
+  const cliLabel=CFG[cliente]?.lbl||cliente||'';
+  const hoy=new Date().toLocaleDateString('es-AR');
+
+  // Header
+  doc.setFillColor(43,107,43);
+  doc.rect(0,0,W,18,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('TWIN FIELD',M,10);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text('Ing. Agr. Marcos Fernández (MP 737)  |  Tel: 2983-618926  |  marcosf009@gmail.com',M,15);
+  doc.setFontSize(10);doc.setFont('helvetica','bold');
+  doc.text(cliLabel.toUpperCase(),W-M,10,{align:'right'});
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text('Generado: '+hoy,W-M,15,{align:'right'});
+
+  // Título
+  doc.setTextColor(30,30,30);
+  doc.setFontSize(11);doc.setFont('helvetica','bold');
+  doc.text('ORDEN DE APLICACIÓN',M,26);
+
+  // Recolectar todos los productos únicos
+  const allProds=new Set();
+  recetas.forEach(r=>(r.productos||[]).forEach(p=>allProds.add(p.nombre||p.n||'')));
+  const prods=[...allProds].filter(Boolean);
+
+  // Tabla
+  const head=[['Rec.','Campo','Lote','Cultivo','Ha','Dest.',...prods,'Urgencia','Obs.']];
+  const body=recetas.map(r=>[
+    r.numero_receta||'—',
+    r.campo_id||'',
+    r.lote_id||'',
+    r.cultivo||'',
+    r.caudal?String(r.caudal):'',
+    r.destino||'',
+    ...prods.map(p=>{const prod=(r.productos||[]).find(x=>(x.nombre||x.n||'')==p);return prod?(prod.dosis||prod.d||'')+' '+(prod.unidad||prod.u||''):''}),
+    r.urgencia||'',
+    r.observaciones||''
+  ]);
+
+  // Totales por producto
+  const totRow=['','','','','TOTAL','',...prods.map(p=>{
+    let tot=0;
+    recetas.forEach(r=>{const prod=(r.productos||[]).find(x=>(x.nombre||x.n||'')==p);if(prod){const d=parseFloat(prod.dosis||prod.d);if(!isNaN(d))tot+=d;}});
+    return tot>0?tot.toFixed(1):'';
+  }),'',''];
+
+  doc.autoTable({
+    startY:30,
+    head,
+    body:[...body,totRow],
+    styles:{fontSize:7,cellPadding:2,font:'helvetica'},
+    headStyles:{fillColor:[43,107,43],textColor:255,fontStyle:'bold',fontSize:7},
+    bodyStyles:{textColor:30},
+    alternateRowStyles:{fillColor:[245,248,243]},
+    didParseCell:(data)=>{
+      if(data.row.index===body.length){
+        data.cell.styles.fontStyle='bold';
+        data.cell.styles.fillColor=[220,235,220];
+      }
+    },
+    columnStyles:{0:{cellWidth:12},1:{cellWidth:22},2:{cellWidth:12},3:{cellWidth:20}},
+    margin:{left:M,right:M},
+    tableWidth:'auto',
+  });
+
+  // Observaciones generales
+  const finalY=doc.lastAutoTable.finalY+6;
+  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
+  doc.text('OBSERVACIONES GENERALES:',M,finalY);
+  doc.setFont('helvetica','normal');
+  doc.setDrawColor(180,180,180);
+  doc.rect(M,finalY+2,W-M*2,18);
+
+  // Guardar
+  const fecha=recetas[0]?.fecha||hoy.replace(/\//g,'-');
+  doc.save('orden_'+cliLabel.toLowerCase().replace(/ /g,'_')+'_'+fecha+'.pdf');
+  retToggleOrden();
 }
 
 // INIT
