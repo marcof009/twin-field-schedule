@@ -394,7 +394,7 @@ const sCV=document.getElementById('scv'),sCX=sCV.getContext('2d');
 
 function schInit(){if(D){schBT();schR();schIV();schDraw();document.getElementById('slod').style.display='none';return;}schLoad();}
 async function schLoad(){
-  if(!DBX_TOKEN) await dbxRefreshToken();
+  await dbxRefreshToken();
   document.getElementById('slod').style.display='flex';
   try{
     const ck2=SESSION.c[0]==='all'?'la_alicia':SESSION.c[0];
