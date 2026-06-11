@@ -555,7 +555,7 @@ function schLL(x,y){const W=sCV.width,H=sCV.height;return[(x-W/2)/sVp.scale+sVp.
 function schR(){const w=sCV.parentElement.clientWidth,h=sCV.parentElement.clientHeight;if(sCV.width!==w||sCV.height!==h){sCV.width=w;sCV.height=h;if(D){schIV();schDraw();}}}
 function schGC(l){if(sYr==='r26'&&D?.siembra){const k=schSK(l);if(k){const s=D.siembra[l.layer]?.[k];if(s?.cultivo)return s.cultivo;}}return l[sYr]||'';}
 function schDraw(){
-  const W=sCV.width,H=sCV.height;sCX.clearRect(0,0,W,H);sCX.fillStyle='#edf0e8';sCX.fillRect(0,0,W,H);
+  const W=sCV.width,H=sCV.height;sCX.clearRect(0,0,W,H);sCX.fillStyle='#c8dfc0';sCX.fillRect(0,0,W,H);
   schVL().forEach(l=>{
     const val=schGC(l),fill=cc(val),isSel=sSel?.name===l.name&&sSel?.layer===l.layer;
     l.rings.forEach(ring=>{
@@ -570,10 +570,10 @@ function schDraw(){
       const nm=l.name.toUpperCase();
       sCX.font='300 '+Math.max(9,Math.min(12,ha/10+8))+'px DM Sans,sans-serif';
       const tw=sCX.measureText(nm).width;
-      sCX.fillStyle='rgba(0,0,0,.32)';
+      sCX.fillStyle='rgba(255,255,255,.75)';
       sCX.beginPath();const rx=px-tw/2-3,ry=py-7,rw=tw+6,rh=11,rr=2;sCX.moveTo(rx+rr,ry);sCX.lineTo(rx+rw-rr,ry);sCX.arcTo(rx+rw,ry,rx+rw,ry+rr,rr);sCX.lineTo(rx+rw,ry+rh-rr);sCX.arcTo(rx+rw,ry+rh,rx+rw-rr,ry+rh,rr);sCX.lineTo(rx+rr,ry+rh);sCX.arcTo(rx,ry+rh,rx,ry+rh-rr,rr);sCX.lineTo(rx,ry+rr);sCX.arcTo(rx,ry,rx+rr,ry,rr);sCX.closePath();sCX.fill();
-      sCX.fillStyle='rgba(255,255,255,.9)';sCX.textAlign='center';sCX.textBaseline='middle';sCX.fillText(nm,px,py-1);
-      if(val){sCX.font='300 '+Math.max(7,Math.min(10,ha/12+6))+'px DM Sans,sans-serif';sCX.fillStyle='rgba(255,255,255,.6)';sCX.fillText(cl(val),px,py+8);}
+      sCX.fillStyle='rgba(0,0,0,.85)';sCX.textAlign='center';sCX.textBaseline='middle';sCX.fillText(nm,px,py-1);
+      if(val){sCX.font='300 '+Math.max(7,Math.min(10,ha/12+6))+'px DM Sans,sans-serif';sCX.fillStyle='rgba(0,0,0,.55)';sCX.fillText(cl(val),px,py+8);}
       sCX.restore();
     }
   });
