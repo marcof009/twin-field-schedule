@@ -314,7 +314,19 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 
 <script>
 // CONFIG
-const DBX_TOKEN = 'PEGAR_TOKEN_DROPBOX_AQUI';
+const DBX_APP_KEY = 'w8cf47jd6nbq12m';
+const DBX_APP_SECRET = 'l7jed4296lfssqr';
+const DBX_REFRESH = '3BA3tPNn4koAAAAAAAAAAQZgsMPem0wAvwBPOdPxEuRrDkt7eGIUM6xUC9lWxKgN';
+let DBX_TOKEN = '';
+async function dbxRefreshToken(){
+  const r = await fetch('https://api.dropbox.com/oauth2/token', {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:`refresh_token=${DBX_REFRESH}&grant_type=refresh_token&client_id=${DBX_APP_KEY}&client_secret=${DBX_APP_SECRET}`
+  });
+  const d = await r.json();
+  DBX_TOKEN = d.access_token;
+}
 const SB_URL = 'https://qqzjmhuhuudbanaujncp.supabase.co';
 const SB_KEY = 'sb_publishable_UYUDPQroApuPKy3ARh7nWw_ezeQYVg2';
 const SBH = {'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
@@ -382,6 +394,7 @@ const sCV=document.getElementById('scv'),sCX=sCV.getContext('2d');
 
 function schInit(){if(D){schBT();schR();schIV();schDraw();document.getElementById('slod').style.display='none';return;}schLoad();}
 async function schLoad(){
+  if(!DBX_TOKEN) await dbxRefreshToken();
   document.getElementById('slod').style.display='flex';
   try{
     const ck2=SESSION.c[0]==='all'?'la_alicia':SESSION.c[0];
