@@ -391,6 +391,8 @@ const CFG = {
   almarmat:{lbl:'Almarmat',campos:{el_cholo:{lbl:'El Cholo',shp:'el_cholo.zip'},la_chicha:{lbl:'La Chicha',shp:'la_chicha.zip'}},pulv:'almarmat.xlsx',pm:{}},
 };
 
+let PRODUCTOS=[];
+
 // STATE
 let SESSION=null, D=null;
 
@@ -772,7 +774,28 @@ function recMicT(){
 // RECETAS
 let retStk=[],retP=[],retR=[];
 let retOrdenMode=false,retSel=new Set();
-async function retInit(){retStk=[];retOrdenMode=false;retSel=new Set();document.getElementById('ret-title').textContent='Recetas';document.getElementById('ret-add').style.display=SESSION.r==='admin'?'block':'none';document.getElementById('ret-orden-btn').style.display='block';try{const q=SESSION.r==='aplicador'?'cliente_id=eq.'+SESSION.c[0]+'&order=fecha.desc&limit=200':'order=created_at.desc&limit=200';retR=await sbG('recetas',q);}catch(e){retR=[];}retRend();}
+async function retInit(){
+  retStk=[];retOrdenMode=false;retSel=new Set();
+  document.getElementById('ret-title').textContent='Recetas';
+  document.getElementById('ret-add').style.display=SESSION.r==='admin'?'block':'none';
+  document.getElementById('ret-orden-btn').style.display='block';
+  // Cargar productos desde Dropbox si no están cargados
+  if(!PRODUCTOS.length){
+    try{
+      const buf=await dbxDL(TF+'/xlsx/productos.xlsx');
+      const wb=XLSX.read(buf,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{raw:false});
+      PRODUCTOS=rows.map(r=>({nombre:String(r.nombre||'').trim(),categoria:String(r.categoria||'').trim(),unidad:String(r.unidad||'L/ha').trim()})).filter(p=>p.nombre);
+    }catch(e){console.warn('productos.xlsx no disponible',e.message);}
+  }
+  try{
+    const q=SESSION.r==='aplicador'?'cliente_id=eq.'+SESSION.c[0]+'&order=fecha.desc&limit=200':'order=created_at.desc&limit=200';
+    retR=await sbG('recetas',q);
+    retR.sort((a,b)=>{if(a.estado==='pendiente'&&b.estado!=='pendiente')return -1;if(b.estado==='pendiente'&&a.estado!=='pendiente')return 1;return new Date(b.fecha)-new Date(a.fecha);});
+  }catch(e){retR=[];}
+  retRend();
+}
 function retBack(){if(!retStk.length){closeMod('recetas');return;}retStk.pop();retRend();}
 function retNueva(){retStk.push({type:'nueva'});retP=[];drawState.annotation=null;retRend();}
 function retRend(){
@@ -817,7 +840,69 @@ function retRL(body){
 }
 function retRF(body){
   const copts=Object.entries(CFG).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join('');
-  body.innerHTML='<div class="rform"><div class="rfs">Ubicación</div><div class="rfr"><div class="rff"><label>Cliente</label><select id="rc" onchange="retUC()"><option value="">—</option>'+copts+'</select></div><div class="rff"><label>Campo</label><select id="rcm" onchange="retUL()"><option value="">—</option></select></div></div><div class="rfr"><div class="rff"><label>Lote</label><select id="rl" onchange="retUA()"><option value="">—</option></select></div><div class="rff"><label>Ha</label><input type="number" id="rha" placeholder="0"></div></div><div class="rfs">Detalle</div><div class="rfr"><div class="rff"><label>Cultivo</label><select id="rcu"><option value="">—</option><option>Trigo</option><option>Cebada</option><option>Girasol</option><option>Maíz</option><option>Soja</option><option>Avena</option><option>Sorgo</option></select></div><div class="rff"><label>Urgencia</label><select id="ru"><option value="">—</option><option>Alta</option><option>Media</option><option>Baja</option></select></div></div><div class="rfr"><div class="rff"><label>Destino</label><select id="rd"><option value="">—</option><option>Aéreo</option><option>Terrestre</option></select></div><div class="rff"><label>Caudal (L/ha)</label><input type="number" id="rcau" placeholder="100"></div></div><div class="rfr full"><div class="rff"><label>Objetivo</label><input type="text" id="rob" placeholder="Ej: Control malezas"></div></div><div class="rfs">Productos</div><div class="apg"><div class="rff"><label>Producto</label><input type="text" id="rpn" placeholder="Nombre"></div><div class="rff"><label>Dosis</label><input type="number" id="rpd" placeholder="0"></div><div class="rff"><label>Unidad</label><select id="rpu"><option>L/ha</option><option>kg/ha</option><option>cc/ha</option><option>g/ha</option></select></div><div class="rff"><label>&nbsp;</label><button class="apb" onclick="retAP()">+</button></div></div><div id="rpl"></div><div class="rfr full"><div class="rff"><label>Observaciones</label><textarea id="robs" rows="3" placeholder="Notas..."></textarea></div></div><button class="rfsave" onclick="retG()">Guardar receta</button></div>';
+  body.innerHTML=`<div class="rform">
+<div class="rfs">Ubicación</div>
+<div class="rfr"><div class="rff"><label>Cliente</label><select id="rc" onchange="retUC()"><option value="">—</option>${copts}</select></div><div class="rff"><label>Campo</label><select id="rcm" onchange="retUL()"><option value="">—</option></select></div></div>
+<div class="rfr"><div class="rff"><label>Lote</label><select id="rl" onchange="retUA()"><option value="">—</option></select></div><div class="rff"><label>Ha</label><input type="number" id="rha" placeholder="0" readonly></div></div>
+<div id="ret-draw-wrap"></div>
+<div class="rfs">Detalle</div>
+<div class="rfr"><div class="rff"><label>Cultivo</label><select id="rcu"><option value="">—</option><option>Cebada</option>
+<option>Trigo</option>
+<option>Avena</option>
+<option>Soja</option>
+<option>Soja ENLIST</option>
+<option>Soja 2da</option>
+<option>Girasol</option>
+<option>Maíz</option>
+<option>Maíz ENLIST</option>
+<option>Maíz 2da</option>
+<option>Pisingallo</option>
+<option>Sorgo</option>
+<option>Cebada forrajera</option>
+<option>Avena/Vicia</option>
+<option>Rye Grass</option>
+<option>Pastura</option>
+<option>Pastura implantación</option>
+<option>Pastura vieja</option>
+<option>Mijo</option>
+<option>Disqueado</option>
+<option>Rastrojo Cebada</option>
+<option>Rastrojo Trigo</option>
+<option>Rastrojo Girasol</option>
+<option>Rastrojo Soja</option>
+<option>Rastrojo Soja 2da</option>
+<option>Rastrojo Maíz</option>
+<option>Rastrojo Maíz 2da</option>
+<option>Rastrojo Avena</option>
+<option>Rastrojo Avena/Vicia</option>
+<option>Rastrojo Sorgo</option>
+<option>Otro</option></select></div><div class="rff"><label>Urgencia</label><select id="ru"><option value="">—</option><option>YA</option>
+<option>Dentro de los prox 2-3 dias</option>
+<option>Dentro de los prox 5-7 dias</option>
+<option>Dentro de los prox 7 dias</option>
+<option>Dentro de los prox 10 dias</option>
+<option>Dentro de 15 dias</option>
+<option>A definir</option></select></div></div>
+<div class="rfr"><div class="rff"><label>Destino</label><select id="rd"><option value="">—</option><option>Terrestre</option>
+<option>Aéreo</option></select></div><div class="rff"><label>Caudal (L/ha)</label><input type="number" id="rcau" placeholder="—"></div></div>
+<div class="rfr full"><div class="rff"><label>Objetivo / Observaciones</label><textarea id="rob" rows="2" placeholder="Notas adicionales..."></textarea></div></div>
+<div class="rfs">Productos</div>
+<div style="margin-bottom:8px">
+  <div style="display:grid;grid-template-columns:1fr auto;gap:5px;align-items:end;margin-bottom:5px">
+    <div class="rff"><label>Buscar producto</label>
+      <input type="text" id="rpn" placeholder="Escribí para buscar o agregar..." oninput="retFiltrarProd(this.value)" autocomplete="off">
+      <div id="rpn-sugg" style="background:var(--surf);border:1px solid var(--bord2);border-radius:var(--r2);max-height:140px;overflow-y:auto;display:none;margin-top:2px;box-shadow:var(--sh2)"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:70px 70px auto;gap:5px;align-items:end">
+      <div class="rff"><label>Dosis</label><input type="number" id="rpd" placeholder="0" step="0.1"></div>
+      <div class="rff"><label>Unidad</label><select id="rpu"><option>L/ha</option><option>kg/ha</option><option>cc/ha</option><option>g/ha</option><option>ml/ha</option></select></div>
+      <div class="rff"><label>&nbsp;</label><button class="apb" onclick="retAP()">+</button></div>
+    </div>
+  </div>
+</div>
+<div id="rpl"></div>
+<button class="rfsave" onclick="retG()">Guardar receta</button>
+</div>`;
 }
 function retUC(){const cfg=CFG[document.getElementById('rc').value];document.getElementById('rcm').innerHTML='<option value="">—</option>'+(cfg?Object.entries(cfg.campos).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join(''):'');document.getElementById('rl').innerHTML='<option value="">—</option>';}
 function retUL(){const cm=document.getElementById('rcm').value;document.getElementById('rl').innerHTML='<option value="">—</option>'+(D?.lotes.filter(l=>l.layer===cm)||[]).map(l=>'<option value="'+l.name+'">'+l.name.toUpperCase()+' ('+l.area+' ha)</option>').join('');}
@@ -838,7 +923,23 @@ function retUA(){
     document.getElementById('rl').closest('.rfr').after(wrap);
   }
 }
-function retAP(){const n=document.getElementById('rpn').value.trim();if(!n){toast('Nombre requerido');return;}retP.push({nombre:n,dosis:document.getElementById('rpd').value,unidad:document.getElementById('rpu').value});document.getElementById('rpn').value='';document.getElementById('rpd').value='';retRP();}
+function retFiltrarProd(q){
+  const box=document.getElementById('rpn-sugg');if(!box)return;
+  if(!q||q.length<1){box.style.display='none';return;}
+  const ql=q.toLowerCase();
+  const matches=PRODUCTOS.filter(p=>p.nombre.toLowerCase().includes(ql)).slice(0,8);
+  if(!matches.length){box.style.display='none';return;}
+  box.style.display='block';
+  box.innerHTML=matches.map(p=>`<div onclick="retSelProd('${p.nombre.replace(/'/g,"\'")}','${p.unidad}')" style="padding:7px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--bord);display:flex;justify-content:space-between;align-items:center"><span>${p.nombre}</span><span style="font-size:10px;color:var(--txt3)">${p.categoria}</span></div>`).join('');
+}
+function retSelProd(nombre,unidad){
+  const inp=document.getElementById('rpn');if(inp)inp.value=nombre;
+  const su=document.getElementById('rpn-sugg');if(su)su.style.display='none';
+  const pu=document.getElementById('rpu');
+  if(pu){const u=unidad.toLowerCase();if(u.includes('kg'))pu.value='kg/ha';else if(u.includes('cc'))pu.value='cc/ha';else if(u.includes('gr')||u.includes('g/'))pu.value='g/ha';else pu.value='L/ha';}
+  document.getElementById('rpd')?.focus();
+}
+function retAP(){const n=document.getElementById('rpn').value.trim();if(!n){toast('Nombre requerido');return;}const su=document.getElementById('rpn-sugg');if(su)su.style.display='none';retP.push({nombre:n,dosis:document.getElementById('rpd').value,unidad:document.getElementById('rpu').value});document.getElementById('rpn').value='';document.getElementById('rpd').value='';retRP();}
 function retRP(){const el=document.getElementById('rpl');if(!el)return;el.innerHTML=retP.map((p,i)=>'<div class="pr"><div class="pr-n">'+p.nombre+'</div><div class="pr-d">'+p.dosis+' '+p.unidad+'</div><button class="pr-del" onclick="retP.splice('+i+',1);retRP()">✕</button></div>').join('');}
 async function retG(){
   const lo=document.getElementById('rl').value;if(!lo){toast('Seleccioná un lote');return;}if(!retP.length){toast('Agregá al menos un producto');return;}
