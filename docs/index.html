@@ -884,8 +884,39 @@ function retRF(body){
 <option>Dentro de los prox 10 dias</option>
 <option>Dentro de 15 dias</option>
 <option>A definir</option></select></div></div>
-<div class="rfr"><div class="rff"><label>Destino</label><select id="rd"><option value="">—</option><option>Terrestre</option><option>Aéreo</option></select></div><div class="rff"><label>Caudal (L/ha)</label><input type="number" id="rcau" placeholder="—"></div></div>
-<div class="rfr full"><div class="rff"><label>Objetivo / Observaciones</label><textarea id="rob" rows="2" placeholder="Notas adicionales..."></textarea></div></div>
+<div class="rfr"><div class="rff"><label>Destino</label><select id="rd"><option value="">—</option><option>Cebada</option>
+<option>Trigo</option>
+<option>Avena</option>
+<option>Soja</option>
+<option>Soja ENLIST</option>
+<option>Soja 2da</option>
+<option>Girasol</option>
+<option>Maíz</option>
+<option>Maíz ENLIST</option>
+<option>Maíz 2da</option>
+<option>Pisingallo</option>
+<option>Sorgo</option>
+<option>Cebada forrajera</option>
+<option>Avena/Vicia</option>
+<option>Rye Grass</option>
+<option>Pastura</option>
+<option>Pastura implantación</option>
+<option>Pastura vieja</option>
+<option>Mijo</option>
+<option>Disqueado</option>
+<option>Rastrojo Cebada</option>
+<option>Rastrojo Trigo</option>
+<option>Rastrojo Girasol</option>
+<option>Rastrojo Soja</option>
+<option>Rastrojo Soja 2da</option>
+<option>Rastrojo Maíz</option>
+<option>Rastrojo Maíz 2da</option>
+<option>Rastrojo Avena</option>
+<option>Rastrojo Avena/Vicia</option>
+<option>Rastrojo Sorgo</option>
+<option>Otro</option></select></div><div class="rff"><label>Caudal (L/ha)</label><input type="number" id="rcau" placeholder="—"></div></div>
+<div class="rfr"><div class="rff"><label>Objetivo</label><select id="robj"><option value="">—</option><option>Barbecho</option><option>Pre emergente</option><option>Post emergente</option><option>Fertilizante</option><option>Fungicida</option><option>Insecticida</option><option>Cebo BB</option><option>Aplicación aérea</option><option>Drone</option><option>Otro</option></select></div><div class="rff"></div></div>
+<div class="rfr full"><div class="rff"><label>Observaciones</label><textarea id="rob" rows="2" placeholder="Notas adicionales..."></textarea></div></div>
 <div class="rfs">Productos</div>
 <div style="margin-bottom:8px">
   <div style="display:grid;grid-template-columns:1fr auto;gap:5px;align-items:end;margin-bottom:5px">
@@ -975,7 +1006,7 @@ function retAP(){const n=document.getElementById('rpn').value.trim();if(!n){toas
 function retRP(){const el=document.getElementById('rpl');if(!el)return;el.innerHTML=retP.map((p,i)=>'<div class="pr"><div class="pr-n">'+p.nombre+'</div><div class="pr-d">'+p.dosis+' '+p.unidad+'</div><button class="pr-del" onclick="retP.splice('+i+',1);retRP()">✕</button></div>').join('');}
 async function retG(){
   const lo=document.getElementById('rl').value;if(!lo){toast('Seleccioná un lote');return;}if(!retP.length){toast('Agregá al menos un producto');return;}
-  const rec={lote_id:lo,campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,anotacion:drawState.annotation||null,fecha:new Date().toISOString().split('T')[0],cultivo:document.getElementById('rcu').value,objetivo:'',urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rcau')?.value)||null,observaciones:document.getElementById('rob').value,usuario:SESSION.u,estado:'pendiente',productos:retP};
+  const rec={lote_id:lo,campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,anotacion:drawState.annotation||null,fecha:new Date().toISOString().split('T')[0],cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('robj').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rcau')?.value)||null,observaciones:document.getElementById('rob').value,usuario:SESSION.u,estado:'pendiente',productos:retP};
   try{await sbI('recetas',rec);toast('Receta guardada ✓');retStk=[];retInit();}catch(e){toast('Error: '+e.message);}
 }
 function retRD(body,id){
