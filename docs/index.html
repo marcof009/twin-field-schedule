@@ -935,9 +935,14 @@ function retUL(){
 function retUA(){
   const cm=document.getElementById('rcm').value,lo=document.getElementById('rl').value;
   const l=D?.lotes.find(x=>x.layer===cm&&x.name===lo);
+  const haInput=document.getElementById('rha');
   if(l){
-    document.getElementById('rha').value=l.area;
-    // Mostrar botón dibujar y thumbnail
+    haInput.value=l.area;haInput.readOnly=true;
+  }else{
+    haInput.value='';haInput.readOnly=false;haInput.placeholder='Ingresar ha';
+  }
+  if(lo&&l){
+    // Mostrar botón dibujar y thumbnail (solo si hay geometría SHP)
     const existing=document.getElementById('ret-draw-wrap');
     if(existing)existing.remove();
     const wrap=document.createElement('div');wrap.id='ret-draw-wrap';
@@ -947,6 +952,8 @@ function retUA(){
       <div class="lote-thumb-label">Toca para editar</div>
     </div>`;
     document.getElementById('rl').closest('.rfr').after(wrap);
+  }else{
+    document.getElementById('ret-draw-wrap')?.remove();
   }
 }
 function retFiltrarProd(q){
