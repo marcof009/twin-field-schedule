@@ -312,7 +312,8 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 
 <!-- RECETAS -->
 <div id="s-recetas" class="screen">
-  <div class="ah"><button class="ab" onclick="retBack()">Inicio</button><div class="at" id="ret-title">Recetas</div><button class="aa" id="ret-orden-btn" onclick="retToggleOrden()" style="display:none;background:var(--acc);margin-right:5px">Orden</button><button class="aa" id="ret-add" onclick="retNueva()" style="display:none">+ Nueva</button></div>
+  <div class="ah"><button class="ab" onclick="retBack()">Inicio</button><div class="at" id="ret-title">Recetas</div><button class="aa" id="ret-rep-btn" onclick="retToggleReporte()" style="display:none;background:var(--blu);margin-right:5px">Reporte</button>
+<button class="aa" id="ret-orden-btn" onclick="retToggleOrden()" style="display:none;background:var(--acc);margin-right:5px">Orden</button><button class="aa" id="ret-add" onclick="retNueva()" style="display:none">+ Nueva</button></div>
   <div id="ret-body" style="flex:1;overflow-y:auto;padding:10px 14px 40px;-webkit-overflow-scrolling:touch"></div>
 </div>
 
@@ -773,12 +774,12 @@ function recMicT(){
 
 // RECETAS
 let retStk=[],retP=[],retR=[];
-let retOrdenMode=false,retSel=new Set();
+let retOrdenMode=false,retSel=new Set(),retRepMode=false;
 async function retInit(){
-  retStk=[];retOrdenMode=false;retSel=new Set();
+  retStk=[];retOrdenMode=false;retRepMode=false;retSel=new Set();
   document.getElementById('ret-title').textContent='Recetas';
   document.getElementById('ret-add').style.display=SESSION.r==='admin'?'block':'none';
-  document.getElementById('ret-orden-btn').style.display='block';
+  document.getElementById('ret-orden-btn').style.display='block';document.getElementById('ret-rep-btn').style.display='block';
   // Cargar productos desde Dropbox si no están cargados
   if(!PRODUCTOS.length){
     try{
@@ -824,6 +825,10 @@ function retDashboard(){
 function retRL(body){
   const dash=retDashboard();
   if(!retR.length){body.innerHTML=dash+'<div class="empty">Sin recetas</div>';return;}
+  if(retRepMode){
+    body.innerHTML=dash+retRenderReporte();
+    return;
+  }
   if(retOrdenMode){
     body.innerHTML=dash+`<div style="padding:10px 14px 0;font-size:11px;color:var(--txt2)">Seleccioná las recetas para incluir en la orden</div>`+
     retR.map(r=>{
@@ -1061,6 +1066,60 @@ async function sueloConf(data,fn){
 }
 
 
+function retToggleReporte(){
+  retRepMode=!retRepMode;
+  retOrdenMode=false;retSel=new Set();
+  const btn=document.getElementById('ret-rep-btn');
+  btn.textContent=retRepMode?'Cerrar':'Reporte';
+  btn.style.background=retRepMode?'var(--red)':'var(--blu)';
+  document.getElementById('ret-orden-btn').textContent='Orden';
+  document.getElementById('ret-orden-btn').style.background='var(--acc)';
+  retRend();
+}
+function retRenderReporte(){
+  const pendientes=retR.filter(r=>r.estado==='pendiente');
+  if(!pendientes.length)return `<div class="empty">No hay recetas pendientes</div>`;
+  // Agrupar por cliente
+  const porCliente={};
+  pendientes.forEach(r=>{
+    const cli=r.cliente_id||'—';
+    if(!porCliente[cli])porCliente[cli]=[];
+    porCliente[cli].push(r);
+  });
+  let html=`<div style="padding:10px 14px 0;font-size:11px;color:var(--txt2)">Productos necesarios para recetas pendientes</div>`;
+  for(const[cli,recs] of Object.entries(porCliente)){
+    const cliLbl=CFG[cli]?.lbl||cli;
+    // Sumar productos
+    const totales={};
+    recs.forEach(r=>{
+      const ha=parseFloat(r.caudal)||parseFloat(D?.lotes.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area)||0;
+      (r.productos||[]).forEach(p=>{
+        const nombre=p.nombre||p.n||'—';
+        const dosis=parseFloat(p.dosis||p.d)||0;
+        const unidad=p.unidad||p.u||'';
+        const key=nombre+'|'+unidad;
+        if(!totales[key])totales[key]={nombre,unidad,total:0,ha:0};
+        totales[key].total+=dosis*ha;
+        totales[key].ha+=ha;
+      });
+    });
+    const totalHa=[...new Set(recs.map(r=>r.lote_id+r.campo_id))].reduce((s,k)=>{
+      const r=recs.find(x=>(x.lote_id+x.campo_id)===k);
+      return s+(parseFloat(r.caudal)||parseFloat(D?.lotes.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area)||0);
+    },0);
+    html+=`<div style="margin:14px 14px 0">
+      <div class="rsect">${cliLbl} — ${recs.length} receta${recs.length!==1?'s':''} pendiente${recs.length!==1?'s':''}</div>
+      <table class="rtbl"><thead><tr><th>Producto</th><th>Total estimado</th></tr></thead><tbody>`;
+    Object.values(totales).sort((a,b)=>b.total-a.total).forEach(t=>{
+      html+=`<tr><td>${t.nombre}</td><td><b>${t.total.toFixed(1)}</b> ${t.unidad}</td></tr>`;
+    });
+    html+=`</tbody></table>
+      <div style="font-size:10px;color:var(--txt3);margin-top:4px">* Cálculo basado en hectáreas indicadas en cada receta (campo Caudal/Ha o área del lote si no se especificó)</div>
+    </div>`;
+  }
+  html+=`<div style="height:14px"></div>`;
+  return html;
+}
 function retToggleOrden(){
   retOrdenMode=!retOrdenMode;
   retSel=new Set();
