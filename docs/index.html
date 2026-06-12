@@ -260,12 +260,10 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 <div id="s-login" class="screen active">
   <div class="lw">
     <div class="ll">
-      <svg width="80" height="22" viewBox="0 0 80 22" xmlns="http://www.w3.org/2000/svg">
-        <text x="0" y="17" font-family="DM Sans,system-ui" font-weight="200" font-size="18" fill="#cc5c08" letter-spacing="1">TW</text>
-        <text x="37" y="17" font-family="DM Sans,system-ui" font-weight="200" font-size="18" fill="#cc5c08" letter-spacing="1">N</text>
-        <g transform="translate(33,1)"><ellipse cx="3.5" cy="13" rx="2.8" ry="3.5" fill="#cc5c08"/><ellipse cx="1" cy="11" rx="2" ry="2.8" fill="#cc5c08" transform="rotate(-20,1,11)"/><ellipse cx="6" cy="11" rx="2" ry="2.8" fill="#cc5c08" transform="rotate(20,6,11)"/><ellipse cx="0.5" cy="8" rx="1.5" ry="2.2" fill="#cc5c08" transform="rotate(-35,0.5,8)"/><ellipse cx="6.5" cy="8" rx="1.5" ry="2.2" fill="#cc5c08" transform="rotate(35,6.5,8)"/><path d="M3.5,16 Q3.5,19 3.5,21" stroke="#cc5c08" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M3.5,18 Q1,17 0,15" stroke="#cc5c08" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M3.5,17 Q6,16 7,14" stroke="#cc5c08" stroke-width="1" fill="none" stroke-linecap="round"/></g>
+      <svg width="160" height="62" viewBox="0 0 160 62" xmlns="http://www.w3.org/2000/svg">
+        <text x="80" y="32" text-anchor="middle" font-family="DM Sans,system-ui" font-weight="200" font-size="38" fill="#cc5c08" letter-spacing="2">TWIN</text>
+        <text x="80" y="55" text-anchor="middle" font-family="DM Sans,system-ui" font-weight="400" font-size="13" fill="#2b6b2b" letter-spacing="4">FIELD SUITE</text>
       </svg>
-      <div class="lt">Field Suite</div>
     </div>
     <div class="ls">Ing. Agr. Marcos Fernández</div>
     <div class="lf"><label>Usuario</label><input type="text" id="li-u" autocapitalize="none" spellcheck="false" placeholder="usuario"></div>
@@ -627,16 +625,17 @@ function schDraw(){
     if(ha>=10||sVp.scale>200){
       sCX.save();
       const nm=l.name.toUpperCase();
-      sCX.font='300 '+Math.max(9,Math.min(12,ha/10+8))+'px DM Sans,sans-serif';
+      const numFont='500 '+Math.max(12,Math.min(16,ha/8+10))+'px DM Sans,sans-serif';
+      sCX.font=numFont;
       const tw=sCX.measureText(nm).width;
       const cvFont='300 '+Math.max(7,Math.min(10,ha/12+6))+'px DM Sans,sans-serif';
       sCX.font=cvFont;const cw=val?sCX.measureText(cl(val)).width:0;
-      const pw=Math.max(tw,cw)+8,ph=val?22:12;
+      const pw=Math.max(tw,cw)+8,ph=val?26:16;
       sCX.fillStyle='rgba(255,255,255,.78)';
       sCX.beginPath();const rx=px-pw/2,ry=py-ph/2-1,rw=pw,rh=ph,rr=3;sCX.moveTo(rx+rr,ry);sCX.lineTo(rx+rw-rr,ry);sCX.arcTo(rx+rw,ry,rx+rw,ry+rr,rr);sCX.lineTo(rx+rw,ry+rh-rr);sCX.arcTo(rx+rw,ry+rh,rx+rw-rr,ry+rh,rr);sCX.lineTo(rx+rr,ry+rh);sCX.arcTo(rx,ry+rh,rx,ry+rh-rr,rr);sCX.lineTo(rx,ry+rr);sCX.arcTo(rx,ry,rx+rr,ry,rr);sCX.closePath();sCX.fill();
-      sCX.font='300 '+Math.max(9,Math.min(12,ha/10+8))+'px DM Sans,sans-serif';
-      sCX.fillStyle='rgba(0,0,0,.85)';sCX.textAlign='center';sCX.textBaseline='middle';sCX.fillText(nm,px,val?py-5:py);
-      if(val){sCX.font=cvFont;sCX.fillStyle='rgba(0,0,0,.75)';sCX.fillText(cl(val),px,py+7);}
+      sCX.font=numFont;
+      sCX.fillStyle='rgba(0,0,0,.88)';sCX.textAlign='center';sCX.textBaseline='middle';sCX.fillText(nm,px,val?py-6:py);
+      if(val){sCX.font=cvFont;sCX.fillStyle='rgba(0,0,0,.65)';sCX.fillText(cl(val),px,py+8);}
       sCX.restore();
     }
   });
