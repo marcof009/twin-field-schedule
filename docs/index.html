@@ -911,15 +911,7 @@ function retUC(){
   document.getElementById('rl').innerHTML='<option value="">—</option>';
   // Si el cliente seleccionado no es el que está cargado en D, precargar siembra
   if(ck2&&(!D||D.ck!==ck2)){
-    (async()=>{
-      if(!DBX_TOKEN) await dbxRefreshToken();
-      try{
-        const buf=await dbxDL(TF+'/xlsx/siembras.xlsx');
-        if(!D)D={lotes:[],pulv:{},suelos:{},siembra:{},ck:ck2};
-        D.siembra=pSiembra(buf,ck2);
-        D.ck=ck2;
-      }catch(e){console.warn('siembras.xlsx',e.message);}
-    })();
+    schLoad(ck2);
   }
 }
 function retUL(){
@@ -937,7 +929,7 @@ function retUA(){
   const l=D?.lotes.find(x=>x.layer===cm&&x.name===lo);
   const haInput=document.getElementById('rha');
   if(l){
-    haInput.value=l.area;haInput.readOnly=true;
+    haInput.value=l.area;haInput.readOnly=false;
   }else{
     haInput.value='';haInput.readOnly=false;haInput.placeholder='Ingresar ha';
   }
