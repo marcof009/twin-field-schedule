@@ -560,6 +560,16 @@ function pSuelos(buf,ck2){
   }
   return su;
 }
+function fmtFecha(v){
+  if(!v)return'';
+  if(typeof v==='number'){
+    const d=new Date(Math.round((v-25569)*86400*1000));
+    return String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear();
+  }
+  const s=String(v).trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)){const[y,m,d]=s.split('-');return d+'/'+m+'/'+y;}
+  return s;
+}
 function pSiembra(buf,ck2){
   const wb=XLSX.read(buf,{type:'array'});
   const ws=wb.Sheets[wb.SheetNames[0]];
@@ -576,7 +586,7 @@ function pSiembra(buf,ck2){
     res[cmk][lk]={
       cultivo:String(r[ci['Cultivo 1ra']]||'').trim(),variedad:String(r[ci['Variedad']]||'').trim(),
       kg_ha:parseFloat(r[ci['Kg_ha']])||0,p_fuente:String(r[ci['P_fuente']]||'').trim(),p_dosis:parseFloat(r[ci['P_dosis']])||0,
-      ant:String(r[ci['Antecesor']]||'').trim(),siembra_fecha:String(r[ci['siembra_fecha']]||'').trim(),pg:parseFloat(r[ci['PG']])||0,p1000:parseFloat(r[ci['P1000']])||0,
+      ant:String(r[ci['Antecesor']]||'').trim(),siembra_fecha:fmtFecha(r[ci['siembra_fecha']]),pg:parseFloat(r[ci['PG']])||0,p1000:parseFloat(r[ci['P1000']])||0,
       analisis:String(r[ci['Analisis']]||'').trim(),curasemilla:String(r[ci['Curasemilla']]||'').trim(),
       siembra_modo:String(r[ci['Siembra_modo']]||'').trim(),ferti_modo:String(r[ci['ferti_modo']]||'').trim(),
       semilla_modo:String(r[ci['semilla_modo']]||'').trim(),
