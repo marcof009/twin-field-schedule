@@ -277,7 +277,11 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 
 <!-- HOME -->
 <div id="s-home" class="screen">
-  <div class="hh"><div class="hht"><div><div class="hg">Bienvenido</div><div class="hu" id="h-user">—</div></div><button class="hlo" onclick="doLogout()">Salir</button></div></div>
+  <div class="hh"><div class="hht"><div><div class="hg">Bienvenido</div><div class="hu" id="h-user">—</div></div><button class="hlo" onclick="doLogout()">Salir</button></div>
+<div id="h-cli-sel-wrap" style="display:none;margin-top:10px">
+  <select id="h-cli-sel" onchange="homeCambioCli(this.value)" style="width:100%;font-family:var(--f);font-size:13px;font-weight:300;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:9px 12px;color:var(--txt);outline:none">
+  </select>
+</div></div>
   <div class="hb">
     <div class="hlbl">Módulos</div>
     <div class="mg">
@@ -291,7 +295,7 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 
 <!-- SCHEDULE -->
 <div id="s-schedule" class="screen">
-  <div class="ah"><button class="ab" onclick="closeMod('schedule')">Inicio</button><div class="at" id="s-hcli" style="font-size:13px;color:var(--txt2)">—</div><select id="s-cli-sel" onchange="schCambioCli(this.value)" style="display:none;font-family:var(--f);font-size:11px;font-weight:300;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:4px 8px;color:var(--txt);outline:none"></select></div>
+  <div class="ah"><button class="ab" onclick="closeMod('schedule')">Inicio</button><div class="at" id="s-hcli" style="font-size:13px;color:var(--txt2)">—</div></div>
   <div id="sct"></div>
   <div id="smw">
     <canvas id="scv"></canvas>
@@ -393,6 +397,7 @@ const CFG = {
 };
 
 let PRODUCTOS=[];
+let ACTIVE_CLI='la_alicia';
 
 // STATE
 let SESSION=null, D=null;
@@ -417,7 +422,23 @@ async function doLogin(){
 }
 function doLogout(){sessionStorage.removeItem('ts');SESSION=null;D=null;SS('login');}
 function chkS(){const s=sessionStorage.getItem('ts');if(s){SESSION=JSON.parse(s);return true;}document.getElementById('li-p').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});return false;}
-function goHome(){document.getElementById('h-user').textContent=SESSION.u==='marcos'?'Marcos Fernández':SESSION.u;SS('home');}
+function goHome(){
+  document.getElementById('h-user').textContent=SESSION.u==='marcos'?'Marcos Fernández':SESSION.u;
+  if(SESSION.c[0]==='all'){
+    document.getElementById('h-cli-sel-wrap').style.display='block';
+    const sel=document.getElementById('h-cli-sel');
+    sel.innerHTML=Object.entries(CFG).map(([k,v])=>`<option value="${k}">${v.lbl}</option>`).join('');
+    const saved=sessionStorage.getItem('active_cli');
+    ACTIVE_CLI=saved&&CFG[saved]?saved:'la_alicia';
+    sel.value=ACTIVE_CLI;
+  }
+  SS('home');
+}
+function homeCambioCli(ck2){
+  ACTIVE_CLI=ck2;
+  sessionStorage.setItem('active_cli',ck2);
+  D=null; // forzar recarga de datos del nuevo cliente
+}
 
 // NAV
 function openMod(m){SS(m);if(m==='schedule')schInit();else if(m==='recorridas')recInit();else if(m==='recetas')retInit();else if(m==='suelos')suelInit();}
@@ -468,22 +489,15 @@ let sVp={cx:0,cy:0,scale:1},sDrg={on:false},sPnch={on:false};
 const sCV=document.getElementById('scv'),sCX=sCV.getContext('2d');
 
 function schInit(){
-  // poblar selector si es admin
-  const sel=document.getElementById('s-cli-sel');
-  if(SESSION.c[0]==='all'){
-    sel.style.display='block';
-    sel.innerHTML=Object.entries(CFG).map(([k,v])=>`<option value="${k}">${v.lbl}</option>`).join('');
-  }
   if(D){schBT();schR();schIV();schDraw();document.getElementById('slod').style.display='none';return;}
   schLoad();
 }
-function schCambioCli(ck2){D=null;sSel=null;schLoad(ck2);}
 async function schLoad(clienteKey){
   await dbxRefreshToken();
   document.getElementById('slod').style.display='flex';
   D=null;
   try{
-    const ck2=clienteKey||(SESSION.c[0]==='all'?'la_alicia':SESSION.c[0]);
+    const ck2=clienteKey||(SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0]);
     const cfg=CFG[ck2];if(!cfg)throw new Error('Cliente no configurado');
     const sr=await Promise.all(Object.entries(cfg.campos).map(async([k,ci])=>{
       try{
@@ -731,7 +745,12 @@ function recR(){
 }
 function rP(s){rStk.push(s);recR();}
 function recRC(body){
-  const cs=SESSION.c[0]==='all'?Object.entries(CFG).map(([k,v])=>({key:k,...v})):SESSION.c.map(k=>({key:k,...CFG[k]}));
+  if(SESSION.c[0]==='all'){
+    rStk.push({type:'cam',ck:ACTIVE_CLI,title:CFG[ACTIVE_CLI]?.lbl||ACTIVE_CLI});
+    recRCam(body,ACTIVE_CLI);
+    return;
+  }
+  const cs=SESSION.c.map(k=>({key:k,...CFG[k]}));
   body.innerHTML=`<div class="rsec">Clientes</div>`+cs.map(c=>`<div class="rc" data-ck="${c.key}" data-lbl="${c.lbl}" onclick="rP({type:'cam',ck:this.dataset.ck,title:this.dataset.lbl})"><div class="rc-n">${c.lbl}</div><div class="rc-m">${Object.keys(c.campos||{}).length} campos</div></div>`).join('');
 }
 function recRCam(body,ck2){
@@ -777,7 +796,7 @@ let retStk=[],retP=[],retR=[];
 let retOrdenMode=false,retSel=new Set(),retRepMode=false;
 async function retInit(){
   retStk=[];retOrdenMode=false;retRepMode=false;retSel=new Set();
-  document.getElementById('ret-title').textContent='Recetas';
+  document.getElementById('ret-title').textContent=SESSION.c[0]==='all'?'Recetas — '+(CFG[ACTIVE_CLI]?.lbl||''):'Recetas';
   document.getElementById('ret-add').style.display=SESSION.r==='admin'?'block':'none';
   document.getElementById('ret-orden-btn').style.display='block';document.getElementById('ret-rep-btn').style.display='block';
   // Cargar productos desde Dropbox si no están cargados
@@ -792,7 +811,12 @@ async function retInit(){
     }catch(e){console.warn('productos.xlsx no disponible',e.message);}
   }
   try{
-    const q=SESSION.r==='aplicador'?'cliente_id=eq.'+SESSION.c[0]+'&order=fecha.desc&limit=200':'order=created_at.desc&limit=200';
+    let q;
+    if(SESSION.r==='aplicador'){q='cliente_id=eq.'+SESSION.c[0]+'&order=fecha.desc&limit=200';}
+    else if(SESSION.c[0]==='all'){
+      q='cliente_id=eq.'+ACTIVE_CLI+'&order=created_at.desc&limit=200';
+    }
+    else{q='cliente_id=eq.'+SESSION.c[0]+'&order=created_at.desc&limit=200';}
     retR=await sbG('recetas',q);
     retR.sort((a,b)=>{if(a.estado==='pendiente'&&b.estado!=='pendiente')return -1;if(b.estado==='pendiente'&&a.estado!=='pendiente')return 1;return new Date(b.fecha)-new Date(a.fecha);});
   }catch(e){retR=[];}
@@ -856,7 +880,7 @@ function retRL(body){
   }).join('');
 }
 function retRF(body){
-  const copts=Object.entries(CFG).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join('');
+  const copts=Object.entries(CFG).map(([k,v])=>'<option value="'+k+'"'+(SESSION.c[0]==='all'&&k===ACTIVE_CLI?' selected':'')+'>'+v.lbl+'</option>').join('');
   body.innerHTML=`<div class="rform">
 <div class="rfs">Ubicación</div>
 <div class="rfr"><div class="rff"><label>Cliente</label><select id="rc" onchange="retUC()"><option value="">—</option>${copts}</select></div><div class="rff"><label>Campo</label><select id="rcm" onchange="retUL()"><option value="">—</option></select></div></div>
