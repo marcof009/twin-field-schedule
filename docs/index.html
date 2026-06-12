@@ -283,7 +283,7 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
     <div class="mg">
       <div class="mc c-s" onclick="openMod('schedule')"><div class="mac"></div><div class="mi">📅</div><div class="mn">Schedule</div><div class="md">Mapa de lotes y cultivos</div></div>
       <div class="mc c-rec" onclick="openMod('recorridas')"><div class="mac"></div><div class="mi">📝</div><div class="mn">Recorridas</div><div class="md">Observaciones en campo</div></div>
-      <div class="mc c-r" onclick="openMod('recetas')"><div class="mac"></div><div class="mi">🚿</div><div class="mn">Recetas</div><div class="md">Gestión de pulverizaciones</div></div>
+      <div class="mc c-r" onclick="openMod('recetas')"><div class="mac"></div><div class="mi">🧪</div><div class="mn">Recetas</div><div class="md">Gestión de pulverizaciones</div></div>
       <div class="mc c-su" onclick="openMod('suelos')"><div class="mac"></div><div class="mi">🪴</div><div class="mn">Suelos</div><div class="md">Análisis de laboratorio</div></div>
     </div>
   </div>
@@ -842,7 +842,18 @@ function retRL(body){
     `<div style="padding:10px 14px"><button onclick="retGenPDF()" style="width:100%;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:12px;font-size:13px;font-weight:400;font-family:var(--f)">Generar PDF (${retSel.size} receta${retSel.size!==1?'s':''})</button></div>`;
     return;
   }
-  body.innerHTML=dash+retR.map(r=>`<div class="rli" data-id="${r.id}" onclick="retStk.push({type:'ver',id:this.dataset.id});retRend()"><div class="rli-top"><div class="rli-n">Rec. ${r.numero_receta||'—'} · ${r.lote_id||'?'}</div><span class="ep ep-${r.estado||'pendiente'}">${r.estado||'pendiente'}</span></div><div class="rli-m"><span>📅 ${r.fecha}</span><span>${r.cultivo||'—'}</span><span>${r.objetivo||''}</span></div></div>`).join('');
+  body.innerHTML=dash+retR.map(r=>{
+    const campoLbl=CFG[r.cliente_id]?.campos[r.campo_id]?.lbl||r.campo_id||'—';
+    const urgColor=r.urgencia==='YA'?'var(--red)':r.urgencia?.toLowerCase().includes('2-3')?'var(--ora)':'var(--txt2)';
+    return `<div class="rli" data-id="${r.id}" onclick="retStk.push({type:'ver',id:this.dataset.id});retRend()">
+      <div class="rli-top">
+        <div class="rli-n">${campoLbl} · Lote ${(r.lote_id||'?').toUpperCase()}</div>
+        <span class="ep ep-${r.estado||'pendiente'}">${r.estado||'pendiente'}</span>
+      </div>
+      <div class="rli-m" style="margin-bottom:3px"><span>📅 ${r.fecha}</span><span>${cl(r.cultivo)||r.cultivo||'—'}</span>${r.numero_receta?`<span>Rec. ${r.numero_receta}</span>`:''}</div>
+      ${r.objetivo||r.urgencia?`<div class="rli-m" style="gap:6px">${r.objetivo?`<span style="background:var(--surf2);border-radius:3px;padding:1px 6px;font-size:10px">${r.objetivo}</span>`:''}${r.urgencia?`<span style="color:${urgColor};font-weight:400">⏱ ${r.urgencia}</span>`:''}</div>`:''}
+    </div>`;
+  }).join('');
 }
 function retRF(body){
   const copts=Object.entries(CFG).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join('');
