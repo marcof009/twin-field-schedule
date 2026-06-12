@@ -528,7 +528,7 @@ function pPulv(buf,pm){
   for(let i=14;i<hr.length;i++){const h=String(hr[i]||'').trim();if(h&&h!=='nan')pc[i]=h;}
   for(let ri=7;ri<rows.length;ri++){
     const r=rows[ri];if(!r||!r[1])continue;
-    const ck2=pm[String(r[1]).trim().toUpperCase()];if(!ck2)continue;
+    const raw=String(r[1]).trim();const ck2=pm[raw.toUpperCase()]||raw.toLowerCase();if(!ck2)continue;
     const lr=String(r[2]||'').trim();if(!lr||lr==='nan')continue;
     const lk=lr.toUpperCase().startsWith('LOTE')?lr.toUpperCase():'LOTE '+lr.toUpperCase();
     const prods=Object.entries(pc).map(([i,n])=>({n,d:String(r[i]||'').trim()})).filter(p=>p.d&&p.d!=='nan'&&p.d!=='0');
