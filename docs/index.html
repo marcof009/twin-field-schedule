@@ -671,34 +671,69 @@ function schSK(l){const d=D.siembra?.[l.layer];if(!d)return null;return fK(d,l.n
 function schSuK(l){const d=D.suelos?.[l.layer];if(!d)return null;return fK(d,l.name)||null;}
 
 const MOS=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-function schRPulv(){
+async function schRPulv(){
   const body=document.getElementById('spb');
-  const cd=D.pulv[sSel.layer];if(!cd){body.innerHTML='<div class="empty">Sin datos de pulverizaciones</div>';return;}
-  const key=schPK(sSel);let apps=cd[key];
-  if(!apps?.length){const n=key.replace('LOTE ','').trim().toLowerCase();for(const[k,v] of Object.entries(cd)){if(k.replace('LOTE ','').trim().toLowerCase()===n){apps=v;break;}}}
-  if(!apps?.length){body.innerHTML='<div class="empty">Sin registros para '+key+'</div>';return;}
-  const gr={};apps.forEach(a=>{const pts=a.f.split('/');const mk=(pts[1]||'?')+'/'+(pts[2]||'?');if(!gr[mk])gr[mk]=[];gr[mk].push(a);});
+  body.innerHTML='<div class="empty">Cargando...</div>';
+  const cd=D.pulv[sSel.layer]||{};
+  const key=schPK(sSel);let apps=cd[key]?[...cd[key]]:[];
+  if(!apps.length){const n=key.replace('LOTE ','').trim().toLowerCase();for(const[k,v] of Object.entries(cd)){if(k.replace('LOTE ','').trim().toLowerCase()===n){apps=[...v];break;}}}
+  // Agregar recetas aplicadas desde Supabase
+  try{
+    const recs=await sbG('recetas','cliente_id=eq.'+(D.ck||ACTIVE_CLI)+'&campo_id=eq.'+sSel.layer+'&lote_id=eq.'+sSel.name+'&estado=eq.ok&order=fecha_aplicacion.desc');
+    recs.forEach(r=>{
+      const f=r.fecha_aplicacion||r.fecha;
+      let fdisp=f;
+      if(f&&/^\d{4}-\d{2}-\d{2}/.test(f)){const[y,m,d]=f.split('-');fdisp=d+'/'+m+'/'+y;}
+      apps.push({f:fdisp,c:r.cultivo||'',e:'ok',r:r.numero_receta||'',o:[r.observaciones,r.obs_aplicacion].filter(Boolean).join(' — '),p:(r.productos||[]).map(p=>({n:p.nombre||p.n,d:p.dosis||p.d}))});
+    });
+  }catch(e){console.warn('recetas sb',e.message);}
+  if(!apps.length){body.innerHTML='<div class="empty">Sin registros para '+key+'</div>';return;}
+  // Agrupar por mes/año (parse dd/mm/yyyy)
+  const gr={};apps.forEach(a=>{const pts=(a.f||'').split('/');const mk=(pts[1]||'?')+'/'+(pts[2]||'?');if(!gr[mk])gr[mk]=[];gr[mk].push(a);});
+  // Ordenar grupos por fecha desc
+  const sortedKeys=Object.keys(gr).sort((a,b)=>{const[ma,ya]=a.split('/'),[mb,yb]=b.split('/');return (yb+mb).localeCompare(ya+ma);});
   let html='';
-  for(const[mk,list] of Object.entries(gr)){
-    const[m,y2]=mk.split('/');html+='<div class="pg"><div class="pgh">'+MOS[+m]+' '+y2+'</div>';
+  for(const mk of sortedKeys){
+    const list=gr[mk];
+    const[m,y2]=mk.split('/');html+='<div class="pg"><div class="pgh">'+(MOS[+m]||m)+' '+y2+'</div>';
     list.forEach(a=>{const e=(a.e||'').toLowerCase();let c='ok',b='bok';if(e.includes('anulado')){c='an';b='ban';}else if(e.includes('suspendido')){c='su';b='bsu';}else if(e.includes('pendiente')){c='pe';b='bpe';}
     html+='<div class="pc '+c+'"><div class="ptop"><div><div class="pdate">'+a.f+'</div><div class="pcult">'+a.c+'</div></div><span class="badge '+b+'">'+a.e+'</span></div>'+(a.o?'<div class="pobs">'+a.o+'</div>':'')+'<div>'+(a.p||[]).map(p=>'<div class="prow"><span>'+p.n+'</span><span style="color:var(--txt3)">'+p.d+' l/ha</span></div>').join('')+'</div>'+(a.r?'<div class="prec">Rec. '+a.r+'</div>':'')+'</div>';});
     html+='</div>';
   }
   body.innerHTML=html||'<div class="empty">Sin registros</div>';
 }
-function schRSuelos(){
+async function schRSuelos(){
   const body=document.getElementById('spb');
-  const key=schSuK(sSel);if(!key){body.innerHTML='<div class="empty">Sin análisis para este lote</div>';return;}
-  const an=D.suelos[sSel.layer]?.[key];if(!an){body.innerHTML='<div class="empty">Sin datos</div>';return;}
+  body.innerHTML='<div class="empty">Cargando...</div>';
   const PARAMS=['N-NO3','Fósforo','N Min.','S-Sulfato','MO','Zinc','pH','Humedad','Boro'];
   let html='';
-  Object.keys(an).sort((a,b)=>b-a).forEach(yr2=>{
-    const a=an[yr2];const perf=a.perfiles||[];if(!perf.length)return;
-    const cols=PARAMS.filter(p=>perf.some(r=>r[p]!==undefined));
-    html+='<div class="sy"><div class="sytit">Análisis '+yr2+'</div><table class="stbl"><thead><tr><th>Prof.</th>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+perf.map(r=>'<tr><td><b>'+r.prof+'</b></td>'+cols.map(c=>'<td>'+(r[c]!==undefined?r[c]:'—')+'</td>').join('')+'</tr>').join('')+'</tbody></table><div style="font-size:9px;color:var(--txt3);margin-top:3px">'+a.arch+'</div></div>';
-  });
-  body.innerHTML=html||'<div class="empty">Sin datos</div>';
+  // 1. Datos del Excel (histórico)
+  const key=schSuK(sSel);
+  if(key){
+    const an=D.suelos[sSel.layer]?.[key];
+    if(an){
+      Object.keys(an).sort((a,b)=>b-a).forEach(yr2=>{
+        const a=an[yr2];const perf=a.perfiles||[];if(!perf.length)return;
+        const cols=PARAMS.filter(p=>perf.some(r=>r[p]!==undefined));
+        html+='<div class="sy"><div class="sytit">Análisis '+yr2+'</div><table class="stbl"><thead><tr><th>Prof.</th>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+perf.map(r=>'<tr><td><b>'+r.prof+'</b></td>'+cols.map(c=>'<td>'+(r[c]!==undefined?r[c]:'—')+'</td>').join('')+'</tr>').join('')+'</tbody></table><div style="font-size:9px;color:var(--txt3);margin-top:3px">'+a.arch+'</div></div>';
+      });
+    }
+  }
+  // 2. Datos de Supabase (cargados desde módulo Suelos)
+  try{
+    const rows=await sbG('analisis_suelos','establecimiento=ilike.*'+encodeURIComponent(sSel.campo||'')+'*&lote=eq.'+encodeURIComponent(sSel.name)+'&order=fecha.desc');
+    if(rows?.length){
+      // Agrupar por fecha+ambiente
+      const grupos={};
+      rows.forEach(r=>{const k=(r.fecha||'')+'|'+(r.ambiente||'');if(!grupos[k])grupos[k]={fecha:r.fecha,ambiente:r.ambiente,lab:r.laboratorio,arch:r.archivo,perfiles:[]};grupos[k].perfiles.push(r);});
+      Object.values(grupos).forEach(g=>{
+        const cols=PARAMS.filter(p=>{const map={'N-NO3':'n_no3','Fósforo':'fosforo','N Min.':'n_min','S-Sulfato':'s_sulfato','MO':'mo','Zinc':'zinc','pH':'ph','Humedad':'humedad','Boro':'boro'};return g.perfiles.some(r=>r[map[p]]!=null);});
+        const map={'N-NO3':'n_no3','Fósforo':'fosforo','N Min.':'n_min','S-Sulfato':'s_sulfato','MO':'mo','Zinc':'zinc','pH':'ph','Humedad':'humedad','Boro':'boro'};
+        html+='<div class="sy"><div class="sytit">'+(g.ambiente?g.ambiente+' — ':'')+(g.fecha||'')+(g.lab?' ('+g.lab+')':'')+'</div><table class="stbl"><thead><tr><th>Prof.</th>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+g.perfiles.map(r=>'<tr><td><b>'+(r.profundidad||'—')+'</b></td>'+cols.map(c=>'<td>'+(r[map[c]]??'—')+'</td>').join('')+'</tr>').join('')+'</tbody></table>'+(g.arch?'<div style="font-size:9px;color:var(--txt3);margin-top:3px">'+g.arch+'</div>':'')+'</div>';
+      });
+    }
+  }catch(e){console.warn('analisis_suelos sb',e.message);}
+  body.innerHTML=html||'<div class="empty">Sin análisis para este lote</div>';
 }
 function mpill(v,isVar){if(!v)return'';return'<span class="mp '+(isVar?'mp-v':'mp-f')+'">'+v+'</span>';}
 function schRSiembra(){
