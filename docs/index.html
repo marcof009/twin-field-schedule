@@ -782,6 +782,7 @@ async function retInit(){
   // Cargar productos desde Dropbox si no están cargados
   if(!PRODUCTOS.length){
     try{
+      if(!DBX_TOKEN) await dbxRefreshToken();
       const buf=await dbxDL(TF+'/xlsx/productos.xlsx');
       const wb=XLSX.read(buf,{type:'array'});
       const ws=wb.Sheets[wb.SheetNames[0]];
