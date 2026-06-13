@@ -58,7 +58,7 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 .mc{background:var(--surf);border-radius:var(--r3);padding:20px 16px 18px;border:1px solid var(--bord);cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:10px;box-shadow:var(--sh)}
 .mc:active{transform:scale(.97);background:var(--surf2)}
 .mac{width:18px;height:1.5px;border-radius:1px;margin-bottom:2px}
-.c-s .mac{background:var(--acc)} .c-r .mac{background:var(--ora)} .c-rec .mac{background:var(--blu)} .c-su .mac{background:#8d6e63}
+.c-s .mac{background:var(--acc)} .c-r .mac{background:var(--ora)} .c-rec .mac{background:var(--blu)} .c-su .mac{background:#8d6e63} .c-sb .mac{background:#cda434}
 .mi{font-size:22px} .mn{font-size:14px;font-weight:400;letter-spacing:-.2px} .md{font-size:11px;color:var(--txt2);line-height:1.4}
 
 /* SHARED HDR */
@@ -231,6 +231,13 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 .lote-thumb{width:100%;height:80px;border-radius:var(--r2);background:var(--surf2);border:1px solid var(--bord);margin-top:5px;position:relative;overflow:hidden;cursor:pointer}
 .lote-thumb canvas{width:100%;height:100%;display:block}
 .lote-thumb-label{position:absolute;bottom:4px;right:6px;font-size:9px;color:var(--txt3);font-weight:300}
+#sb-tabs{flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bord);display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#sb-tabs::-webkit-scrollbar{display:none}
+.sb-item{background:var(--surf);border-radius:var(--r);padding:11px 13px;margin-bottom:7px;border:1px solid var(--bord);box-shadow:var(--sh);display:flex;gap:10px;align-items:flex-start}
+.sb-chk{width:22px;height:22px;flex-shrink:0;margin-top:2px;accent-color:var(--acc);cursor:pointer}
+.sb-fields{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.sb-fields input{background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r2);padding:7px 9px;font-size:12px;font-family:var(--f);outline:none;width:100%}
+.sb-fields input:focus{border-color:var(--acc)}
 
 /* SUELOS */
 #s-suelos{background:var(--bg)}
@@ -275,7 +282,12 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 
 <!-- HOME -->
 <div id="s-home" class="screen">
-  <div class="hh"><div class="hht"><div><div class="hg">Bienvenido</div><div class="hu" id="h-user">—</div></div><button class="hlo" onclick="doLogout()">Salir</button></div>
+  <div class="hh"><div class="hht"><div><div class="hg">Bienvenido</div><div class="hu" id="h-user">—</div></div>
+<svg width="120" height="46" viewBox="0 0 160 62" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+  <text x="80" y="32" text-anchor="middle" font-family="DM Sans,system-ui" font-weight="200" font-size="38" fill="#cc5c08" letter-spacing="2">TWIN</text>
+  <text x="80" y="55" text-anchor="middle" font-family="DM Sans,system-ui" font-weight="400" font-size="13" fill="#2b6b2b" letter-spacing="4">FIELD SUITE</text>
+</svg>
+<button class="hlo" onclick="doLogout()">Salir</button></div>
 <div id="h-cli-sel-wrap" style="display:none;margin-top:10px">
   <select id="h-cli-sel" onchange="homeCambioCli(this.value)" style="width:100%;font-family:var(--f);font-size:13px;font-weight:300;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:9px 12px;color:var(--txt);outline:none">
   </select>
@@ -287,6 +299,7 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
       <div class="mc c-rec" onclick="openMod('recorridas')"><div class="mac"></div><div class="mi">📝</div><div class="mn">Recorridas</div><div class="md">Observaciones en campo</div></div>
       <div class="mc c-r" onclick="openMod('recetas')"><div class="mac"></div><div class="mi">🧪</div><div class="mn">Recetas</div><div class="md">Gestión de pulverizaciones</div></div>
       <div class="mc c-su" onclick="openMod('suelos')"><div class="mac"></div><div class="mi">🪴</div><div class="mn">Suelos</div><div class="md">Análisis de laboratorio</div></div>
+      <div class="mc c-sb" onclick="openMod('siembra')"><div class="mac"></div><div class="mi">🌾</div><div class="mn">Siembra</div><div class="md">Avance del plan de siembra</div></div>
     </div>
   </div>
 </div>
@@ -317,6 +330,13 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
   <div class="ah"><button class="ab" onclick="retBack()">Inicio</button><div class="at" id="ret-title">Recetas</div><button class="aa" id="ret-rep-btn" onclick="retToggleReporte()" style="display:none;background:var(--blu);margin-right:5px">Reporte</button>
 <button class="aa" id="ret-orden-btn" onclick="retToggleOrden()" style="display:none;background:var(--acc);margin-right:5px">Orden</button><button class="aa" id="ret-add" onclick="retNueva()" style="display:none">+ Nueva</button></div>
   <div id="ret-body" style="flex:1;overflow-y:auto;padding:10px 14px 40px;-webkit-overflow-scrolling:touch"></div>
+</div>
+
+<!-- SIEMBRA -->
+<div id="s-siembra" class="screen">
+  <div class="ah"><button class="ab" onclick="closeMod('siembra')">Inicio</button><div class="at">Siembra</div></div>
+  <div id="sb-tabs"></div>
+  <div id="sb-body" class="rb"></div>
 </div>
 
 <!-- SUELOS -->
@@ -439,7 +459,7 @@ function homeCambioCli(ck2){
 }
 
 // NAV
-function openMod(m){SS(m);if(m==='schedule')schInit();else if(m==='recorridas')recInit();else if(m==='recetas')retInit();else if(m==='suelos')suelInit();}
+function openMod(m){SS(m);if(m==='schedule')schInit();else if(m==='recorridas')recInit();else if(m==='recetas')retInit();else if(m==='suelos')suelInit();else if(m==='siembra')siembraInit();}
 function closeMod(m){SS('home');if(m==='schedule'){schCP();schCR();}}
 
 // CROP COLORS
@@ -487,7 +507,7 @@ let sVp={cx:0,cy:0,scale:1},sDrg={on:false},sPnch={on:false};
 const sCV=document.getElementById('scv'),sCX=sCV.getContext('2d');
 
 function schInit(){
-  if(D){schBT();schR();schIV();schDraw();document.getElementById('slod').style.display='none';return;}
+  if(D){schBT();schR();schIV();schDraw();document.getElementById('slod').style.display='none';if(!Object.keys(SB_AVANCE).length)siembraLoadAvance().then(schRT);return;}
   schLoad();
 }
 async function schLoad(clienteKey){
@@ -518,6 +538,7 @@ async function schLoad(clienteKey){
     document.getElementById('slod').style.display='none';
     schBT();schR();schIV();schDraw();
   }catch(e){document.getElementById('slod').innerHTML='<div style="color:var(--red);text-align:center;padding:20px;font-size:12px">Error cargando datos<br><span style="color:var(--txt3)">'+e.message+'</span></div>';console.error(e);}
+  await siembraLoadAvance();
 }
 
 function pPulv(buf,pm){
@@ -753,7 +774,9 @@ function mpill(v,isVar){if(!v)return'';return'<span class="mp '+(isVar?'mp-v':'m
 function schRSiembra(){
   const body=document.getElementById('spb');
   const key=schSK(sSel);if(!key){body.innerHTML='<div class="empty">Sin datos de siembra para este lote</div>';return;}
-  const s=D.siembra[sSel.layer]?.[key];if(!s){body.innerHTML='<div class="empty">Sin datos</div>';return;}
+  const s={...(D.siembra[sSel.layer]?.[key]||{})};if(!Object.keys(s).length){body.innerHTML='<div class="empty">Sin datos</div>';return;}
+  const avK=sSel.layer+'|'+sSel.name.toUpperCase();const av=SB_AVANCE[avK];
+  if(av?.sembrado&&av.fecha){s.siembra_fecha=fmtFecha(av.fecha);}
   const antL={'GR':'Girasol','TR':'Trigo','CB':'Cebada','MZ':'Maíz','SJ':'Soja'}[s.ant]||s.ant||'—';
   const mp=(v)=>{if(!v)return'';const lv=v.toLowerCase();return'<span class="mp '+(lv==='variable'?'mp-v':lv==='directa'?'mp-d':lv==='conv'||lv==='convencional'?'mp-c':'mp-f')+'">'+v+'</span>';};
   let fert='';
@@ -843,6 +866,107 @@ function recMicT(){
   sr.onresult=e=>{const t=e.results[0][0].transcript;const ta=document.getElementById('ota');if(ta)ta.value=(ta.value?ta.value+' ':'')+t;};
   sr.onerror=sr.onend=()=>{rMic=false;const b=document.getElementById('omic');if(b){b.textContent='🎤';b.classList.remove('rec');}};
   sr.start();rMic=true;btn.textContent='🔴';btn.classList.add('rec');
+}
+
+// ══════════════════════════════════════════════════════
+// SIEMBRA
+// ══════════════════════════════════════════════════════
+let SB_AVANCE={},sbGroup='';
+
+async function siembraLoadAvance(){
+  const ck2=D?.ck||(SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0]);
+  try{
+    const rows=await sbG('siembra_avance','cliente_id=eq.'+ck2);
+    SB_AVANCE={};rows.forEach(r=>{SB_AVANCE[r.campo_id+'|'+r.lote_id.toUpperCase()]=r;});
+  }catch(e){SB_AVANCE={};}
+}
+
+async function siembraInit(){
+  const target=SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];
+  if(!D||D.ck!==target){
+    document.getElementById('sb-body').innerHTML='<div class="empty">Cargando...</div>';
+    await schLoad(target);
+  }
+  if(!Object.keys(SB_AVANCE).length)await siembraLoadAvance();
+  siembraBuildTabs();
+}
+
+function siembraGroups(){
+  const groups={};
+  if(!D)return groups;
+  Object.entries(D.siembra||{}).forEach(([campoKey,lotes])=>{
+    Object.entries(lotes).forEach(([loteKey,s])=>{
+      const cultivo=s.cultivo;if(!cultivo)return;
+      const k=ck(cultivo);if(k==='default')return;
+      let gkey=k,glbl=cl(cultivo);
+      if(k==='trigo'||k==='cebada'){gkey='fina';glbl='Trigo / Cebada';}
+      const loteName=loteKey.replace(/^LOTE\s*/i,'');
+      const lote=D.lotes.find(l=>l.layer===campoKey&&l.name.toUpperCase()===loteName.toUpperCase());
+      const ha=lote?parseFloat(lote.area)||0:0;
+      if(!groups[gkey])groups[gkey]={label:glbl,items:[]};
+      groups[gkey].items.push({campoKey,campoLbl:CFG[D.ck]?.campos[campoKey]?.lbl||campoKey,loteId:loteName,ha,cultivo:s.cultivo,variedadPlan:s.variedad||''});
+    });
+  });
+  return groups;
+}
+
+function siembraBuildTabs(){
+  const groups=siembraGroups();
+  const keys=Object.keys(groups).sort((a,b)=>groups[b].items.reduce((s,i)=>s+i.ha,0)-groups[a].items.reduce((s,i)=>s+i.ha,0));
+  if(!sbGroup||!groups[sbGroup])sbGroup=keys[0]||'';
+  document.getElementById('sb-tabs').innerHTML=keys.map(k=>`<div class="ctab ${k===sbGroup?'on':''}" data-g="${k}" onclick="sbSwitch(this)">${groups[k].label}</div>`).join('');
+  siembraRender();
+}
+function sbSwitch(el){sbGroup=el.dataset.g;document.querySelectorAll('#sb-tabs .ctab').forEach(x=>x.classList.remove('on'));el.classList.add('on');siembraRender();}
+
+function siembraRender(){
+  const body=document.getElementById('sb-body');
+  const groups=siembraGroups();
+  const g=groups[sbGroup];
+  if(!g){body.innerHTML='<div class="empty">Sin plan de siembra</div>';return;}
+  const items=[...g.items].sort((a,b)=>a.campoLbl.localeCompare(b.campoLbl)||a.loteId.localeCompare(b.loteId,undefined,{numeric:true}));
+  const totalHa=items.reduce((s,i)=>s+i.ha,0);
+  const sembHa=items.reduce((s,i)=>{const av=SB_AVANCE[i.campoKey+'|'+i.loteId.toUpperCase()];return s+(av?.sembrado?i.ha:0);},0);
+  const pct=totalHa>0?(sembHa/totalHa*100):0;
+  let html=`<div style="padding:12px 14px 0">
+    <div class="rb-wrap">
+      <div class="rb-lbl"><span>${g.label} — Avance de siembra</span><span style="color:var(--txt3)">${Math.round(sembHa)} / ${Math.round(totalHa)} ha · ${pct.toFixed(0)}%</span></div>
+      <div class="rb-tr" style="height:16px"><div class="rb-fill" style="width:${pct}%;background:var(--acc)"></div></div>
+    </div>
+  </div>`;
+  html+=`<div class="rsec" style="padding:0 14px">Lotes (${items.length})</div><div style="padding:0 14px 30px">`;
+  items.forEach(i=>{
+    const key=i.campoKey+'|'+i.loteId.toUpperCase();
+    const av=SB_AVANCE[key]||{};
+    html+=`<div class="sb-item">
+      <input type="checkbox" class="sb-chk" ${av.sembrado?'checked':''} onchange="sbSetField('${i.campoKey}','${i.loteId}','sembrado',this.checked)">
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div style="font-size:13px;font-weight:400">${i.campoLbl} · Lote ${i.loteId.toUpperCase()}</div>
+          <div style="font-size:11px;color:var(--txt3)">${i.ha} ha</div>
+        </div>
+        <div style="font-size:11px;color:var(--txt2)">${cl(i.cultivo)}${i.variedadPlan?' · '+i.variedadPlan+' (plan)':''}</div>
+        <div class="sb-fields">
+          <input type="date" value="${av.fecha||''}" onchange="sbSetField('${i.campoKey}','${i.loteId}','fecha',this.value)" placeholder="Fecha siembra">
+          <input type="text" value="${av.variedad||''}" placeholder="Variedad/Híbrido" onchange="sbSetField('${i.campoKey}','${i.loteId}','variedad',this.value)">
+        </div>
+      </div>
+    </div>`;
+  });
+  html+='</div>';
+  body.innerHTML=html;
+}
+
+async function sbSetField(campoKey,loteId,field,val){
+  const ck2=D?.ck||(SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0]);
+  const key=campoKey+'|'+loteId.toUpperCase();
+  const rec=SB_AVANCE[key]||{cliente_id:ck2,campo_id:campoKey,lote_id:loteId,sembrado:false,fecha:null,variedad:''};
+  rec[field]=val;
+  SB_AVANCE[key]=rec;
+  try{
+    await fetch(SB_URL+'/rest/v1/siembra_avance?on_conflict=cliente_id,campo_id,lote_id',{method:'POST',headers:{...SBH,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rec)});
+  }catch(e){console.warn('sb_avance',e.message);}
+  siembraRender();
 }
 
 // RECETAS
