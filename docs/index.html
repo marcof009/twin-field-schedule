@@ -803,13 +803,9 @@ function recR(){
 }
 function rP(s){rStk.push(s);recR();}
 function recRC(body){
-  if(SESSION.c[0]==='all'){
-    rStk.push({type:'cam',ck:ACTIVE_CLI,title:CFG[ACTIVE_CLI]?.lbl||ACTIVE_CLI});
-    recRCam(body,ACTIVE_CLI);
-    return;
-  }
-  const cs=SESSION.c.map(k=>({key:k,...CFG[k]}));
-  body.innerHTML=`<div class="rsec">Clientes</div>`+cs.map(c=>`<div class="rc" data-ck="${c.key}" data-lbl="${c.lbl}" onclick="rP({type:'cam',ck:this.dataset.ck,title:this.dataset.lbl})"><div class="rc-n">${c.lbl}</div><div class="rc-m">${Object.keys(c.campos||{}).length} campos</div></div>`).join('');
+  const ck=SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];
+  rStk.push({type:'cam',ck:ck,title:CFG[ck]?.lbl||ck});
+  recRCam(body,ck);
 }
 function recRCam(body,ck2){
   const cfg=CFG[ck2];
@@ -853,7 +849,7 @@ function recMicT(){
 let retStk=[],retP=[],retR=[];
 let retOrdenMode=false,retSel=new Set(),retRepMode=false;
 async function retInit(){
-  retStk=[];retOrdenMode=false;retRepMode=false;retSel=new Set();
+  retStk=[];retOrdenMode=false;retRepMode=false;retFiltroPend=false;retSel=new Set();
   document.getElementById('ret-title').textContent=SESSION.c[0]==='all'?'Recetas — '+(CFG[ACTIVE_CLI]?.lbl||''):'Recetas';
   document.getElementById('ret-add').style.display=SESSION.r==='admin'?'block':'none';
   document.getElementById('ret-orden-btn').style.display='block';document.getElementById('ret-rep-btn').style.display='block';
@@ -881,7 +877,7 @@ async function retInit(){
   retRend();
 }
 function retBack(){if(!retStk.length){closeMod('recetas');return;}retStk.pop();retRend();}
-function retNueva(){retStk.push({type:'nueva'});retP=[];drawState.annotation=null;retRend();}
+function retNueva(){retEditId=null;retStk.push({type:'nueva'});retP=[];drawState.annotation=null;retRend();}
 function retRend(){
   const body=document.getElementById('ret-body');const t=retStk[retStk.length-1];
   document.getElementById('ret-add').style.display=(!t&&SESSION.r==='admin')?'block':'none';
@@ -892,10 +888,11 @@ function retDashboard(){
   const pend=retR.filter(r=>r.estado==='pendiente').length;
   const ok=retR.filter(r=>r.estado==='ok').length;
   const anul=retR.filter(r=>r.estado==='anulada').length;
+  const pOn=retFiltroPend;
   return `<div style="display:flex;gap:8px;padding:10px 14px 0;flex-wrap:wrap">
-    <div style="background:rgba(38,115,168,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center">
-      <div style="font-size:22px;font-weight:200;color:var(--blu)">${pend}</div>
-      <div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--blu)">Pendientes</div>
+    <div onclick="retTogglePend()" style="cursor:pointer;background:${pOn?'var(--blu)':'rgba(38,115,168,.08)'};border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center;transition:all .15s">
+      <div style="font-size:22px;font-weight:200;color:${pOn?'#fff':'var(--blu)'}">${pend}</div>
+      <div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:${pOn?'#fff':'var(--blu)'}">Pendientes</div>
     </div>
     <div style="background:rgba(74,158,74,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center">
       <div style="font-size:22px;font-weight:200;color:var(--grn)">${ok}</div>
@@ -903,6 +900,27 @@ function retDashboard(){
     </div>
     ${anul?`<div style="background:rgba(184,50,50,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center"><div style="font-size:22px;font-weight:200;color:var(--red)">${anul}</div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--red)">Anuladas</div></div>`:''}
   </div>`;
+}
+let retFiltroPend=false;
+function retTogglePend(){retFiltroPend=!retFiltroPend;retRend();}
+function retRenderPendDetalle(){
+  const pend=retR.filter(r=>r.estado==='pendiente');
+  if(!pend.length)return `<div class="empty">No hay recetas pendientes</div>`;
+  return pend.map(r=>{
+    const campoLbl=CFG[r.cliente_id]?.campos[r.campo_id]?.lbl||r.campo_id||'—';
+    const urgColor=r.urgencia==='YA'?'var(--red)':r.urgencia?.toLowerCase().includes('2-3')?'var(--ora)':'var(--txt2)';
+    return `<div class="rli" data-id="${r.id}" onclick="retStk.push({type:'ver',id:this.dataset.id});retRend()" style="cursor:pointer">
+      <div class="rli-top">
+        <div class="rli-n">${campoLbl} · Lote ${(r.lote_id||'?').toUpperCase()}</div>
+        ${r.numero_receta?`<span style="font-size:10px;color:var(--txt3)">Rec. ${r.numero_receta}</span>`:''}
+      </div>
+      <div class="rli-m" style="margin-bottom:4px"><span>📅 ${r.fecha}</span><span>${cl(r.cultivo)||r.cultivo||'—'}</span>${r.objetivo?`<span style="background:var(--surf2);border-radius:3px;padding:1px 6px;font-size:10px">${r.objetivo}</span>`:''}${r.urgencia?`<span style="color:${urgColor}">⏱ ${r.urgencia}</span>`:''}</div>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        ${(r.productos||[]).map(p=>`<div class="prow" style="font-size:11px"><span>${p.nombre||p.n}</span><span style="color:var(--txt3)">${p.dosis||p.d} ${p.unidad||p.u||''}</span></div>`).join('')}
+      </div>
+      ${r.observaciones?`<div style="font-size:11px;color:var(--txt2);font-style:italic;margin-top:4px">${r.observaciones}</div>`:''}
+    </div>`;
+  }).join('');
 }
 function retRL(body){
   const dash=retDashboard();
@@ -912,7 +930,7 @@ function retRL(body){
     return;
   }
   if(retOrdenMode){
-    body.innerHTML=dash+`<div style="padding:10px 14px 0;font-size:11px;color:var(--txt2)">Seleccioná las recetas para incluir en la orden</div>`+
+    body.innerHTML=dash+`<div style="padding:10px 14px 0;display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-size:11px;color:var(--txt2)">Seleccioná las recetas para incluir</span><button onclick="retGenPDF()" style="background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:7px 12px;font-size:11px;font-weight:400;font-family:var(--f);white-space:nowrap">PDF (${retSel.size})</button></div>`+
     retR.map(r=>{
       const sel=retSel.has(r.id);
       return `<div class="rli" data-id="${r.id}" onclick="retToggleSel(this)" style="display:flex;align-items:center;gap:10px;${sel?'border-color:var(--acc);background:rgba(43,107,43,.04)':''}">
@@ -922,6 +940,10 @@ function retRL(body){
       </div>`;
     }).join('')+
     `<div style="padding:10px 14px"><button onclick="retGenPDF()" style="width:100%;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:12px;font-size:13px;font-weight:400;font-family:var(--f)">Generar PDF (${retSel.size} receta${retSel.size!==1?'s':''})</button></div>`;
+    return;
+  }
+  if(retFiltroPend){
+    body.innerHTML=dash+`<div style="padding:10px 14px 0;font-size:11px;color:var(--blu)">Mostrando solo pendientes — tocá el chip para ver todas</div>`+retRenderPendDetalle();
     return;
   }
   body.innerHTML=dash+retR.map(r=>{
@@ -1104,9 +1126,59 @@ function retAP(){const n=document.getElementById('rpn').value.trim();if(!n){toas
 function retRP(){const el=document.getElementById('rpl');if(!el)return;el.innerHTML=retP.map((p,i)=>'<div class="pr"><div class="pr-n">'+p.nombre+'</div><div class="pr-d">'+p.dosis+' '+p.unidad+'</div><button class="pr-del" onclick="retP.splice('+i+',1);retRP()">✕</button></div>').join('');}
 async function retG(){
   const lo=document.getElementById('rl').value;if(!lo){toast('Seleccioná un lote');return;}if(!retP.length){toast('Agregá al menos un producto');return;}
+  if(retEditId){
+    const rec={lote_id:lo,campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,anotacion:drawState.annotation||null,cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('robj').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rha')?.value)||null,observaciones:document.getElementById('rob').value,productos:retP};
+    try{
+      const res=await fetch(SB_URL+'/rest/v1/recetas?id=eq.'+retEditId,{method:'PATCH',headers:SBH,body:JSON.stringify(rec)});
+      if(!res.ok)throw new Error(await res.text());
+      toast('Receta actualizada ✓');retEditId=null;retStk=[];retInit();
+    }catch(e){toast('Error: '+e.message);}
+    return;
+  }
   const rec={lote_id:lo,campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,anotacion:drawState.annotation||null,fecha:new Date().toISOString().split('T')[0],cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('robj').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rcau')?.value)||null,observaciones:document.getElementById('rob').value,usuario:SESSION.u,estado:'pendiente',productos:retP};
   try{await sbI('recetas',rec);toast('Receta guardada ✓');retStk=[];retInit();}catch(e){toast('Error: '+e.message);}
 }
+async function retEliminar(id){
+  if(!confirm('¿Eliminar esta receta? Esta acción no se puede deshacer.'))return;
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/recetas?id=eq.'+id,{method:'DELETE',headers:SBH});
+    if(!r.ok)throw new Error(await r.text());
+    toast('Receta eliminada');
+    retR=retR.filter(x=>x.id!==id);
+    retStk.pop();retRend();
+  }catch(e){toast('Error: '+e.message);}
+}
+let retEditId=null;
+function retEditar(id){
+  retEditId=id;
+  retStk.push({type:'nueva'});
+  retP=[];
+  retRend();
+  // Precargar datos después de renderizar el form
+  setTimeout(()=>{
+    const r=retR.find(x=>x.id===id);if(!r)return;
+    const set=(elId,val)=>{const el=document.getElementById(elId);if(el&&val!=null)el.value=val;};
+    set('rc',r.cliente_id);retUC();
+    setTimeout(()=>{
+      set('rcm',r.campo_id);retUL();
+      setTimeout(()=>{
+        set('rl',r.lote_id);retUA();
+        set('rha',r.caudal);
+        set('rcu',r.cultivo);
+        set('ru',r.urgencia);
+        set('rd',r.destino);
+        set('robj',r.objetivo);
+        set('rob',r.observaciones);
+        retP=JSON.parse(JSON.stringify(r.productos||[]));
+        retRP();
+        drawState.annotation=r.anotacion||null;
+        const btn=document.querySelector('.rfsave');
+        if(btn)btn.textContent='Guardar cambios';
+      },400);
+    },400);
+  },50);
+}
+
 function retRD(body,id){
   const r=retR.find(x=>x.id===id);if(!r){body.innerHTML='<div class="empty">No encontrada</div>';return;}
   body.innerHTML='<div class="rform"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><div style="font-size:22px;font-weight:200;letter-spacing:-.5px">Rec. '+(r.numero_receta||'—')+'</div><div style="font-size:11px;color:var(--txt2)">'+r.fecha+'</div></div><span class="ep ep-'+(r.estado||'pendiente')+'" style="font-size:10px;padding:4px 8px">'+(r.estado||'pendiente')+'</span></div><div class="sgrid"><div class="si"><div class="si-l">Lote</div><div class="si-v" style="font-size:12px">'+(r.lote_id||'—')+'</div></div><div class="si"><div class="si-l">Cultivo</div><div class="si-v" style="font-size:12px">'+(r.cultivo||'—')+'</div></div><div class="si"><div class="si-l">Urgencia</div><div class="si-v" style="font-size:12px">'+(r.urgencia||'—')+'</div></div><div class="si"><div class="si-l">Caudal</div><div class="si-v" style="font-size:12px">'+(r.caudal||'—')+' L/ha</div></div></div>'+(r.objetivo?'<div style="background:var(--surf2);border-radius:6px;padding:9px 11px;margin:8px 0;font-size:12px"><span style="font-size:8px;font-weight:500;text-transform:uppercase;color:var(--txt3);display:block;margin-bottom:2px">Objetivo</span>'+r.objetivo+'</div>':'')+'<div class="rfs">Productos</div>'+(r.productos||[]).map(p=>'<div class="pr"><div class="pr-n">'+(p.nombre||p.n||'—')+'</div><div class="pr-d">'+(p.dosis||p.d||'—')+' '+(p.unidad||p.u||'')+'</div></div>').join('')+(r.observaciones?'<div class="rfs">Obs.</div><div style="font-size:12px;line-height:1.5">'+r.observaciones+'</div>':'')
@@ -1123,6 +1195,11 @@ function retRD(body,id){
       <button onclick="retMarcarAplicado('${r.id}')" style="width:100%;background:var(--grn);color:#fff;border:none;border-radius:var(--r2);padding:11px;font-size:12px;font-weight:400;font-family:var(--f)">✓ Marcar como aplicado</button>
     </div>`
     :r.estado==='ok'&&r.fecha_aplicacion?`<div style="background:rgba(74,158,74,.08);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--grn)">✓ Aplicado el ${r.fecha_aplicacion}${r.operador?' por '+r.operador:''}</div>`:'')
+    +`<div style="display:flex;gap:8px;margin-top:16px">
+      <button onclick="retStk.pop();retRend()" style="flex:1;background:none;border:1px solid var(--bord2);border-radius:var(--r2);padding:11px;font-size:12px;color:var(--txt2);font-family:var(--f)">Cancelar</button>
+      ${SESSION.r==='admin'?`<button onclick="retEditar('${r.id}')" style="flex:1;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:11px;font-size:12px;color:var(--txt);font-family:var(--f)">Editar</button>
+      <button onclick="retEliminar('${r.id}')" style="flex:1;background:none;border:1px solid var(--red);border-radius:var(--r2);padding:11px;font-size:12px;color:var(--red);font-family:var(--f)">Eliminar</button>`:''}
+    </div>`
     +'</div>';
 }
 
