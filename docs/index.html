@@ -235,7 +235,9 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 #sb-tabs::-webkit-scrollbar{display:none}
 .sb-item{padding:9px 14px;border-bottom:1px solid var(--bord);display:flex;gap:10px;align-items:flex-start}
 .sb-item:last-child{border-bottom:none}
-.sb-chk{width:21px;height:21px;flex-shrink:0;margin-top:2px;accent-color:var(--acc);cursor:pointer}
+.sb-chk{width:22px;height:22px;flex-shrink:0;margin-top:2px;cursor:pointer;-webkit-appearance:none;appearance:none;border:2px solid var(--bord2);border-radius:5px;background:var(--surf);position:relative;outline:none}
+.sb-chk:checked{background:var(--acc);border-color:var(--acc)}
+.sb-chk:checked::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700}
 .sb-fields{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:5px}
 .sb-fields input{background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r2);padding:6px 9px;font-size:11px;font-family:var(--f);outline:none;width:100%}
 .sb-fields input:focus{border-color:var(--acc)}
@@ -930,12 +932,26 @@ function siembraRender(){
   if(!g){body.innerHTML='<div class="empty">Sin plan de siembra</div>';return;}
   const items=[...g.items].sort((a,b)=>a.campoLbl.localeCompare(b.campoLbl)||a.loteId.localeCompare(b.loteId,undefined,{numeric:true}));
   const totalHa=items.reduce((s,i)=>s+i.ha,0);
-  const sembHa=items.reduce((s,i)=>{const av=SB_AVANCE[i.campoKey+'|'+i.loteId.toUpperCase()];return s+(av?.sembrado?i.ha:0);},0);
+  const isFina=sbGroup==='fina';
+  const sembrado=(i)=>{const av=SB_AVANCE[i.campoKey+'|'+i.loteId.toUpperCase()];return !!(av?.sembrado||av?.fecha);};
+  const sembHa=items.reduce((s,i)=>s+(sembrado(i)?i.ha:0),0);
   const pct=totalHa>0?(sembHa/totalHa*100):0;
+  let barInner;
+  if(isFina){
+    const trigoT=items.filter(i=>ck(i.cultivo)==='trigo').reduce((s,i)=>s+i.ha,0);
+    const cebadaT=items.filter(i=>ck(i.cultivo)==='cebada').reduce((s,i)=>s+i.ha,0);
+    const trigoS=items.filter(i=>ck(i.cultivo)==='trigo'&&sembrado(i)).reduce((s,i)=>s+i.ha,0);
+    const cebadaS=items.filter(i=>ck(i.cultivo)==='cebada'&&sembrado(i)).reduce((s,i)=>s+i.ha,0);
+    const pT=totalHa>0?trigoS/totalHa*100:0,pC=totalHa>0?cebadaS/totalHa*100:0;
+    barInner=`<div style="display:flex;width:100%;height:100%"><div style="width:${pT}%;background:#2d7a2d;transition:width .3s"></div><div style="width:${pC}%;background:#7ec850;transition:width .3s"></div></div>`;
+  }else{
+    barInner=`<div class="rb-fill" style="width:${pct}%;background:var(--acc)"></div>`;
+  }
   let html=`<div style="padding:12px 14px 0">
     <div class="rb-wrap">
       <div class="rb-lbl"><span>${g.label} — Avance de siembra</span><span style="color:var(--txt3)">${Math.round(sembHa)} / ${Math.round(totalHa)} ha · ${pct.toFixed(0)}%</span></div>
-      <div class="rb-tr" style="height:16px"><div class="rb-fill" style="width:${pct}%;background:var(--acc)"></div></div>
+      <div class="rb-tr" style="height:16px;overflow:hidden">${barInner}</div>
+      ${isFina?`<div style="display:flex;gap:14px;margin-top:5px;font-size:10px;color:var(--txt3)"><span><span class="sb-dot" style="background:#2d7a2d"></span>Trigo</span><span><span class="sb-dot" style="background:#7ec850"></span>Cebada</span></div>`:''}
     </div>
   </div>`;
   html+=`<div class="rsec" style="padding:0 14px">Lotes (${items.length})</div><div style="background:var(--surf);border-top:1px solid var(--bord);border-bottom:1px solid var(--bord);margin-bottom:20px">`;
