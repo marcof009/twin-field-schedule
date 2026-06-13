@@ -233,11 +233,15 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 .lote-thumb-label{position:absolute;bottom:4px;right:6px;font-size:9px;color:var(--txt3);font-weight:300}
 #sb-tabs{flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bord);display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 #sb-tabs::-webkit-scrollbar{display:none}
-.sb-item{background:var(--surf);border-radius:var(--r);padding:11px 13px;margin-bottom:7px;border:1px solid var(--bord);box-shadow:var(--sh);display:flex;gap:10px;align-items:flex-start}
-.sb-chk{width:22px;height:22px;flex-shrink:0;margin-top:2px;accent-color:var(--acc);cursor:pointer}
-.sb-fields{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
-.sb-fields input{background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r2);padding:7px 9px;font-size:12px;font-family:var(--f);outline:none;width:100%}
+.sb-item{padding:9px 14px;border-bottom:1px solid var(--bord);display:flex;gap:10px;align-items:flex-start}
+.sb-item:last-child{border-bottom:none}
+.sb-chk{width:21px;height:21px;flex-shrink:0;margin-top:2px;accent-color:var(--acc);cursor:pointer}
+.sb-fields{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:5px}
+.sb-fields input{background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r2);padding:6px 9px;font-size:11px;font-family:var(--f);outline:none;width:100%}
 .sb-fields input:focus{border-color:var(--acc)}
+.sb-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.sb-trigo .sb-dot{background:#2d7a2d}
+.sb-cebada .sb-dot{background:#7ec850}
 
 /* SUELOS */
 #s-suelos{background:var(--bg)}
@@ -934,15 +938,17 @@ function siembraRender(){
       <div class="rb-tr" style="height:16px"><div class="rb-fill" style="width:${pct}%;background:var(--acc)"></div></div>
     </div>
   </div>`;
-  html+=`<div class="rsec" style="padding:0 14px">Lotes (${items.length})</div><div style="padding:0 14px 30px">`;
+  html+=`<div class="rsec" style="padding:0 14px">Lotes (${items.length})</div><div style="background:var(--surf);border-top:1px solid var(--bord);border-bottom:1px solid var(--bord);margin-bottom:20px">`;
   items.forEach(i=>{
     const key=i.campoKey+'|'+i.loteId.toUpperCase();
     const av=SB_AVANCE[key]||{};
-    html+=`<div class="sb-item">
+    const ck3=ck(i.cultivo);
+    const dotClass=sbGroup==='fina'?(ck3==='trigo'?'sb-trigo':ck3==='cebada'?'sb-cebada':''):'';
+    html+=`<div class="sb-item ${dotClass}">
       <input type="checkbox" class="sb-chk" ${av.sembrado?'checked':''} onchange="sbSetField('${i.campoKey}','${i.loteId}','sembrado',this.checked)">
       <div style="flex:1">
         <div style="display:flex;justify-content:space-between;align-items:baseline">
-          <div style="font-size:13px;font-weight:400">${i.campoLbl} · Lote ${i.loteId.toUpperCase()}</div>
+          <div style="font-size:13px;font-weight:400">${dotClass?'<span class="sb-dot"></span>':''}${i.campoLbl} · Lote ${i.loteId.toUpperCase()}</div>
           <div style="font-size:11px;color:var(--txt3)">${i.ha} ha</div>
         </div>
         <div style="font-size:11px;color:var(--txt2)">${cl(i.cultivo)}${i.variedadPlan?' · '+i.variedadPlan+' (plan)':''}</div>
