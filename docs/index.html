@@ -303,9 +303,9 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
     <div class="mg">
       <div class="mc c-s" onclick="openMod('schedule')"><div class="mac"></div><div class="mi">📅</div><div class="mn">Schedule</div><div class="md">Mapa de lotes y cultivos</div></div>
       <div class="mc c-rec" onclick="openMod('recorridas')"><div class="mac"></div><div class="mi">📝</div><div class="mn">Recorridas</div><div class="md">Observaciones en campo</div></div>
-      <div class="mc c-r" onclick="openMod('recetas')"><div class="mac"></div><div class="mi">🧪</div><div class="mn">Recetas</div><div class="md">Gestión de pulverizaciones</div></div>
-      <div class="mc c-su" onclick="openMod('suelos')"><div class="mac"></div><div class="mi">🪴</div><div class="mn">Suelos</div><div class="md">Análisis de laboratorio</div></div>
-      <div class="mc c-sb" onclick="openMod('siembra')"><div class="mac"></div><div class="mi">🌾</div><div class="mn">Siembra</div><div class="md">Avance del plan de siembra</div></div>
+      <div class="mc c-r" onclick="openMod('recetas')"><div class="mac"></div><div class="mi">💧</div><div class="mn">Recetas</div><div class="md">Gestión de pulverizaciones</div></div>
+      <div class="mc c-su" onclick="openMod('suelos')"><div class="mac"></div><div class="mi">🧪</div><div class="mn">Análisis de Suelos</div><div class="md">Análisis de laboratorio</div></div>
+      <div class="mc c-sb" onclick="openMod('siembra')"><div class="mac"></div><div class="mi">🚜</div><div class="mn">Siembra</div><div class="md">Avance del plan de siembra</div></div>
     </div>
   </div>
 </div>
@@ -347,7 +347,7 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 
 <!-- SUELOS -->
 <div id="s-suelos" class="screen">
-  <div class="ah"><button class="ab" onclick="closeMod('suelos')">Inicio</button><div class="at">Suelos</div></div>
+  <div class="ah"><button class="ab" onclick="closeMod('suelos')">Inicio</button><div class="at">Análisis de Suelos</div></div>
   <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
     <div class="uz" onclick="document.getElementById('si').click()"><div class="uz-i">📄</div><div class="uz-t">Subir informe de laboratorio</div><div class="uz-s">FERTILAB · SUELOFERTIL · PDF o Excel</div></div>
     <input type="file" id="si" accept=".pdf,.xlsx,.xls" style="display:none" onchange="sueloFile(this)">
@@ -824,7 +824,7 @@ let sTs=0;document.getElementById('spnl').addEventListener('touchstart',e=>{sTs=
 // RECORRIDAS
 let rStk=[],rObs={},rMic=false;
 function recInit(){rStk=[];recR();}
-function recBack(){if(!rStk.length){closeMod('recorridas');return;}rStk.pop();recR();}
+function recBack(){if(rStk.length<=1){closeMod('recorridas');return;}rStk.pop();recR();}
 function recR(){
   const body=document.getElementById('r-body');
   document.getElementById('r-title').textContent=rStk.length?rStk[rStk.length-1].title:'Recorridas';
@@ -1007,7 +1007,7 @@ async function retInit(){
       const wb=XLSX.read(buf,{type:'array'});
       const ws=wb.Sheets[wb.SheetNames[0]];
       const rows=XLSX.utils.sheet_to_json(ws,{raw:false});
-      PRODUCTOS=rows.map(r=>({nombre:String(r.nombre||'').trim(),categoria:String(r.categoria||'').trim(),unidad:String(r.unidad||'L/ha').trim()})).filter(p=>p.nombre);
+      PRODUCTOS=rows.map(r=>({nombre:String(r.nombre||'').trim(),categoria:String(r.categoria||'').trim(),unidad:String(r.unidad||'L/ha').trim(),pa:String(r.principio_activo||'').trim()})).filter(p=>p.nombre);
     }catch(e){console.warn('productos.xlsx no disponible',e.message);}
   }
   try{
@@ -1261,15 +1261,21 @@ function retFiltrarProd(q){
   box.style.display='block';
   box.innerHTML=matches.map(p=>`<div onclick="retSelProd('${p.nombre.replace(/'/g,"\'")}','${p.unidad}')" style="padding:7px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--bord);display:flex;justify-content:space-between;align-items:center"><span>${p.nombre}</span><span style="font-size:10px;color:var(--txt3)">${p.categoria}</span></div>`).join('');
 }
-function retSelProd(nombre,unidad){
+let retSelPA='';
+function retSelProd(nombre,unidad,pa){
+  retSelPA=pa||'';
   const inp=document.getElementById('rpn');if(inp)inp.value=nombre;
   const su=document.getElementById('rpn-sugg');if(su)su.style.display='none';
   const pu=document.getElementById('rpu');
   if(pu){const u=unidad.toLowerCase();if(u.includes('kg'))pu.value='kg/ha';else if(u.includes('cc'))pu.value='cc/ha';else if(u.includes('gr')||u.includes('g/'))pu.value='g/ha';else pu.value='L/ha';}
+  // mostrar principio activo debajo del input
+  let paEl=document.getElementById('rpn-pa');
+  if(!paEl){paEl=document.createElement('div');paEl.id='rpn-pa';paEl.style.cssText='font-size:10px;color:var(--txt3);margin-top:2px';inp.parentElement.appendChild(paEl);}
+  paEl.textContent=pa||'';
   document.getElementById('rpd')?.focus();
 }
-function retAP(){const n=document.getElementById('rpn').value.trim();if(!n){toast('Nombre requerido');return;}const su=document.getElementById('rpn-sugg');if(su)su.style.display='none';retP.push({nombre:n,dosis:document.getElementById('rpd').value,unidad:document.getElementById('rpu').value});document.getElementById('rpn').value='';document.getElementById('rpd').value='';retRP();}
-function retRP(){const el=document.getElementById('rpl');if(!el)return;el.innerHTML=retP.map((p,i)=>'<div class="pr"><div class="pr-n">'+p.nombre+'</div><div class="pr-d">'+p.dosis+' '+p.unidad+'</div><button class="pr-del" onclick="retP.splice('+i+',1);retRP()">✕</button></div>').join('');}
+function retAP(){const n=document.getElementById('rpn').value.trim();if(!n){toast('Nombre requerido');return;}const su=document.getElementById('rpn-sugg');if(su)su.style.display='none';retP.push({nombre:n,dosis:document.getElementById('rpd').value,unidad:document.getElementById('rpu').value,pa:retSelPA});document.getElementById('rpn').value='';document.getElementById('rpd').value='';retSelPA='';const paEl=document.getElementById('rpn-pa');if(paEl)paEl.textContent='';retRP();}
+function retRP(){const el=document.getElementById('rpl');if(!el)return;el.innerHTML=retP.map((p,i)=>'<div class="pr"><div><div class="pr-n">'+p.nombre+'</div>'+(p.pa?'<div style="font-size:10px;color:var(--txt3)">'+p.pa+'</div>':'')+'</div><div class="pr-d">'+p.dosis+' '+p.unidad+'</div><button class="pr-del" onclick="retP.splice('+i+',1);retRP()">✕</button></div>').join('');}
 async function retG(){
   const lo=document.getElementById('rl').value;if(!lo){toast('Seleccioná un lote');return;}if(!retP.length){toast('Agregá al menos un producto');return;}
   if(retEditId){
