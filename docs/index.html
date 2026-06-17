@@ -863,9 +863,89 @@ function recRCam(body,ck2){
     return `<div class="rc" data-lk="${k}" data-ck="${ck2}" data-lbl="${v.lbl}" onclick="rP({type:'lots',lk:this.dataset.lk,ck:this.dataset.ck,title:this.dataset.lbl})"><div class="rc-n">${v.lbl}</div><div class="rc-m"><span>${ls.length} lotes</span><span>${Math.round(ha)} ha</span></div></div>`;
   }).join('');
 }
+async function recInformePDF(lk,ck2){
+  const hoy=new Date().toISOString().split('T')[0];
+  const hoyFmt=hoy.split('-').reverse().join('/');
+  const campoLbl=CFG[ck2]?.campos[lk]?.lbl||lk;
+  const cliLbl=CFG[ck2]?.lbl||ck2;
+  const ls=D?.lotes.filter(l=>l.layer===lk)||[];
+  // Cargar historial del día de hoy para todos los lotes
+  let hist=[];
+  try{hist=await sbG('historial_lotes',`cliente_id=eq.${ck2}&campo_id=eq.${lk}&fecha=eq.${hoy}&order=lote_id.asc`);}catch(e){}
+  // Combinar con rObs del día
+  const obsHoy={};
+  ls.forEach(l=>{
+    const k=l.name+lk;
+    const local=(rObs[k]||[]).filter(o=>o.fecha===hoy);
+    const remote=hist.filter(h=>h.lote_id===l.name);
+    const all=[...local,...remote];
+    if(all.length)obsHoy[l.name]=all;
+  });
+  if(!Object.keys(obsHoy).length){toast('No hay observaciones de hoy para generar informe');return;}
+  // Generar PDF con jsPDF
+  const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});
+  const W=210,M=14;let y=20;
+  // Header
+  doc.setDrawColor(43,107,43);doc.setLineWidth(0.5);doc.line(0,22,W,22);
+  doc.setFontSize(20);doc.setFont('helvetica','bold');
+  doc.setTextColor(204,92,8);doc.text('TWIN',M,14);
+  const tw=doc.getTextWidth('TWIN');
+  doc.setTextColor(204,92,8);doc.text(' FIELD',M+tw,14);
+  doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(60,60,60);
+  doc.text('Ing. Agr. Marcos Fernández',W-M,7,{align:'right'});
+  doc.text('(+54) 2983 618926  |  CIAFBA n°737',W-M,12,{align:'right'});
+  doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
+  doc.text(`${cliLbl} — ${campoLbl}`,W/2,10,{align:'center'});
+  doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);
+  doc.text('Informe de Recorrida',W/2,15,{align:'center'});
+  y=30;
+  // Fecha
+  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(43,107,43);
+  doc.text('Fecha: '+hoyFmt,M,y);
+  y+=8;
+  // Lotes
+  const LABELS=[['cultivo','Cultivo'],['maleza','Malezas'],['plaga','Plagas'],['enfermedad','Enfermedades'],['fertilidad','Fertilidad'],['obs','Observaciones']];
+  Object.entries(obsHoy).sort(([a],[b])=>a.localeCompare(b,undefined,{numeric:true})).forEach(([loteId,obs])=>{
+    if(y>270){doc.addPage();y=20;}
+    // Header lote
+    doc.setFillColor(43,107,43);doc.rect(M,y,W-M*2,6,'F');
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+    const loteObj=ls.find(l=>l.name===loteId);
+    const val=loteObj?schGC(loteObj):'';
+    doc.text(`Lote ${loteId.toUpperCase()}${loteObj?' · '+loteObj.area+' ha':''}${val?' · '+cl(val):''}`,M+2,y+4);
+    y+=8;
+    // Obs del lote (tomar la más reciente)
+    const ob=obs[0];
+    const txt=ob.texto||'';
+    const partes={};
+    if(txt.includes('|')){txt.split('|').forEach(p=>{const pm=p.trim().match(/^([^:]+):\s*(.*)/);if(pm)partes[pm[1].trim().toLowerCase()]=pm[2].trim();else if(p.trim())partes['obs']=(partes['obs']?partes['obs']+' ':'')+p.trim();});}
+    else{partes['obs']=txt;}
+    LABELS.forEach(([k,lbl])=>{
+      if(!partes[k]||partes[k].toLowerCase()==='no') return;
+      if(y>275){doc.addPage();y=20;}
+      doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(80,80,80);
+      doc.text(lbl+':',M+2,y);
+      doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);
+      const lines=doc.splitTextToSize(partes[k],W-M*2-28);
+      doc.text(lines,M+28,y);
+      y+=lines.length*4+1;
+    });
+    y+=4;
+  });
+  // Footer
+  doc.setFontSize(7);doc.setTextColor(150,150,150);
+  doc.text('Generado '+hoyFmt+' — Twin Field Suite',W/2,290,{align:'center'});
+  doc.save(`Recorrida_${campoLbl}_${hoy}.pdf`);
+  toast('PDF generado ✓');
+}
+
 function recRLots(body,lk,ck2){
   const ls=D?.lotes.filter(l=>l.layer===lk)||[];const hoy=new Date().toISOString().split('T')[0];
-  body.innerHTML='<div class="rsec">'+ls.length+' lotes</div>'+ls.map(l=>{
+  const campoLbl=CFG[ck2]?.campos[lk]?.lbl||lk;
+  body.innerHTML=`<div style="padding:10px 14px 0;display:flex;justify-content:space-between;align-items:center">
+    <div class="rsec" style="margin:0">${ls.length} lotes</div>
+    <button onclick="recInformePDF('${lk}','${ck2}')" style="background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:7px 12px;font-size:11px;font-weight:400;font-family:var(--f)">📄 Informe</button>
+  </div>`+ls.map(l=>{
     const obs=rObs[l.name+lk]||[];const th=obs.some(o=>o.fecha===hoy);const val=schGC(l);
     return `<div class="rc" data-lid="${l.name}" data-lk="${lk}" onclick="rP({type:'lot',lid:this.dataset.lid,lk:this.dataset.lk,title:'Lote '+this.dataset.lid.toUpperCase()})"><div class="rc-n">${l.name.toUpperCase()}</div><div class="rc-m"><span>${l.area} ha</span><span style="color:${cc(val)}">${cl(val)}</span>${th?'<span class="bh">✓ hoy</span>':''}</div></div>`;
   }).join('');
