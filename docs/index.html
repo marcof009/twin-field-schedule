@@ -184,6 +184,17 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 .omic{background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:0 12px;font-size:16px}
 .omic.rec{border-color:var(--red);animation:pulse 1s infinite}
 .osave{flex:1;background:var(--txt);color:var(--bg);border:none;border-radius:var(--r2);padding:10px;font-size:12px;font-weight:400;letter-spacing:.3px}
+.of-field{margin-bottom:8px}
+.of-field label{display:block;font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:3px}
+.of-field input,.of-field textarea{width:100%;background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r2);padding:8px 10px;font-size:12px;font-family:var(--f);outline:none;color:var(--txt)}
+.of-field input:focus,.of-field textarea:focus{border-color:var(--acc)}
+.hcard{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);margin-bottom:8px;overflow:hidden}
+.hcard-fecha{background:var(--surf2);padding:6px 11px;font-size:10px;font-weight:500;color:var(--txt2);border-bottom:1px solid var(--bord);display:flex;justify-content:space-between}
+.hcard-body{padding:9px 11px}
+.hcard-row{display:flex;gap:6px;margin-bottom:4px;font-size:12px;align-items:baseline}
+.hcard-row:last-child{margin-bottom:0}
+.hcard-lbl{font-size:9px;font-weight:500;letter-spacing:.4px;text-transform:uppercase;color:var(--txt3);min-width:70px;flex-shrink:0}
+.hcard-val{color:var(--txt);line-height:1.4}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .oi{border-radius:var(--r2);padding:9px 11px;margin-bottom:5px;border-left:2px solid var(--bord2)}
 .oi.maleza{border-left-color:#e67e22}.oi.plaga{border-left-color:var(--red)}.oi.enfermedad{border-left-color:#8e44ad}.oi.general{border-left-color:var(--blu)}.oi.fertilidad{border-left-color:var(--grn)}
@@ -859,26 +870,81 @@ function recRLots(body,lk,ck2){
     return `<div class="rc" data-lid="${l.name}" data-lk="${lk}" onclick="rP({type:'lot',lid:this.dataset.lid,lk:this.dataset.lk,title:'Lote '+this.dataset.lid.toUpperCase()})"><div class="rc-n">${l.name.toUpperCase()}</div><div class="rc-m"><span>${l.area} ha</span><span style="color:${cc(val)}">${cl(val)}</span>${th?'<span class="bh">✓ hoy</span>':''}</div></div>`;
   }).join('');
 }
+function fmtHCard(o){
+  // Parsear el texto guardado (puede venir como "cultivo|M:...|P:...|E:...|F:...|O:..." o texto libre)
+  const txt=o.texto||o.descripcion||'';
+  const partes={};
+  // Intentar parsear formato estructurado con separador |
+  if(txt.includes('|')){
+    txt.split('|').forEach(p=>{
+      const pm=p.trim().match(/^([^:]+):\s*(.*)/);
+      if(pm){partes[pm[1].trim().toLowerCase()]=pm[2].trim();}
+      else if(p.trim()) partes['obs']=(partes['obs']?partes['obs']+' ':'')+p.trim();
+    });
+  } else {
+    // Texto libre — mostrar como observación
+    partes['obs']=txt;
+  }
+  const LABELS=[['cultivo','Cultivo'],['maleza','Malezas'],['plaga','Plagas'],['enfermedad','Enfermedades'],['fertilidad','Fertilidad'],['obs','Obs.']];
+  const rows=LABELS.filter(([k])=>partes[k]&&partes[k].toLowerCase()!=='no').map(([k,lbl])=>`<div class="hcard-row"><span class="hcard-lbl">${lbl}</span><span class="hcard-val">${partes[k]}</span></div>`).join('');
+  return `<div class="hcard"><div class="hcard-fecha"><span>${o.fecha||''}</span><span style="color:var(--txt3)">${o.usuario||''}</span></div><div class="hcard-body">${rows||`<div class="hcard-val" style="color:var(--txt2)">${txt}</div>`}</div></div>`;
+}
+
 async function recRLot(body,lid,lk){
   const l=D?.lotes.find(x=>x.name===lid&&x.layer===lk);
   const val=schGC(l||{});const ok=lid+lk;const obs=rObs[ok]||[];
-  const TIPOS=['Maleza','Plaga','Enfermedad','Fertilidad','General'];
-  // Cargar historial desde historial_lotes
-  let hist=[];
   const ck2=D?.ck||(SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0]);
-  try{
-    hist=await sbG('historial_lotes',`cliente_id=eq.${ck2}&campo_id=eq.${lk}&lote_id=eq.${lid}&order=fecha.desc&limit=100`);
-  }catch(e){hist=[];}
-  const todosObs=[...obs.map(o=>({...o,fuente:'nueva'})),...hist.map(h=>({...h,texto:h.texto,fuente:'hist'}))];
-  todosObs.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
-  body.innerHTML=`<div class="lhb"><div class="lhn">${lid.toUpperCase()}</div><div class="lhs">${l?.campo||''} · ${l?.area||'?'} ha</div>${val?`<div class="lcp"><span style="display:inline-block;width:7px;height:7px;border-radius:1px;background:${cc(val)}"></span>${cl(val)}</div>`:''}</div><div style="padding:12px 14px"><div class="of"><div class="of-t">Nueva observación</div><div class="tipos">${TIPOS.map(t=>`<div class="tipo-btn" id="ot-${t.toLowerCase()}" onclick="recST('${t.toLowerCase()}')">${t}</div>`).join('')}</div><textarea class="ota" id="ota" rows="3" placeholder="Describí lo que observás..."></textarea><div class="oacts"><button class="omic" id="omic" onclick="recMicT()">🎤</button><button class="osave" onclick="recSave('${lid}','${lk}')">Guardar</button></div></div><div class="rsec">Historial (${todosObs.length})</div><div id="ol">${todosObs.length?todosObs.map(o=>`<div class="oi ${o.tipo||'general'}"><div class="oi-top"><span class="oi-tipo">${o.tipo||'general'}</span><span class="oi-fecha">${o.fecha||''}</span></div><div class="oi-txt">${o.texto||o.descripcion||''}</div></div>`).join(''):'<div class="empty">Sin observaciones</div>'}</div></div>`;
+  let hist=[];
+  try{hist=await sbG('historial_lotes',`cliente_id=eq.${ck2}&campo_id=eq.${lk}&lote_id=eq.${lid}&order=fecha.desc&limit=100`);}catch(e){hist=[];}
+  const todosObs=[...obs.map(o=>({...o})),...hist].sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  body.innerHTML=`<div class="lhb"><div class="lhn">${lid.toUpperCase()}</div><div class="lhs">${l?.campo||''} · ${l?.area||'?'} ha</div>${val?`<div class="lcp"><span style="display:inline-block;width:7px;height:7px;border-radius:1px;background:${cc(val)}"></span>${cl(val)}</div>`:''}</div>
+  <div style="padding:12px 14px">
+    <div class="of">
+      <div class="of-t">Nueva observación</div>
+      <div class="of-field"><label>Cultivo / Estado fenológico</label><input type="text" id="o-cultivo" placeholder="Ej: Trigo B802 Z3.2"></div>
+      <div class="of-field"><label>Malezas</label><input type="text" id="o-maleza" placeholder="Ej: Rye grass, nabon"></div>
+      <div class="of-field"><label>Plagas</label><input type="text" id="o-plaga" placeholder="Ej: No"></div>
+      <div class="of-field"><label>Enfermedades</label><input type="text" id="o-enfermedad" placeholder="Ej: Roya amarilla baja"></div>
+      <div class="of-field"><label>Fertilidad</label><input type="text" id="o-fertilidad" placeholder="Ej: Aplicado solmix"></div>
+      <div class="of-field"><label>Observaciones</label><textarea id="o-obs" rows="2" style="width:100%;background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r2);padding:8px 10px;font-size:12px;font-family:var(--f);outline:none" placeholder="Notas adicionales..."></textarea></div>
+      <div class="oacts"><button class="omic" id="omic" onclick="recMicObs()">🎤</button><button class="osave" onclick="recSave('${lid}','${lk}')">Guardar</button></div>
+    </div>
+    <div class="rsec">Historial (${todosObs.length})</div>
+    <div id="ol">${todosObs.length?todosObs.map(fmtHCard).join(''):'<div class="empty">Sin observaciones registradas</div>'}</div>
+  </div>`;
 }
 let rTipo='general';
 function recST(t){rTipo=t;document.querySelectorAll('.tipo-btn').forEach(b=>b.classList.toggle('on',b.id==='ot-'+t));}
+function recMicObs(){
+  // Dictado sobre el campo de obs
+  const btn=document.getElementById('omic');
+  if(rMic){if(window._sr){window._sr.stop();}return;}
+  const sr=new (window.SpeechRecognition||window.webkitSpeechRecognition)();
+  window._sr=sr;sr.lang='es-AR';sr.continuous=true;sr.interimResults=false;
+  sr.onresult=e=>{const t=e.results[e.results.length-1][0].transcript;const el=document.getElementById('o-obs');if(el)el.value=(el.value?el.value+' ':'')+t;};
+  sr.onerror=sr.onend=()=>{rMic=false;if(btn){btn.textContent='🎤';btn.classList.remove('rec');}};
+  sr.start();rMic=true;if(btn){btn.textContent='🔴';btn.classList.add('rec');}
+}
 async function recSave(lid,lk){
-  const txt=document.getElementById('ota')?.value?.trim();if(!txt){toast('Escribí una observación');return;}
+  const cultivo=document.getElementById('o-cultivo')?.value?.trim()||'';
+  const maleza=document.getElementById('o-maleza')?.value?.trim()||'';
+  const plaga=document.getElementById('o-plaga')?.value?.trim()||'';
+  const enferm=document.getElementById('o-enfermedad')?.value?.trim()||'';
+  const ferti=document.getElementById('o-fertilidad')?.value?.trim()||'';
+  const obs=document.getElementById('o-obs')?.value?.trim()||'';
+  if(!cultivo&&!maleza&&!plaga&&!enferm&&!ferti&&!obs){toast('Completá al menos un campo');return;}
+  // Armar texto estructurado con separador |
+  const partes=[];
+  if(cultivo)partes.push('cultivo: '+cultivo);
+  if(maleza)partes.push('maleza: '+maleza);
+  if(plaga)partes.push('plaga: '+plaga);
+  if(enferm)partes.push('enfermedad: '+enferm);
+  if(ferti)partes.push('fertilidad: '+ferti);
+  if(obs)partes.push('obs: '+obs);
+  const txt=partes.join(' | ');
+  const tipo=maleza?'Maleza':plaga&&plaga.toLowerCase()!=='no'?'Plaga':enferm&&enferm.toLowerCase()!=='no'?'Enfermedad':ferti?'Fertilidad':'General';
   const ck2=D?.ck||(SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0]);
-  const ob={lote_id:lid,campo_id:lk,cliente_id:ck2,tipo:rTipo,texto:txt,fecha:new Date().toISOString().split('T')[0],usuario:SESSION.u};
+  const ob={lote_id:lid,campo_id:lk,cliente_id:ck2,tipo,texto:txt,fecha:new Date().toISOString().split('T')[0],usuario:SESSION.u};
   try{await sbI('historial_lotes',ob);}catch(e){console.warn('offline',e.message);}
   const k=lid+lk;if(!rObs[k])rObs[k]=[];rObs[k].unshift({...ob});
   toast('Guardado ✓');recRLot(document.getElementById('r-body'),lid,lk);
