@@ -431,6 +431,7 @@ const CFG = {
   almarmat:{lbl:'Almarmat',campos:{el_cholo:{lbl:'El Cholo',shp:'el_cholo.zip'},la_chicha:{lbl:'La Chicha',shp:'la_chicha.zip'}},pulv:'almarmat.xlsx',pm:{}},
 };
 
+const CLAUDE_PROXY='https://twin-field-proxy.marcosf009.workers.dev';
 let PRODUCTOS=[];
 let ACTIVE_CLI='la_alicia';
 
@@ -1526,6 +1527,194 @@ function retRD(body,id){
 // SUELOS
 let sHist=[];
 function suelInit(){document.getElementById('shist').innerHTML='<div class="empty">Sin análisis cargados</div>';}
+
+async function sueloFile(input){
+  const file=input.files[0];if(!file)return;
+  const prev=document.getElementById('sprev');
+  prev.innerHTML='<div class="empty">⏳ Procesando con IA...</div>';
+  try{
+    // Leer como base64
+    const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+    const isXlsx=file.name.match(/\.xlsx?$/i);
+    const ck2=SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];
+    const cliLbl=CFG[ck2]?.lbl||ck2;
+
+    // Llamar a Claude via proxy
+    const payload={
+      model:'claude-sonnet-4-6',
+      max_tokens:4000,
+      messages:[{
+        role:'user',
+        content:[
+          {type:isXlsx?'document':'document',source:{type:'base64',media_type:isXlsx?'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'application/pdf',data:b64}},
+          {type:'text',text:`Sos un asistente agrícola. Extraé los datos de análisis de suelo de este informe de laboratorio para el cliente "${cliLbl}".
+
+Devolvé SOLO un JSON válido (sin markdown, sin texto extra) con esta estructura:
+{
+  "establecimiento": "nombre del campo/establecimiento",
+  "laboratorio": "nombre del laboratorio",
+  "archivo": "código de planilla",
+  "fecha": "DD/MM/AAAA",
+  "lotes": [
+    {
+      "lote": "número de lote (solo el número, sin 'LOTE')",
+      "ambiente": "P1, P2, etc o vacío",
+      "perfiles": [
+        {
+          "profundidad": "0-20",
+          "fosforo": 0,
+          "mo": 0,
+          "n_no3": 0,
+          "n_min": 0,
+          "s_sulfato": 0,
+          "zinc": 0,
+          "boro": 0,
+          "ph": null,
+          "ce": null,
+          "calcio": null,
+          "magnesio": null,
+          "potasio": null,
+          "sodio": null,
+          "psi": null,
+          "cic": null,
+          "hierro": null,
+          "cobre": null,
+          "manganeso": null,
+          "arena": null,
+          "arcilla": null,
+          "limo": null
+        }
+      ]
+    }
+  ]
+}
+Solo incluí los parámetros que el informe reporte. Usá null para los que no estén. Los números deben ser numéricos, no strings.`}
+        ]
+      }]
+    };
+
+    const resp=await fetch(CLAUDE_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await resp.json();
+    const txt=data.content?.[0]?.text||'';
+    const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
+
+    // Mostrar preview para confirmar
+    sueloPreview(parsed, ck2, file.name);
+  }catch(e){
+    document.getElementById('sprev').innerHTML=`<div style="padding:14px;color:var(--red)">Error: ${e.message}</div>`;
+  }
+  input.value='';
+}
+
+function sueloPreview(data, ck2, filename){
+  const prev=document.getElementById('sprev');
+  let html=`<div style="padding:12px 14px;background:var(--surf2);border-bottom:1px solid var(--bord)">
+    <div style="font-size:11px;font-weight:500;color:var(--txt2);margin-bottom:6px">Vista previa — confirmá antes de guardar</div>
+    <div style="font-size:12px"><b>${data.establecimiento||'—'}</b> · ${data.archivo||filename}</div>
+    <div style="font-size:11px;color:var(--txt3)">${data.laboratorio||''} · ${data.fecha||''}</div>
+  </div>`;
+  
+  data.lotes?.forEach(l=>{
+    html+=`<div style="padding:9px 14px;border-bottom:1px solid var(--bord)">
+      <div style="font-size:12px;font-weight:500">Lote ${l.lote}${l.ambiente?' ('+l.ambiente+')':''}</div>`;
+    l.perfiles?.forEach(p=>{
+      const vals=Object.entries(p).filter(([k,v])=>k!=='profundidad'&&v!=null).map(([k,v])=>`<span style="font-size:10px;background:var(--surf2);border-radius:3px;padding:2px 5px;margin:1px">${k}: ${v}</span>`).join('');
+      html+=`<div style="margin-top:4px"><span style="font-size:10px;color:var(--txt3)">${p.profundidad}</span> ${vals}</div>`;
+    });
+    html+='</div>';
+  });
+  
+  html+=`<div style="padding:12px 14px;display:flex;gap:8px">
+    <button onclick="document.getElementById('sprev').innerHTML=''" style="flex:1;background:none;border:1px solid var(--bord2);border-radius:var(--r2);padding:10px;font-size:12px;color:var(--txt2);font-family:var(--f)">Cancelar</button>
+    <button onclick="sueloGuardar(${JSON.stringify(JSON.stringify({data,ck2}))})" style="flex:1;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:10px;font-size:12px;font-family:var(--f)">Guardar en planilla</button>
+  </div>`;
+  prev.innerHTML=html;
+}
+
+async function sueloGuardar(jsonStr){
+  const {data,ck2}=JSON.parse(jsonStr);
+  document.getElementById('sprev').innerHTML='<div class="empty">⏳ Actualizando planilla...</div>';
+  try{
+    // Descargar analisis_suelos.xlsx actual
+    if(!DBX_TOKEN)await dbxRefreshToken();
+    let existingRows=[];
+    let existingWb=null;
+    try{
+      const buf=await dbxDL(TF+'/xlsx/analisis_suelos.xlsx');
+      const wb=XLSX.read(buf,{type:'array'});
+      const ws=wb.Sheets['Datos Completos']||wb.Sheets[wb.SheetNames[0]];
+      existingRows=XLSX.utils.sheet_to_json(ws,{header:1});
+      existingWb=wb;
+    }catch(e){existingRows=[];}
+
+    const HDRS=['Cliente','Campo','Lote','Año','Archivo','Prof.','N-NO3','Fósforo','N Min.','S-Sulfato','MO','Zinc','pH','Humedad','Boro','CE','Calcio','Magnesio','Potasio','Sodio','PSI','CIC','Hierro','Cobre','Manganeso','Arena','Arcilla','Limo'];
+    
+    // Preparar nuevas filas
+    const año=data.fecha?data.fecha.split('/')[2]||new Date().getFullYear():new Date().getFullYear();
+    const campoNorm=(data.establecimiento||'').toLowerCase().replace(/\s+/g,'_').replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u');
+    
+    const newRows=[];
+    data.lotes?.forEach(l=>{
+      l.perfiles?.forEach(p=>{
+        const row={};
+        row['Cliente']=ck2;
+        row['Campo']=campoNorm;
+        row['Lote']=l.lote;
+        row['Año']=año;
+        row['Archivo']=(data.archivo||'')+(l.ambiente?' ('+l.ambiente+')':'');
+        row['Prof.']=p.profundidad;
+        if(p.n_no3!=null)row['N-NO3']=p.n_no3;
+        if(p.fosforo!=null)row['Fósforo']=p.fosforo;
+        if(p.n_min!=null)row['N Min.']=p.n_min;
+        if(p.s_sulfato!=null)row['S-Sulfato']=p.s_sulfato;
+        if(p.mo!=null)row['MO']=p.mo;
+        if(p.zinc!=null)row['Zinc']=p.zinc;
+        if(p.ph!=null)row['pH']=p.ph;
+        if(p.boro!=null)row['Boro']=p.boro;
+        if(p.ce!=null)row['CE']=p.ce;
+        if(p.calcio!=null)row['Calcio']=p.calcio;
+        if(p.magnesio!=null)row['Magnesio']=p.magnesio;
+        if(p.potasio!=null)row['Potasio']=p.potasio;
+        if(p.sodio!=null)row['Sodio']=p.sodio;
+        if(p.psi!=null)row['PSI']=p.psi;
+        if(p.cic!=null)row['CIC']=p.cic;
+        if(p.hierro!=null)row['Hierro']=p.hierro;
+        if(p.cobre!=null)row['Cobre']=p.cobre;
+        if(p.manganeso!=null)row['Manganeso']=p.manganeso;
+        if(p.arena!=null)row['Arena']=p.arena;
+        if(p.arcilla!=null)row['Arcilla']=p.arcilla;
+        if(p.limo!=null)row['Limo']=p.limo;
+        newRows.push(row);
+      });
+    });
+
+    // Reconstruir Excel
+    const wb2=XLSX.utils.book_new();
+    const wsData=existingRows.length?existingRows:[[...HDRS]];
+    // Si no hay header en existingRows, agregar
+    if(!existingRows.length){wsData[0]=HDRS;}
+    // Agregar filas nuevas
+    newRows.forEach(row=>{
+      const arr=HDRS.map(h=>row[h]!=null?row[h]:'');
+      wsData.push(arr);
+    });
+    const ws2=XLSX.utils.aoa_to_sheet(wsData);
+    XLSX.utils.book_append_sheet(wb2,ws2,'Datos Completos');
+    const out=XLSX.write(wb2,{type:'array',bookType:'xlsx'});
+
+    // Subir a Dropbox
+    const token=DBX_TOKEN;
+    await fetch('https://content.dropboxapi.com/2/files/upload',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token,'Dropbox-API-Arg':JSON.stringify({path:TF+'/xlsx/analisis_suelos.xlsx',mode:'overwrite'}),'Content-Type':'application/octet-stream'},
+      body:new Uint8Array(out)
+    });
+    document.getElementById('sprev').innerHTML=`<div style="padding:14px;color:var(--grn)">✓ Guardado correctamente — ${newRows.length} filas agregadas a analisis_suelos.xlsx</div>`;
+    toast('Análisis guardado ✓');
+  }catch(e){
+    document.getElementById('sprev').innerHTML=`<div style="padding:14px;color:var(--red)">Error al guardar: ${e.message}</div>`;
+  }
+}
 async function sueloFile(input){
   const file=input.files[0];if(!file)return;
   const prev=document.getElementById('sprev');
@@ -1533,7 +1722,7 @@ async function sueloFile(input){
   try{
     const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
     const isPdf=file.name.toLowerCase().endsWith('.pdf');
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:[isPdf?{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}}:{type:'text',text:'no pdf'},{type:'text',text:'Extraé los datos de este informe de análisis de suelos argentino. Solo JSON sin markdown: {"laboratorio":"FERTILAB o SUELOFERTIL o OTRO","productor":"","establecimiento":"","lote":"","fecha":"DD/MM/YYYY","numero_analisis":"","muestras":[{"ambiente":"P3 o Loma etc","perfiles":[{"profundidad":"0-20","fosforo":null,"mo":null,"n_no3":null,"n_min":null,"s_sulfato":null,"zinc":null,"boro":null,"ph":null,"cic":null}]}]}'}]}]})});
+    const resp=await fetch(CLAUDE_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:[isPdf?{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}}:{type:'text',text:'no pdf'},{type:'text',text:'Extraé los datos de este informe de análisis de suelos argentino. Solo JSON sin markdown: {"laboratorio":"FERTILAB o SUELOFERTIL o OTRO","productor":"","establecimiento":"","lote":"","fecha":"DD/MM/YYYY","numero_analisis":"","muestras":[{"ambiente":"P3 o Loma etc","perfiles":[{"profundidad":"0-20","fosforo":null,"mo":null,"n_no3":null,"n_min":null,"s_sulfato":null,"zinc":null,"boro":null,"ph":null,"cic":null}]}]}'}]}]})});
     const data=await resp.json();
     const txt=data.content?.find(c=>c.type==='text')?.text||'{}';
     const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
