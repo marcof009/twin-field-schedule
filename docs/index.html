@@ -1525,7 +1525,33 @@ function retRD(body,id){
 
 // SUELOS
 let sHist=[];
-function suelInit(){document.getElementById('shist').innerHTML='<div class="empty">Sin análisis cargados</div>';}
+async function suelInit(){
+  const ck2=SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];
+  const hist=document.getElementById('shist');
+  hist.innerHTML='<div class="empty">Cargando...</div>';
+  // Cargar analisis_suelos.xlsx de Dropbox para mostrar historial
+  try{
+    if(!DBX_TOKEN)await dbxRefreshToken();
+    const buf=await dbxDL(TF+'/xlsx/analisis_suelos.xlsx');
+    const wb=XLSX.read(buf,{type:'array'});
+    const ws=wb.Sheets['Datos Completos']||wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{raw:false});
+    const mios=rows.filter(r=>String(r['Cliente']||'').toLowerCase()===ck2);
+    if(!mios.length){hist.innerHTML='<div class="empty">Sin análisis cargados para este cliente</div>';return;}
+    // Agrupar por Archivo (código de planilla)
+    const grupos={};
+    mios.forEach(r=>{
+      const arch=String(r['Archivo']||'').replace(/\s*\(.*\)/,'').trim();
+      if(!grupos[arch])grupos[arch]={campo:r['Campo']||'',lotes:new Set(),año:r['Año']||'',arch};
+      grupos[arch].lotes.add(String(r['Lote']||''));
+    });
+    hist.innerHTML=Object.values(grupos).sort((a,b)=>b.arch.localeCompare(a.arch)).map(g=>`
+      <div style="background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:10px 13px;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:400">${g.arch}</div>
+        <div style="font-size:11px;color:var(--txt2);margin-top:2px">${g.campo} · Lotes: ${[...g.lotes].join(', ')} · ${g.año}</div>
+      </div>`).join('');
+  }catch(e){hist.innerHTML='<div class="empty">Sin análisis cargados</div>';}
+}
 
 async function sueloFile(input){
   const file=input.files[0];if(!file)return;
