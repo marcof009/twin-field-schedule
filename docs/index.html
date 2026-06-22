@@ -625,6 +625,7 @@ function pSiembra(buf,ck2){
     res[cmk]=res[cmk]||{};
     res[cmk][lk]={
       cultivo:String(r[ci['Cultivo 1ra']]||'').trim(),variedad:String(r[ci['Variedad']]||'').trim(),
+      area:parseFloat(r[ci['Area_ha']])||0,
       kg_ha:parseFloat(r[ci['Kg_ha']])||0,p_fuente:String(r[ci['P_fuente']]||'').trim(),p_dosis:parseFloat(r[ci['P_dosis']])||0,
       ant:String(r[ci['Antecesor']]||'').trim(),siembra_fecha:fmtFecha(r[ci['siembra_fecha']]),pg:parseFloat(r[ci['PG']])||0,p1000:parseFloat(r[ci['P1000']])||0,
       analisis:String(r[ci['Analisis']]||'').trim(),curasemilla:String(r[ci['Curasemilla']]||'').trim(),
@@ -1072,7 +1073,8 @@ function siembraGroups(){
       if(k==='trigo'||k==='cebada'){gkey='fina';glbl='Trigo / Cebada';}
       const loteName=loteKey.replace(/^LOTE\s*/i,'');
       const lote=D.lotes.find(l=>l.layer===campoKey&&l.name.toUpperCase()===loteName.toUpperCase());
-      const ha=lote?parseFloat(lote.area)||0:0;
+      const haRaw=lote?parseFloat(lote.area)||0:0;
+      const ha=haRaw||parseFloat(s.area||s.sup||0)||0;
       if(!groups[gkey])groups[gkey]={label:glbl,items:[]};
       groups[gkey].items.push({campoKey,campoLbl:CFG[D.ck]?.campos[campoKey]?.lbl||campoKey,loteId:loteName,ha,cultivo:s.cultivo,variedadPlan:s.variedad||''});
     });
@@ -1098,22 +1100,24 @@ function siembraRender(){
   const totalHa=items.reduce((s,i)=>s+i.ha,0);
   const isFina=sbGroup==='fina';
   const sembrado=(i)=>{const av=SB_AVANCE[i.campoKey+'|'+i.loteId.toUpperCase()];return !!(av?.sembrado||av?.fecha);};
-  const sembHa=items.reduce((s,i)=>s+(sembrado(i)?i.ha:0),0);
-  const pct=totalHa>0?(sembHa/totalHa*100):0;
+  // Para la barra, usar 1 ha mínimo por lote si no hay área disponible
+  const totalHa2=items.reduce((s,i)=>s+(i.ha||1),0);
+  const sembHa=items.reduce((s,i)=>s+(sembrado(i)?(i.ha||1):0),0);
+  const pct=totalHa2>0?(sembHa/totalHa2*100):0;
   let barInner;
   if(isFina){
     const trigoT=items.filter(i=>ck(i.cultivo)==='trigo').reduce((s,i)=>s+i.ha,0);
     const cebadaT=items.filter(i=>ck(i.cultivo)==='cebada').reduce((s,i)=>s+i.ha,0);
     const trigoS=items.filter(i=>ck(i.cultivo)==='trigo'&&sembrado(i)).reduce((s,i)=>s+i.ha,0);
     const cebadaS=items.filter(i=>ck(i.cultivo)==='cebada'&&sembrado(i)).reduce((s,i)=>s+i.ha,0);
-    const pT=totalHa>0?trigoS/totalHa*100:0,pC=totalHa>0?cebadaS/totalHa*100:0;
+    const pT=totalHa2>0?trigoS/totalHa2*100:0,pC=totalHa2>0?cebadaS/totalHa2*100:0;
     barInner=`<div style="display:flex;width:100%;height:100%"><div style="width:${pT}%;background:#2d7a2d;transition:width .3s"></div><div style="width:${pC}%;background:#7ec850;transition:width .3s"></div></div>`;
   }else{
     barInner=`<div class="rb-fill" style="width:${pct}%;background:var(--acc)"></div>`;
   }
   let html=`<div style="padding:12px 14px 0">
     <div class="rb-wrap">
-      <div class="rb-lbl"><span>${g.label} — Avance de siembra</span><span style="color:var(--txt3)">${Math.round(sembHa)} / ${Math.round(totalHa)} ha · ${pct.toFixed(0)}%</span></div>
+      <div class="rb-lbl"><span>${g.label} — Avance de siembra</span><span style="color:var(--txt3)">${Math.round(sembHa)} / ${Math.round(totalHa2)} ha · ${pct.toFixed(0)}%</span></div>
       <div class="rb-tr" style="height:16px;overflow:hidden">${barInner}</div>
       ${isFina?`<div style="display:flex;gap:14px;margin-top:5px;font-size:10px;color:var(--txt3)"><span><span class="sb-dot" style="background:#2d7a2d"></span>Trigo</span><span><span class="sb-dot" style="background:#7ec850"></span>Cebada</span></div>`:''}
     </div>
@@ -1499,7 +1503,7 @@ function retRD(body,id){
   const r=retR.find(x=>x.id===id);if(!r){body.innerHTML='<div class="empty">No encontrada</div>';return;}
   body.innerHTML='<div class="rform"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><div style="font-size:22px;font-weight:200;letter-spacing:-.5px">Rec. '+(r.numero_receta||'—')+'</div><div style="font-size:11px;color:var(--txt2)">'+r.fecha+'</div></div><span class="ep ep-'+(r.estado||'pendiente')+'" style="font-size:10px;padding:4px 8px">'+(r.estado||'pendiente')+'</span></div><div class="sgrid"><div class="si"><div class="si-l">Lote</div><div class="si-v" style="font-size:12px">'+(r.lote_id||'—')+'</div></div><div class="si"><div class="si-l">Cultivo</div><div class="si-v" style="font-size:12px">'+(r.cultivo||'—')+'</div></div><div class="si"><div class="si-l">Urgencia</div><div class="si-v" style="font-size:12px">'+(r.urgencia||'—')+'</div></div><div class="si"><div class="si-l">Caudal</div><div class="si-v" style="font-size:12px">'+(r.caudal||'—')+' L/ha</div></div></div>'+(r.objetivo?'<div style="background:var(--surf2);border-radius:6px;padding:9px 11px;margin:8px 0;font-size:12px"><span style="font-size:8px;font-weight:500;text-transform:uppercase;color:var(--txt3);display:block;margin-bottom:2px">Objetivo</span>'+r.objetivo+'</div>':'')+'<div class="rfs">Productos</div>'+(r.productos||[]).map(p=>'<div class="pr"><div class="pr-n">'+(p.nombre||p.n||'—')+'</div><div class="pr-d">'+(p.dosis||p.d||'—')+' '+(p.unidad||p.u||'')+'</div></div>').join('')+(r.observaciones?'<div class="rfs">Obs.</div><div style="font-size:12px;line-height:1.5">'+r.observaciones+'</div>':'')
     +(r.anotacion?'<div class="rfs">Anotación</div><img src="'+r.anotacion+'" style="width:100%;border-radius:var(--r);border:1px solid var(--bord);margin-top:4px">':'')+
-    ((SESSION.r==='aplicador'||SESSION.r==='admin')&&r.estado==='pendiente'?`
+    ((SESSION.r==='aplicador'||SESSION.r==='admin'||SESSION.r==='cliente')&&r.estado==='pendiente'?`
     <div class="rfs">Acción</div>
     <div style="background:var(--surf2);border-radius:var(--r);padding:12px 13px;margin-bottom:8px">
       <div style="font-size:9px;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:var(--txt3);margin-bottom:8px">Marcar como aplicado</div>
@@ -1510,7 +1514,7 @@ function retRD(body,id){
       <div class="rff" style="margin-bottom:8px"><label>Observación</label><textarea id="apl-obs" rows="2" style="background:var(--surf);border:1px solid var(--bord);border-radius:var(--r2);padding:8px 10px;font-size:12px;width:100%;outline:none;resize:none;font-family:var(--f)" placeholder="Condiciones, equipo, etc..."></textarea></div>
       <button onclick="retMarcarAplicado('${r.id}')" style="width:100%;background:var(--grn);color:#fff;border:none;border-radius:var(--r2);padding:11px;font-size:12px;font-weight:400;font-family:var(--f)">✓ Marcar como aplicado</button>
     </div>`
-    :r.estado==='ok'&&r.fecha_aplicacion?`<div style="background:rgba(74,158,74,.08);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--grn)">✓ Aplicado el ${r.fecha_aplicacion}${r.operador?' por '+r.operador:''}</div>`:'')
+    :r.estado==='ok'&&r.fecha_aplicacion?`<div style="background:rgba(74,158,74,.08);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--grn);display:flex;justify-content:space-between;align-items:center"><span>✓ Aplicado el ${r.fecha_aplicacion}${r.operador?' por '+r.operador:''}</span>${SESSION.r==='admin'?`<button onclick="retRevertir('${r.id}')" style="background:none;border:1px solid var(--bord2);border-radius:var(--r2);padding:4px 9px;font-size:10px;color:var(--txt3);font-family:var(--f);cursor:pointer">↩ Pendiente</button>`:''}</div>`:'')
     +`<div style="display:flex;gap:8px;margin-top:16px">
       <button onclick="retStk.pop();retRend()" style="flex:1;background:none;border:1px solid var(--bord2);border-radius:var(--r2);padding:11px;font-size:12px;color:var(--txt2);font-family:var(--f)">Cancelar</button>
       ${SESSION.r==='admin'?`<button onclick="retEditar('${r.id}')" style="flex:1;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:11px;font-size:12px;color:var(--txt);font-family:var(--f)">Editar</button>
@@ -1723,6 +1727,18 @@ async function retGenPDF(){
   const fecha=recetas[0]?.fecha||hoy.replace(/\//g,'-');
   doc.save('orden_'+cliLabel.toLowerCase().replace(/ /g,'_')+'_'+fecha+'.pdf');
   retToggleOrden();
+}
+
+async function retRevertir(id){
+  if(!confirm('¿Revertir esta receta a pendiente?'))return;
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/recetas?id=eq.'+id,{method:'PATCH',headers:{...SBH,'Prefer':'return=minimal'},body:JSON.stringify({estado:'pendiente',fecha_aplicacion:null,operador:null,obs_aplicacion:null})});
+    if(!r.ok)throw new Error(await r.text());
+    toast('Revertida a pendiente ✓');
+    retR=await (async()=>{const q=SESSION.c[0]==='all'?'cliente_id=eq.'+ACTIVE_CLI+'&order=created_at.desc&limit=200':'cliente_id=eq.'+SESSION.c[0]+'&order=created_at.desc&limit=200';return sbG('recetas',q);})();
+    retR.sort((a,b)=>{if(a.estado==='pendiente'&&b.estado!=='pendiente')return -1;if(b.estado==='pendiente'&&a.estado!=='pendiente')return 1;return new Date(b.fecha)-new Date(a.fecha);});
+    retStk.pop();retRend();
+  }catch(e){toast('Error: '+e.message);}
 }
 
 async function retMarcarAplicado(id){
