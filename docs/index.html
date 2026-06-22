@@ -1694,9 +1694,11 @@ async function sueloGuardar(jsonStr){
     if(!existingRows.length){wsData[0]=HDRS;}
     // Verificar duplicados por código de planilla (columna Archivo)
     const archivoBase=data.archivo||'';
-    const yaExiste=existingRows.slice(1).some(r=>{
-      const arch=String(r[4]||'');
-      return archivoBase&&arch.includes(archivoBase);
+    const hdrsRow=existingRows[0]||[];
+    const archivoIdx=hdrsRow.findIndex(h=>String(h).trim()==='Archivo');
+    const yaExiste=archivoBase&&archivoIdx>=0&&existingRows.slice(1).some(r=>{
+      const arch=String(r[archivoIdx]||'');
+      return arch.includes(archivoBase);
     });
     if(yaExiste){
       document.getElementById('sprev').innerHTML=`<div style="padding:14px;color:var(--ora)">⚠️ El código de planilla <b>${archivoBase}</b> ya existe en la planilla. No se agregaron filas para evitar duplicados.</div>`;
