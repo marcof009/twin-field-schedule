@@ -1525,32 +1525,83 @@ function retRD(body,id){
 
 // SUELOS
 let sHist=[];
+let SUELOS_DATA=[];
+
 async function suelInit(){
   const ck2=SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];
   const hist=document.getElementById('shist');
   hist.innerHTML='<div class="empty">Cargando...</div>';
-  // Cargar analisis_suelos.xlsx de Dropbox para mostrar historial
   try{
     if(!DBX_TOKEN)await dbxRefreshToken();
     const buf=await dbxDL(TF+'/xlsx/analisis_suelos.xlsx');
     const wb=XLSX.read(buf,{type:'array'});
     const ws=wb.Sheets['Datos Completos']||wb.Sheets[wb.SheetNames[0]];
     const rows=XLSX.utils.sheet_to_json(ws,{raw:false});
-    const mios=rows.filter(r=>String(r['Cliente']||'').toLowerCase()===ck2);
-    if(!mios.length){hist.innerHTML='<div class="empty">Sin análisis cargados para este cliente</div>';return;}
-    // Agrupar por Archivo (código de planilla)
-    const grupos={};
-    mios.forEach(r=>{
-      const arch=String(r['Archivo']||'').replace(/\s*\(.*\)/,'').trim();
-      if(!grupos[arch])grupos[arch]={campo:r['Campo']||'',lotes:new Set(),año:r['Año']||'',arch};
-      grupos[arch].lotes.add(String(r['Lote']||''));
-    });
-    hist.innerHTML=Object.values(grupos).sort((a,b)=>b.arch.localeCompare(a.arch)).map(g=>`
-      <div style="background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:10px 13px;margin-bottom:8px">
-        <div style="font-size:12px;font-weight:400">${g.arch}</div>
-        <div style="font-size:11px;color:var(--txt2);margin-top:2px">${g.campo} · Lotes: ${[...g.lotes].join(', ')} · ${g.año}</div>
-      </div>`).join('');
+    SUELOS_DATA=rows.filter(r=>String(r['Cliente']||'').toLowerCase()===ck2);
+    if(!SUELOS_DATA.length){hist.innerHTML='<div class="empty">Sin análisis cargados para este cliente</div>';return;}
+    // Selector de campo
+    const campos=[...new Set(SUELOS_DATA.map(r=>String(r['Campo']||'').trim()))].filter(Boolean).sort();
+    hist.innerHTML=`
+      <div style="margin-bottom:12px">
+        <select id="suel-campo" onchange="suelMostrar()" style="width:100%;font-family:var(--f);font-size:13px;font-weight:300;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:9px 12px;color:var(--txt);outline:none">
+          <option value="">— Seleccioná un campo —</option>
+          ${campos.map(c=>`<option value="${c}">${c}</option>`).join('')}
+        </select>
+      </div>
+      <div id="suel-tabla"></div>`;
   }catch(e){hist.innerHTML='<div class="empty">Sin análisis cargados</div>';}
+}
+
+function suelMostrar(){
+  const campo=document.getElementById('suel-campo')?.value;
+  const el=document.getElementById('suel-tabla');
+  if(!campo||!el)return;
+  const filas=SUELOS_DATA.filter(r=>String(r['Campo']||'').trim()===campo);
+  if(!filas.length){el.innerHTML='<div class="empty">Sin datos para este campo</div>';return;}
+
+  // Parámetros disponibles
+  const PARAMS=['N-NO3','Fósforo','N Min.','S-Sulfato','MO','Zinc','pH','Boro','CE','Calcio','Magnesio','Potasio','Sodio','PSI','CIC','Hierro','Cobre','Manganeso','Arena','Arcilla','Limo'];
+  const usados=PARAMS.filter(p=>filas.some(r=>r[p]!=null&&r[p]!==''));
+
+  // Agrupar por Lote → Año → Archivo
+  const lotes={};
+  filas.forEach(r=>{
+    const l=String(r['Lote']||'').trim();
+    const a=String(r['Año']||'').trim();
+    const arch=String(r['Archivo']||'').trim();
+    const prof=String(r['Prof.']||'').trim();
+    if(!lotes[l])lotes[l]={};
+    const key=a+'|'+arch.replace(/\s*\(.*\)/,'').trim();
+    if(!lotes[l][key])lotes[l][key]={año:a,arch:arch.replace(/\s*\(.*\)/,'').trim(),perfiles:[]};
+    lotes[l][key].perfiles.push(r);
+  });
+
+  let html='';
+  Object.keys(lotes).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).forEach(lote=>{
+    html+=`<div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--acc);padding:6px 0 4px;border-bottom:2px solid var(--acc);margin-bottom:6px">Lote ${lote}</div>`;
+    Object.values(lotes[lote]).sort((a,b)=>b.año-a.año).forEach(g=>{
+      html+=`<div style="margin-bottom:10px">
+        <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">${g.arch} · ${g.año}</div>
+        <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="background:var(--surf2)">
+            <th style="padding:5px 8px;text-align:left;border:1px solid var(--bord);font-weight:500;color:var(--txt2)">Prof.</th>
+            ${usados.map(p=>`<th style="padding:5px 8px;text-align:right;border:1px solid var(--bord);font-weight:500;color:var(--txt2);white-space:nowrap">${p}</th>`).join('')}
+          </tr></thead>
+          <tbody>
+            ${g.perfiles.sort((a,b)=>String(a['Prof.']).localeCompare(String(b['Prof.']))).map(r=>`
+              <tr>
+                <td style="padding:5px 8px;border:1px solid var(--bord);font-weight:500">${r['Prof.']||'—'}</td>
+                ${usados.map(p=>`<td style="padding:5px 8px;text-align:right;border:1px solid var(--bord);color:${r[p]!=null&&r[p]!==''?'var(--txt)':'var(--txt3)'}">${r[p]!=null&&r[p]!==''?r[p]:'—'}</td>`).join('')}
+              </tr>`).join('')}
+          </tbody>
+        </table></div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  el.innerHTML=html;
 }
 
 async function sueloFile(input){
