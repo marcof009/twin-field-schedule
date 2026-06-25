@@ -1539,26 +1539,167 @@ let SUELOS_DATA=[];
 async function suelInit(){
   const ck2=SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];
   const hist=document.getElementById('shist');
-  hist.innerHTML='<div class="empty">Cargando...</div>';
+  if(!DBX_TOKEN)await dbxRefreshToken();
+
+  // Listar PDFs pendientes en Dropbox
+  let pendientes=[];
   try{
-    if(!DBX_TOKEN)await dbxRefreshToken();
+    const r=await fetch('https://api.dropboxapi.com/2/files/list_folder',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+DBX_TOKEN,'Content-Type':'application/json'},
+      body:JSON.stringify({path:TF+'/laboratorio/pendientes'})
+    });
+    const d=await r.json();
+    pendientes=(d.entries||[]).filter(e=>e.name.match(/\.(pdf|xlsx?)$/i));
+  }catch(e){pendientes=[];}
+
+  // Cargar historial desde analisis_suelos.xlsx
+  let histRows=[];
+  try{
     const buf=await dbxDL(TF+'/xlsx/analisis_suelos.xlsx');
     const wb=XLSX.read(buf,{type:'array'});
     const ws=wb.Sheets['Datos Completos']||wb.Sheets[wb.SheetNames[0]];
-    const rows=XLSX.utils.sheet_to_json(ws,{raw:false});
-    SUELOS_DATA=rows.filter(r=>String(r['Cliente']||'').toLowerCase()===ck2);
-    if(!SUELOS_DATA.length){hist.innerHTML='<div class="empty">Sin análisis cargados para este cliente</div>';return;}
-    // Selector de campo
-    const campos=[...new Set(SUELOS_DATA.map(r=>String(r['Campo']||'').trim()))].filter(Boolean).sort();
-    hist.innerHTML=`
-      <div style="margin-bottom:12px">
-        <select id="suel-campo" onchange="suelMostrar()" style="width:100%;font-family:var(--f);font-size:13px;font-weight:300;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:9px 12px;color:var(--txt);outline:none">
-          <option value="">— Seleccioná un campo —</option>
-          ${campos.map(c=>`<option value="${c}">${c}</option>`).join('')}
-        </select>
-      </div>
-      <div id="suel-tabla"></div>`;
-  }catch(e){hist.innerHTML='<div class="empty">Sin análisis cargados</div>';}
+    histRows=XLSX.utils.sheet_to_json(ws,{raw:false}).filter(r=>String(r['Cliente']||'').toLowerCase()===ck2);
+  }catch(e){}
+
+  // Render
+  let html='';
+
+  // Sección: pendientes
+  if(pendientes.length){
+    html+=`<div style="background:rgba(204,92,8,.06);border:1px solid rgba(204,92,8,.2);border-radius:var(--r);padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:500;color:var(--ora);margin-bottom:8px">📂 ${pendientes.length} archivo${pendientes.length>1?'s':''} pendiente${pendientes.length>1?'s':''} en Dropbox</div>
+      ${pendientes.map(f=>`<div style="font-size:12px;color:var(--txt2);margin-bottom:3px">· ${f.name}</div>`).join('')}
+      <button onclick="suelProcesar('${ck2}')" style="margin-top:10px;width:100%;background:var(--ora);color:#fff;border:none;border-radius:var(--r2);padding:10px;font-size:12px;font-weight:400;font-family:var(--f)">⚡ Procesar todos</button>
+    </div>`;
+  }
+
+  // Selector de campo + tabla
+  if(histRows.length){
+    const campos=[...new Set(histRows.map(r=>String(r['Campo']||'').trim()))].filter(Boolean).sort();
+    html+=`<div style="margin-bottom:12px">
+      <select id="suel-campo" onchange="suelMostrar()" style="width:100%;font-family:var(--f);font-size:13px;font-weight:300;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:9px 12px;color:var(--txt);outline:none">
+        <option value="">— Ver análisis por campo —</option>
+        ${campos.map(c=>`<option value="${c}">${c}</option>`).join('')}
+      </select>
+    </div>
+    <div id="suel-tabla"></div>`;
+  } else {
+    html+=`<div class="empty">Sin análisis cargados para este cliente</div>`;
+  }
+
+  hist.innerHTML=html;
+}
+
+async function suelProcesar(ck2){
+  const hist=document.getElementById('shist');
+  // Listar archivos pendientes
+  const rList=await fetch('https://api.dropboxapi.com/2/files/list_folder',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+DBX_TOKEN,'Content-Type':'application/json'},
+    body:JSON.stringify({path:TF+'/laboratorio/pendientes'})
+  });
+  const dList=await rList.json();
+  const archivos=(dList.entries||[]).filter(e=>e.name.match(/\.(pdf|xlsx?)$/i));
+  if(!archivos.length){toast('No hay archivos pendientes');return;}
+
+  // Descargar Excel actual
+  let existingRows=[];
+  try{
+    const buf=await dbxDL(TF+'/xlsx/analisis_suelos.xlsx');
+    const wb=XLSX.read(buf,{type:'array'});
+    const ws=wb.Sheets['Datos Completos']||wb.Sheets[wb.SheetNames[0]];
+    existingRows=XLSX.utils.sheet_to_json(ws,{header:1});
+  }catch(e){}
+
+  const HDRS=['Cliente','Campo','Lote','Año','Archivo','Prof.','N-NO3','Fósforo','N Min.','S-Sulfato','MO','Zinc','pH','Humedad','Boro','CE','Calcio','Magnesio','Potasio','Sodio','PSI','CIC','Hierro','Cobre','Manganeso','Arena','Arcilla','Limo'];
+  const cliLbl=CFG[ck2]?.lbl||ck2;
+  let totalNuevas=0;
+  let errores=[];
+
+  for(let i=0;i<archivos.length;i++){
+    const f=archivos[i];
+    hist.innerHTML=`<div class="empty">⏳ Procesando ${i+1}/${archivos.length}: ${f.name}...</div>`;
+    try{
+      // Descargar archivo de Dropbox
+      const fileBuf=await dbxDL(f.path_lower);
+      const b64=btoa(String.fromCharCode(...new Uint8Array(fileBuf)));
+      const isPdf=f.name.match(/\.pdf$/i);
+      const mediaType=isPdf?'application/pdf':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+      // Llamar Claude via proxy
+      const payload={
+        model:'claude-sonnet-4-6',
+        max_tokens:4000,
+        messages:[{role:'user',content:[
+          {type:'document',source:{type:'base64',media_type:mediaType,data:b64}},
+          {type:'text',text:`Sos un asistente agrícola. Extraé los datos de análisis de suelo de este informe para el cliente "${cliLbl}".
+Devolvé SOLO JSON válido sin markdown:
+{"establecimiento":"nombre campo","laboratorio":"nombre lab","archivo":"código planilla","fecha":"DD/MM/AAAA","lotes":[{"lote":"número sin LOTE","ambiente":"P1 etc o vacío","perfiles":[{"profundidad":"0-20","fosforo":null,"mo":null,"n_no3":null,"n_min":null,"s_sulfato":null,"zinc":null,"boro":null,"ph":null,"ce":null,"calcio":null,"magnesio":null,"potasio":null,"sodio":null,"psi":null,"cic":null,"hierro":null,"cobre":null,"manganeso":null,"arena":null,"arcilla":null,"limo":null}]}]}`}
+        ]}]
+      };
+      const resp=await fetch(CLAUDE_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const data=await resp.json();
+      const txt=data.content?.[0]?.text||'';
+      const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
+
+      // Verificar duplicado por código planilla
+      const archivoBase=parsed.archivo||f.name;
+      const hdrsRow=existingRows[0]||HDRS;
+      const archivoIdx=Array.isArray(hdrsRow)?hdrsRow.findIndex(h=>String(h).trim()==='Archivo'):4;
+      const yaExiste=archivoBase&&existingRows.slice(1).some(r=>String(r[archivoIdx]||'').includes(archivoBase));
+
+      if(!yaExiste){
+        const año=parsed.fecha?parsed.fecha.split('/')[2]||new Date().getFullYear():new Date().getFullYear();
+        const campoNorm=(parsed.establecimiento||'').toLowerCase().replace(/\s+/g,'_').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        parsed.lotes?.forEach(l=>{
+          l.perfiles?.forEach(p=>{
+            const row={};
+            row['Cliente']=ck2;row['Campo']=campoNorm;row['Lote']=l.lote;row['Año']=año;
+            row['Archivo']=(archivoBase)+(l.ambiente?' ('+l.ambiente+')':'');row['Prof.']=p.profundidad;
+            if(p.n_no3!=null)row['N-NO3']=p.n_no3;if(p.fosforo!=null)row['Fósforo']=p.fosforo;
+            if(p.n_min!=null)row['N Min.']=p.n_min;if(p.s_sulfato!=null)row['S-Sulfato']=p.s_sulfato;
+            if(p.mo!=null)row['MO']=p.mo;if(p.zinc!=null)row['Zinc']=p.zinc;if(p.ph!=null)row['pH']=p.ph;
+            if(p.boro!=null)row['Boro']=p.boro;if(p.ce!=null)row['CE']=p.ce;
+            if(p.calcio!=null)row['Calcio']=p.calcio;if(p.magnesio!=null)row['Magnesio']=p.magnesio;
+            if(p.potasio!=null)row['Potasio']=p.potasio;if(p.sodio!=null)row['Sodio']=p.sodio;
+            if(p.psi!=null)row['PSI']=p.psi;if(p.cic!=null)row['CIC']=p.cic;
+            if(p.hierro!=null)row['Hierro']=p.hierro;if(p.cobre!=null)row['Cobre']=p.cobre;
+            if(p.manganeso!=null)row['Manganeso']=p.manganeso;
+            if(p.arena!=null)row['Arena']=p.arena;if(p.arcilla!=null)row['Arcilla']=p.arcilla;if(p.limo!=null)row['Limo']=p.limo;
+            const arr=HDRS.map(h=>row[h]!=null?row[h]:'');
+            existingRows.push(arr);
+            totalNuevas++;
+          });
+        });
+      }
+
+      // Mover a /procesados/
+      await fetch('https://api.dropboxapi.com/2/files/move_v2',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+DBX_TOKEN,'Content-Type':'application/json'},
+        body:JSON.stringify({from_path:f.path_lower,to_path:TF+'/laboratorio/procesados/'+f.name,autorename:true})
+      });
+
+    }catch(e){errores.push(f.name+': '+e.message);}
+  }
+
+  // Guardar Excel actualizado
+  if(totalNuevas>0){
+    const wb2=XLSX.utils.book_new();
+    const ws2=XLSX.utils.aoa_to_sheet(existingRows.length?existingRows:[HDRS]);
+    XLSX.utils.book_append_sheet(wb2,ws2,'Datos Completos');
+    const out=XLSX.write(wb2,{type:'array',bookType:'xlsx'});
+    await fetch('https://content.dropboxapi.com/2/files/upload',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+DBX_TOKEN,'Dropbox-API-Arg':JSON.stringify({path:TF+'/xlsx/analisis_suelos.xlsx',mode:'overwrite'}),'Content-Type':'application/octet-stream'},
+      body:new Uint8Array(out)
+    });
+  }
+
+  const msg=`✓ ${archivos.length} archivo${archivos.length>1?'s':''} procesado${archivos.length>1?'s':''}. ${totalNuevas} filas nuevas agregadas.${errores.length?' Errores: '+errores.join(', '):''}`;
+  toast(msg);
+  suelInit();
 }
 
 function suelMostrar(){
