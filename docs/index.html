@@ -942,15 +942,24 @@ async function recInformePDF(lk,ck2){
 }
 
 function recRLots(body,lk,ck2){
-  const ls=D?.lotes.filter(l=>l.layer===lk)||[];const hoy=new Date().toISOString().split('T')[0];
+  const hoy=new Date().toISOString().split('T')[0];
   const campoLbl=CFG[ck2]?.campos[lk]?.lbl||lk;
+  // Lotes del SHP o fallback desde siembra
+  let ls=D?.lotes.filter(l=>l.layer===lk)||[];
+  if(!ls.length&&D?.siembra?.[lk]){
+    ls=Object.keys(D.siembra[lk]).map(k=>({
+      name:k.replace(/^LOTE\s*/i,'').trim(),
+      layer:lk,
+      area:D.siembra[lk][k]?.area||''
+    }));
+  }
   body.innerHTML=`<div style="padding:10px 14px 0;display:flex;justify-content:space-between;align-items:center">
     <div class="rsec" style="margin:0">${ls.length} lotes</div>
     <button onclick="recInformePDF('${lk}','${ck2}')" style="background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:7px 12px;font-size:11px;font-weight:400;font-family:var(--f)">📄 Informe</button>
   </div>`+ls.map(l=>{
     const obs=rObs[l.name+lk]||[];const th=obs.some(o=>o.fecha===hoy);const val=schGC(l);
     return `<div class="rc" data-lid="${l.name}" data-lk="${lk}" onclick="rP({type:'lot',lid:this.dataset.lid,lk:this.dataset.lk,title:'Lote '+this.dataset.lid.toUpperCase()})"><div class="rc-n">${l.name.toUpperCase()}</div><div class="rc-m"><span>${l.area} ha</span><span style="color:${cc(val)}">${cl(val)}</span>${th?'<span class="bh">✓ hoy</span>':''}</div></div>`;
-  }).join('');
+  }).join('')||'<div class="empty">Sin lotes disponibles</div>';
 }
 function fmtHCard(o){
   // Parsear el texto guardado (puede venir como "cultivo|M:...|P:...|E:...|F:...|O:..." o texto libre)
