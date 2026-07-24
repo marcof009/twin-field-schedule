@@ -379,8 +379,12 @@ const USERS = {
   "hollender": {h:"350853890fb39f0fcfdd9d754bf3536b4c2a28a14818fc6da9f357218b1ed7fb",r:"cliente",c:["hollender"]},
   "almarmat":  {h:"dc4513e5e59b19f255710c9db029e6b54f2bac4a4afae12b1efb780566dbefff",r:"cliente",c:["almarmat"]},
   // nueva_empresa: {h:"HASH_SHA256_PASSWORD",r:"cliente",c:["nueva_empresa"]},
-  // aplicadores — agregar uno por cliente con password propio
+  // aplicadores — uno por cliente (contraseñas: cliente2026)
   "aplicador_la_alicia": {h:"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",r:"aplicador",c:["la_alicia"]},
+  "aplicador_dam":       {h:"f8964b7411cbcd3c9e1cad3233c2ee6ceb3204fb74de5ad7f701aff8a8000f69",r:"aplicador",c:["dam"]},
+  "aplicador_hollender": {h:"82e652d9f42e1fdce80926c9d9ced572418656da0b1fb1901f183e5fc8252d34",r:"aplicador",c:["hollender"]},
+  "aplicador_mauricio":  {h:"995172f450b0a720400c3a5dfd6b97680b7900955e35673ce914f73d5e61c5f2",r:"aplicador",c:["mauricio"]},
+  "aplicador_almarmat":  {h:"baead63e9fe849dde879fc369eab05c39c7ee85a935d3bc082c3b171be4b5a71",r:"aplicador",c:["almarmat"]},
 };
 
 // CLIENTES CONFIG — agregar nuevo cliente acá + carpeta en Dropbox/TwinField/shp/
@@ -404,6 +408,7 @@ function toast(m,ms=2400){const el=document.getElementById('toast');el.textConte
 async function dbxDL(p){const r=await fetch('https://content.dropboxapi.com/2/files/download',{method:'POST',headers:{'Authorization':'Bearer '+DBX_TOKEN,'Dropbox-API-Arg':JSON.stringify({path:p}),'Content-Type':'text/plain'}});if(!r.ok)throw new Error('DBX '+r.status+': '+p);return r.arrayBuffer();}
 async function sbG(t,p=''){const r=await fetch(SB_URL+'/rest/v1/'+t+'?'+p,{headers:SBH});if(!r.ok)throw new Error('SB '+r.status);return r.json();}
 async function sbI(t,b){const r=await fetch(SB_URL+'/rest/v1/'+t,{method:'POST',headers:SBH,body:JSON.stringify(b)});if(!r.ok)throw new Error('SBI '+r.status);return r.json();}
+async function sbUp(t,conflict,b){const r=await fetch(SB_URL+'/rest/v1/'+t+'?on_conflict='+conflict,{method:'POST',headers:{...SBH,'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(b)});if(!r.ok)throw new Error('SBU '+r.status);return r.json();}
 
 // AUTH
 async function doLogin(){
@@ -678,17 +683,44 @@ function schRSuelos(){
   body.innerHTML=html||'<div class="empty">Sin datos</div>';
 }
 function mpill(v,isVar){if(!v)return'';return'<span class="mp '+(isVar?'mp-v':'mp-f')+'">'+v+'</span>';}
-function schRSiembra(){
+async function schRSiembra(){
   const body=document.getElementById('spb');
   const key=schSK(sSel);if(!key){body.innerHTML='<div class="empty">Sin datos de siembra para este lote</div>';return;}
   const s=D.siembra[sSel.layer]?.[key];if(!s){body.innerHTML='<div class="empty">Sin datos</div>';return;}
+  const campana={r26:'2026',r25:'2025',r24:'2024',r23:'2023'}[sYr]||sYr;
+  const cliId=D.ck||SESSION.c[0];
+  let edit={};
+  try{
+    const rows=await sbG('siembra_edits','cliente_id=eq.'+encodeURIComponent(cliId)+'&campo_id=eq.'+encodeURIComponent(sSel.layer)+'&lote_key=eq.'+encodeURIComponent(key)+'&campana=eq.'+campana+'&order=created_at.desc&limit=1');
+    if(rows&&rows.length)edit=rows[0];
+  }catch(e){}
   const antL={'GR':'Girasol','TR':'Trigo','CB':'Cebada','MZ':'Maíz','SJ':'Soja'}[s.ant]||s.ant||'—';
   const mp=(v)=>{if(!v)return'';const lv=v.toLowerCase();return'<span class="mp '+(lv==='variable'?'mp-v':lv==='directa'?'mp-d':lv==='conv'||lv==='convencional'?'mp-c':'mp-f')+'">'+v+'</span>';};
+  const varActual=edit.variedad||s.variedad||'';
+  const fechaActual=edit.fecha_siembra||'';
   let fert='';
   if(s.p_dosis>0)fert+='<div class="srow"><span class="sr-l">Fósforo ('+s.p_fuente+')</span><span class="sr-v">'+s.p_dosis+' kg/ha '+mp(s.ferti_modo)+'</span></div>';
   if(s.n1_dosis>0)fert+='<div class="srow"><span class="sr-l">N1 — '+s.n1_fuente+(s.n1_fecha?' · '+s.n1_fecha:'')+'</span><span class="sr-v">'+s.n1_dosis+' kg/ha '+mp(s.n1_modo)+'</span></div>';
   if(s.n2_dosis>0)fert+='<div class="srow"><span class="sr-l">N2 — '+s.n2_fuente+(s.n2_fecha?' · '+s.n2_fecha:'')+'</span><span class="sr-v">'+s.n2_dosis+' kg/ha '+mp(s.n2_modo)+'</span></div>';
-  body.innerHTML='<div class="scard"><div class="scult">'+cl(s.cultivo)+'</div><div class="svar">'+(s.variedad||'—')+'</div><div class="sgrid"><div class="si"><div class="si-l">Semilla</div><div class="si-v">'+(s.kg_ha||'—')+' <span class="si-u">kg/ha</span> '+mp(s.semilla_modo)+'</div></div><div class="si"><div class="si-l">Siembra</div><div class="si-v">'+mp(s.siembra_modo||'—')+'</div></div><div class="si"><div class="si-l">Antecesor</div><div class="si-v">'+antL+'</div></div>'+(s.curasemilla?'<div class="si"><div class="si-l">Curasemilla</div><div class="si-v" style="font-size:11px">'+s.curasemilla+'</div></div>':'')+'</div>'+(fert?'<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Fertilización</div>'+fert:'')+'<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Calidad semilla</div><div class="srow"><span class="sr-l">Poder germinativo</span><span class="sr-v">'+(s.pg?(s.pg*100).toFixed(0)+'%':'—')+'</span></div><div class="srow"><span class="sr-l">Peso mil semillas</span><span class="sr-v">'+(s.p1000||'—')+' g</span></div><div class="srow"><span class="sr-l">N° análisis</span><span class="sr-v">'+(s.analisis||'—')+'</span></div></div>';
+  const canEdit=SESSION.r==='aplicador'||SESSION.r==='admin';
+  const editPanel=canEdit?`<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:8px">Confirmar datos</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><div style="flex:1;min-width:120px"><div style="font-size:10px;color:var(--txt3);margin-bottom:3px">Fecha siembra</div><input id="sie-fecha" type="date" value="${fechaActual}" style="width:100%;box-sizing:border-box;border:1px solid var(--brd);border-radius:6px;padding:6px 8px;font-size:12px;background:var(--surf2);color:var(--txt1)"></div><div style="flex:1;min-width:120px"><div style="font-size:10px;color:var(--txt3);margin-bottom:3px">Variedad</div><input id="sie-var" type="text" value="${varActual.replace(/"/g,'&quot;')}" placeholder="${(s.variedad||'Variedad').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;border:1px solid var(--brd);border-radius:6px;padding:6px 8px;font-size:12px;background:var(--surf2);color:var(--txt1)"></div></div><button onclick="schSaveSiembraEdit()" style="width:100%;background:var(--grn);color:#fff;border:none;border-radius:7px;padding:8px;font-size:13px;font-weight:600;cursor:pointer">Guardar</button>${edit.usuario?'<div style="font-size:10px;color:var(--txt3);margin-top:6px;text-align:right">Última edición: '+edit.usuario+(edit.created_at?' · '+edit.created_at.split('T')[0]:'')+'</div>':''}`:''
+  body.innerHTML='<div class="scard"><div class="scult">'+cl(s.cultivo)+'</div><div class="svar">'+(varActual||'—')+'</div>'+(fechaActual?'<div style="font-size:11px;color:var(--txt3);margin-bottom:4px">Siembra: '+fechaActual+'</div>':'')+'<div class="sgrid"><div class="si"><div class="si-l">Semilla</div><div class="si-v">'+(s.kg_ha||'—')+' <span class="si-u">kg/ha</span> '+mp(s.semilla_modo)+'</div></div><div class="si"><div class="si-l">Siembra</div><div class="si-v">'+mp(s.siembra_modo||'—')+'</div></div><div class="si"><div class="si-l">Antecesor</div><div class="si-v">'+antL+'</div></div>'+(s.curasemilla?'<div class="si"><div class="si-l">Curasemilla</div><div class="si-v" style="font-size:11px">'+s.curasemilla+'</div></div>':'')+'</div>'+(fert?'<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Fertilización</div>'+fert:'')+'<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Calidad semilla</div><div class="srow"><span class="sr-l">Poder germinativo</span><span class="sr-v">'+(s.pg?(s.pg*100).toFixed(0)+'%':'—')+'</span></div><div class="srow"><span class="sr-l">Peso mil semillas</span><span class="sr-v">'+(s.p1000||'—')+' g</span></div><div class="srow"><span class="sr-l">N° análisis</span><span class="sr-v">'+(s.analisis||'—')+'</span></div>'+editPanel+'</div>';
+}
+async function schSaveSiembraEdit(){
+  const key=schSK(sSel);if(!key){toast('Sin lote seleccionado');return;}
+  const campana={r26:'2026',r25:'2025',r24:'2024',r23:'2023'}[sYr]||sYr;
+  const cliId=D.ck||SESSION.c[0];
+  const fecha=document.getElementById('sie-fecha')?.value||'';
+  const variedad=(document.getElementById('sie-var')?.value||'').trim();
+  if(!fecha&&!variedad){toast('Ingresá fecha o variedad');return;}
+  try{
+    await sbUp('siembra_edits','cliente_id,campo_id,lote_key,campana',{
+      cliente_id:cliId,campo_id:sSel.layer,lote_key:key,campana:campana,
+      fecha_siembra:fecha||null,variedad:variedad||null,usuario:SESSION.u
+    });
+    toast('Guardado ✓');
+    schRSiembra();
+  }catch(e){toast('Error al guardar: '+e.message);}
 }
 
 function schTogR(){sRO=!sRO;if(sRO){schCP();schRR();document.getElementById('srpnl').classList.add('open');}else schCR();}
