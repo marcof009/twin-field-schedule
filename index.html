@@ -981,11 +981,12 @@ function retRF(body){
 function retUC(){
   const ck2=document.getElementById('rc').value;
   const cfg=CFG[ck2];
-  document.getElementById('rcm').innerHTML='<option value="">—</option>'+(cfg?Object.entries(cfg.campos).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join(''):'');
+  const rcm=document.getElementById('rcm');
+  rcm.innerHTML='<option value="">—</option>'+(cfg?Object.entries(cfg.campos).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join(''):'');
   const rlWrap=document.getElementById('rl-wrap');if(rlWrap){rlWrap.style.display='none';rlWrap.innerHTML='';}
-  // Si el cliente seleccionado no es el que está cargado en D, precargar siembra
   if(ck2&&(!D||D.ck!==ck2)){
-    schLoad(ck2);
+    rcm.disabled=true;
+    schLoad(ck2).then(()=>{rcm.disabled=false;}).catch(()=>{rcm.disabled=false;});
   }
 }
 function retUL(){
