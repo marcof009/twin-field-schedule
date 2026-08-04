@@ -881,7 +881,7 @@ function retRF(body){
   body.innerHTML=`<div class="rform">
 <div class="rfs">Ubicación</div>
 <div class="rfr"><div class="rff"><label>Cliente</label><select id="rc" onchange="retUC()"><option value="">—</option>${copts}</select></div><div class="rff"><label>Campo</label><select id="rcm" onchange="retUL()"><option value="">—</option></select></div></div>
-<div class="rfr"><div class="rff"><label>Lote</label><select id="rl" onchange="retUA()"><option value="">—</option></select></div><div class="rff"><label>Ha</label><input type="number" id="rha" placeholder="0" readonly></div></div>
+<div id="rl-wrap" style="display:none;padding:8px 14px 0"></div>
 <div id="ret-draw-wrap"></div>
 <div class="rfs">Detalle</div>
 <div class="rfr"><div class="rff"><label>Cultivo</label><select id="rcu"><option value="">—</option><option>Cebada</option>
@@ -984,38 +984,43 @@ function retUC(){
 }
 function retUL(){
   const cm=document.getElementById('rcm').value;
-  // Usar lotes del SHP si están cargados, sino usar lista maestra de siembra
+  const wrap=document.getElementById('rl-wrap');
+  if(!cm){wrap.style.display='none';wrap.innerHTML='';return;}
   let lotes=D?.lotes.filter(l=>l.layer===cm)||[];
   if(!lotes.length&&D?.siembra?.[cm]){
-    // Fallback: lotes desde siembra
     lotes=Object.keys(D.siembra[cm]).map(k=>({name:k.replace(/^LOTE\s*/i,''),layer:cm,area:''}));
   }
-  document.getElementById('rl').innerHTML='<option value="">—</option>'+lotes.map(l=>'<option value="'+l.name+'">'+l.name.toUpperCase()+(l.area?' ('+l.area+' ha)':'')+'</option>').join('');
+  lotes=[...lotes].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+  wrap.style.display='block';
+  wrap.innerHTML='<div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Lotes <span id="rl-count" style="color:var(--acc)"></span></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:5px;margin-bottom:4px">'
+    +lotes.map(l=>{
+      const id='rlc-'+l.name.replace(/\s+/g,'_');
+      return `<label for="${id}" style="display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--bord);border-radius:var(--r2);cursor:pointer;background:var(--surf2);font-size:12px" onclick="retULCount()">
+        <input type="checkbox" id="${id}" value="${l.name}" data-ha="${l.area||''}" style="width:15px;height:15px;accent-color:var(--acc);cursor:pointer">
+        <span>${l.name.toUpperCase()}</span>${l.area?'<span style="color:var(--txt3);font-size:10px;margin-left:auto">'+l.area+' ha</span>':''}
+      </label>`;
+    }).join('')
+    +'</div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:4px">'
+    +'<button onclick="retULAll(true)" style="font-size:11px;padding:4px 10px;border:1px solid var(--bord);border-radius:20px;background:var(--surf);cursor:pointer;color:var(--txt2)">Todos</button>'
+    +'<button onclick="retULAll(false)" style="font-size:11px;padding:4px 10px;border:1px solid var(--bord);border-radius:20px;background:var(--surf);cursor:pointer;color:var(--txt2)">Ninguno</button>'
+    +'</div>';
+  retULCount();
 }
-function retUA(){
-  const cm=document.getElementById('rcm').value,lo=document.getElementById('rl').value;
-  const l=D?.lotes.find(x=>x.layer===cm&&x.name===lo);
-  const haInput=document.getElementById('rha');
-  if(l){
-    haInput.value=l.area;haInput.readOnly=false;
-  }else{
-    haInput.value='';haInput.readOnly=false;haInput.placeholder='Ingresar ha';
-  }
-  if(lo&&l){
-    // Mostrar botón dibujar y thumbnail (solo si hay geometría SHP)
-    const existing=document.getElementById('ret-draw-wrap');
-    if(existing)existing.remove();
-    const wrap=document.createElement('div');wrap.id='ret-draw-wrap';
-    wrap.innerHTML=`<button class="lote-draw-btn" onclick="drawOpen('${cm}','${lo}')">🗺 Anotar sobre el lote</button>
-    <div id="ret-thumb" class="lote-thumb" onclick="drawOpen('${cm}','${lo}')" style="display:none">
-      <canvas id="ret-thumb-cv"></canvas>
-      <div class="lote-thumb-label">Toca para editar</div>
-    </div>`;
-    document.getElementById('rl').closest('.rfr').after(wrap);
-  }else{
-    document.getElementById('ret-draw-wrap')?.remove();
-  }
+function retULCount(){
+  const sel=retLotesSeleccionados();
+  const span=document.getElementById('rl-count');
+  if(span)span.textContent=sel.length?'('+sel.length+' seleccionado'+(sel.length>1?'s':'')+')':'';
 }
+function retULAll(check){
+  document.querySelectorAll('#rl-wrap input[type=checkbox]').forEach(cb=>cb.checked=check);
+  retULCount();
+}
+function retLotesSeleccionados(){
+  return [...document.querySelectorAll('#rl-wrap input[type=checkbox]:checked')].map(cb=>({name:cb.value,ha:cb.dataset.ha}));
+}
+function retUA(){}
 function retFiltrarProd(q){
   const box=document.getElementById('rpn-sugg');if(!box)return;
   if(!q||q.length<1){
@@ -1042,9 +1047,17 @@ function retSelProd(nombre,unidad){
 function retAP(){const n=document.getElementById('rpn').value.trim();if(!n){toast('Nombre requerido');return;}const su=document.getElementById('rpn-sugg');if(su)su.style.display='none';retP.push({nombre:n,dosis:document.getElementById('rpd').value,unidad:document.getElementById('rpu').value});document.getElementById('rpn').value='';document.getElementById('rpd').value='';retRP();}
 function retRP(){const el=document.getElementById('rpl');if(!el)return;el.innerHTML=retP.map((p,i)=>'<div class="pr"><div class="pr-n">'+p.nombre+'</div><div class="pr-d">'+p.dosis+' '+p.unidad+'</div><button class="pr-del" onclick="retP.splice('+i+',1);retRP()">✕</button></div>').join('');}
 async function retG(){
-  const lo=document.getElementById('rl').value;if(!lo){toast('Seleccioná un lote');return;}if(!retP.length){toast('Agregá al menos un producto');return;}
-  const rec={lote_id:lo,campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,anotacion:drawState.annotation||null,fecha:new Date().toISOString().split('T')[0],cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('robj').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rcau')?.value)||null,observaciones:document.getElementById('rob').value,usuario:SESSION.u,estado:'pendiente',productos:retP};
-  try{await sbI('recetas',rec);toast('Receta guardada ✓');retStk=[];retInit();}catch(e){toast('Error: '+e.message);}
+  const lotes=retLotesSeleccionados();
+  if(!lotes.length){toast('Seleccioná al menos un lote');return;}
+  if(!retP.length){toast('Agregá al menos un producto');return;}
+  const base={campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,fecha:new Date().toISOString().split('T')[0],cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('robj').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rcau')?.value)||null,observaciones:document.getElementById('rob').value,usuario:SESSION.u,estado:'pendiente',productos:retP};
+  try{
+    for(const l of lotes){
+      await sbI('recetas',{...base,lote_id:l.name,ha:parseFloat(l.ha)||null,anotacion:null});
+    }
+    toast(lotes.length>1?lotes.length+' recetas guardadas ✓':'Receta guardada ✓');
+    retStk=[];retInit();
+  }catch(e){toast('Error: '+e.message);}
 }
 function retRD(body,id){
   const r=retR.find(x=>x.id===id);if(!r){body.innerHTML='<div class="empty">No encontrada</div>';return;}
