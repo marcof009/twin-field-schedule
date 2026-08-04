@@ -971,6 +971,12 @@ function retRF(body){
 <div id="rpl"></div>
 <button class="rfsave" onclick="retG()">Guardar receta</button>
 </div>`;
+  // Pre-seleccionar cliente si el usuario tiene uno solo asignado
+  const userCli=SESSION.c[0];
+  if(userCli&&userCli!=='all'&&CFG[userCli]){
+    document.getElementById('rc').value=userCli;
+    retUC();
+  }
 }
 function retUC(){
   const ck2=document.getElementById('rc').value;
@@ -986,6 +992,13 @@ function retUL(){
   const cm=document.getElementById('rcm').value;
   const wrap=document.getElementById('rl-wrap');
   if(!cm){wrap.style.display='none';wrap.innerHTML='';return;}
+  const ck2=document.getElementById('rc').value;
+  if(!D||D.ck!==ck2){
+    wrap.style.display='block';
+    wrap.innerHTML='<div style="font-size:11px;color:var(--txt3);padding:4px 0"><span class="spin" style="display:inline-block;width:12px;height:12px;border:2px solid var(--brd);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px"></span>Cargando lotes...</div>';
+    const poll=setInterval(()=>{if(D&&D.ck===ck2){clearInterval(poll);retUL();}},400);
+    return;
+  }
   let lotes=D?.lotes.filter(l=>l.layer===cm)||[];
   if(!lotes.length&&D?.siembra?.[cm]){
     lotes=Object.keys(D.siembra[cm]).map(k=>({name:k.replace(/^LOTE\s*/i,''),layer:cm,area:''}));
