@@ -475,11 +475,11 @@ let sVp={cx:0,cy:0,scale:1},sDrg={on:false},sPnch={on:false};
 const sCV=document.getElementById('scv'),sCX=sCV.getContext('2d');
 
 function schInit(){
-  // poblar selector si es admin
   const sel=document.getElementById('s-cli-sel');
   if(SESSION.c[0]==='all'){
     sel.style.display='block';
     sel.innerHTML=Object.entries(CFG).map(([k,v])=>`<option value="${k}">${v.lbl}</option>`).join('');
+    if(D?.ck)sel.value=D.ck;
   }
   if(D){schBT();schR();schIV();schDraw();document.getElementById('slod').style.display='none';return;}
   schLoad();
@@ -810,7 +810,7 @@ function recMicT(){
 let retStk=[],retP=[],retR=[];
 let retOrdenMode=false,retSel=new Set(),retRepMode=false;
 async function retInit(){
-  retStk=[];retOrdenMode=false;retRepMode=false;retSel=new Set();
+  retStk=[];retOrdenMode=false;retRepMode=false;retSel=new Set();retFiltroEstado=null;
   document.getElementById('ret-title').textContent='Recetas';
   document.getElementById('ret-add').style.display=SESSION.r==='admin'?'block':'none';
   document.getElementById('ret-orden-btn').style.display='block';document.getElementById('ret-rep-btn').style.display='block';
@@ -840,23 +840,29 @@ function retRend(){
   document.getElementById('ret-title').textContent=t?(t.type==='nueva'?'Nueva receta':'Detalle'):'Recetas';
   if(!t){retRL(body);}else if(t.type==='nueva'){retRF(body);}else{retRD(body,t.id);}
 }
+let retFiltroEstado=null;
 function retDashboard(){
   const pend=retR.filter(r=>r.estado==='pendiente').length;
   const ok=retR.filter(r=>r.estado==='ok').length;
   const canc=retR.filter(r=>r.estado==='cancelado').length;
   const anul=retR.filter(r=>r.estado==='anulada').length;
+  const selStyle=(est)=>retFiltroEstado===est?'box-shadow:0 0 0 2px currentColor;':'';
   return `<div style="display:flex;gap:8px;padding:10px 14px 0;flex-wrap:wrap">
-    <div style="background:rgba(38,115,168,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center">
-      <div style="font-size:22px;font-weight:200;color:var(--blu)">${pend}</div>
-      <div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--blu)">Pendientes</div>
+    <div onclick="retToggleFiltro('pendiente')" style="background:rgba(38,115,168,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center;cursor:pointer;${selStyle('pendiente')}color:var(--blu)">
+      <div style="font-size:22px;font-weight:200">${pend}</div>
+      <div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase">Pendientes</div>
     </div>
-    <div style="background:rgba(74,158,74,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center">
-      <div style="font-size:22px;font-weight:200;color:var(--grn)">${ok}</div>
-      <div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--grn)">Aplicadas</div>
+    <div onclick="retToggleFiltro('ok')" style="background:rgba(74,158,74,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center;cursor:pointer;${selStyle('ok')}color:var(--grn)">
+      <div style="font-size:22px;font-weight:200">${ok}</div>
+      <div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase">Aplicadas</div>
     </div>
-    ${canc?`<div style="background:rgba(184,50,50,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center"><div style="font-size:22px;font-weight:200;color:var(--red)">${canc}</div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--red)">Canceladas</div></div>`:''}
-    ${anul?`<div style="background:rgba(184,50,50,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center"><div style="font-size:22px;font-weight:200;color:var(--red)">${anul}</div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--red)">Anuladas</div></div>`:''}
+    ${canc?`<div onclick="retToggleFiltro('cancelado')" style="background:rgba(184,50,50,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center;cursor:pointer;${selStyle('cancelado')}color:var(--red)"><div style="font-size:22px;font-weight:200">${canc}</div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase">Canceladas</div></div>`:''}
+    ${anul?`<div onclick="retToggleFiltro('anulada')" style="background:rgba(184,50,50,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center;cursor:pointer;${selStyle('anulada')}color:var(--red)"><div style="font-size:22px;font-weight:200">${anul}</div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase">Anuladas</div></div>`:''}
   </div>`;
+}
+function retToggleFiltro(estado){
+  retFiltroEstado=retFiltroEstado===estado?null:estado;
+  retRL(document.getElementById('ret-body'));
 }
 function retRL(body){
   const dash=retDashboard();
@@ -878,7 +884,9 @@ function retRL(body){
     `<div style="padding:10px 14px"><button onclick="retGenPDF()" style="width:100%;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:12px;font-size:13px;font-weight:400;font-family:var(--f)">Generar PDF (${retSel.size} receta${retSel.size!==1?'s':''})</button></div>`;
     return;
   }
-  body.innerHTML=dash+retR.map(r=>`<div class="rli" data-id="${r.id}" onclick="retStk.push({type:'ver',id:this.dataset.id});retRend()"><div class="rli-top"><div class="rli-n">Rec. ${r.numero_receta||'—'} · ${r.lote_id||'?'}</div><span class="ep ep-${r.estado||'pendiente'}">${r.estado||'pendiente'}</span></div><div class="rli-m"><span>📅 ${r.fecha}</span><span>${r.cultivo||'—'}</span><span>${r.objetivo||''}</span></div></div>`).join('');
+  const lista=retFiltroEstado?retR.filter(r=>r.estado===retFiltroEstado):retR;
+  body.innerHTML=dash+(retFiltroEstado?`<div style="padding:6px 14px 0;font-size:11px;color:var(--txt3)">Filtrando por <b>${retFiltroEstado}</b> · <span onclick="retToggleFiltro(retFiltroEstado)" style="color:var(--acc);cursor:pointer">Ver todas</span></div>`:'')
+    +lista.map(r=>`<div class="rli" data-id="${r.id}" onclick="retStk.push({type:'ver',id:this.dataset.id});retRend()"><div class="rli-top"><div class="rli-n">Rec. ${r.numero_receta||'—'} · ${r.lote_id||'?'}</div><span class="ep ep-${r.estado||'pendiente'}">${r.estado||'pendiente'}</span></div><div class="rli-m"><span>📅 ${r.fecha}</span><span>${r.cultivo||'—'}</span><span>${r.objetivo||''}</span></div></div>`).join('');
 }
 function retRF(body){
   const copts=Object.entries(CFG).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join('');
@@ -1014,7 +1022,7 @@ function retUL(){
     +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:5px;margin-bottom:4px">'
     +lotes.map(l=>{
       const id='rlc-'+l.name.replace(/\s+/g,'_');
-      return `<label for="${id}" style="display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--bord);border-radius:var(--r2);cursor:pointer;background:var(--surf2);font-size:12px" onclick="retULCount()">
+      return `<label id="lbl-${id}" for="${id}" style="display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--bord);border-radius:var(--r2);cursor:pointer;background:var(--surf2);font-size:12px;transition:all .15s" onclick="retULToggle('${id}')">
         <input type="checkbox" id="${id}" value="${l.name}" data-ha="${l.area||''}" style="width:15px;height:15px;accent-color:var(--acc);cursor:pointer">
         <span>${l.name.toUpperCase()}</span>${l.area?'<span style="color:var(--txt3);font-size:10px;margin-left:auto">'+l.area+' ha</span>':''}
       </label>`;
@@ -1026,13 +1034,39 @@ function retUL(){
     +'</div>';
   retULCount();
 }
+function retULToggle(id){
+  // called via onclick on label — checkbox state already toggled by browser
+  setTimeout(()=>{
+    const cb=document.getElementById(id);
+    const lbl=document.getElementById('lbl-'+id);
+    if(!cb||!lbl)return;
+    if(cb.checked){
+      lbl.style.background='rgba(43,107,43,.12)';
+      lbl.style.borderColor='var(--grn)';
+      lbl.style.color='var(--grn)';
+    }else{
+      lbl.style.background='var(--surf2)';
+      lbl.style.borderColor='var(--bord)';
+      lbl.style.color='';
+    }
+    retULCount();
+  },0);
+}
 function retULCount(){
   const sel=retLotesSeleccionados();
   const span=document.getElementById('rl-count');
   if(span)span.textContent=sel.length?'('+sel.length+' seleccionado'+(sel.length>1?'s':'')+')':'';
 }
 function retULAll(check){
-  document.querySelectorAll('#rl-wrap input[type=checkbox]').forEach(cb=>cb.checked=check);
+  document.querySelectorAll('#rl-wrap input[type=checkbox]').forEach(cb=>{
+    cb.checked=check;
+    const lbl=document.getElementById('lbl-rlc-'+cb.value.replace(/\s+/g,'_'));
+    if(lbl){
+      lbl.style.background=check?'rgba(43,107,43,.12)':'var(--surf2)';
+      lbl.style.borderColor=check?'var(--grn)':'var(--bord)';
+      lbl.style.color=check?'var(--grn)':'';
+    }
+  });
   retULCount();
 }
 function retLotesSeleccionados(){
@@ -1071,7 +1105,7 @@ async function retG(){
   const base={campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,fecha:new Date().toISOString().split('T')[0],cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('robj').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rcau')?.value)||null,observaciones:document.getElementById('rob').value,usuario:SESSION.u,estado:'pendiente',productos:retP};
   try{
     for(const l of lotes){
-      await sbI('recetas',{...base,lote_id:l.name,ha:parseFloat(l.ha)||null,anotacion:null});
+      await sbI('recetas',{...base,lote_id:l.name,anotacion:null});
     }
     toast(lotes.length>1?lotes.length+' recetas guardadas ✓':'Receta guardada ✓');
     retStk=[];retInit();
