@@ -58,7 +58,7 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 .mc{background:var(--surf);border-radius:var(--r3);padding:20px 16px 18px;border:1px solid var(--bord);cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:10px;box-shadow:var(--sh)}
 .mc:active{transform:scale(.97);background:var(--surf2)}
 .mac{width:18px;height:1.5px;border-radius:1px;margin-bottom:2px}
-.c-s .mac{background:var(--acc)} .c-r .mac{background:var(--ora)} .c-rec .mac{background:var(--blu)} .c-su .mac{background:#8d6e63} .c-sb .mac{background:#cda434}
+.c-s .mac{background:var(--acc)} .c-r .mac{background:var(--ora)} .c-rec .mac{background:var(--blu)} .c-su .mac{background:#8d6e63}
 .mi{font-size:22px} .mn{font-size:14px;font-weight:400;letter-spacing:-.2px} .md{font-size:11px;color:var(--txt2);line-height:1.4}
 
 /* SHARED HDR */
@@ -184,17 +184,6 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 .omic{background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:0 12px;font-size:16px}
 .omic.rec{border-color:var(--red);animation:pulse 1s infinite}
 .osave{flex:1;background:var(--txt);color:var(--bg);border:none;border-radius:var(--r2);padding:10px;font-size:12px;font-weight:400;letter-spacing:.3px}
-.of-field{margin-bottom:8px}
-.of-field label{display:block;font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:3px}
-.of-field input,.of-field textarea{width:100%;background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r2);padding:8px 10px;font-size:12px;font-family:var(--f);outline:none;color:var(--txt)}
-.of-field input:focus,.of-field textarea:focus{border-color:var(--acc)}
-.hcard{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);margin-bottom:8px;overflow:hidden}
-.hcard-fecha{background:var(--surf2);padding:6px 11px;font-size:10px;font-weight:500;color:var(--txt2);border-bottom:1px solid var(--bord);display:flex;justify-content:space-between}
-.hcard-body{padding:9px 11px}
-.hcard-row{display:flex;gap:6px;margin-bottom:4px;font-size:12px;align-items:baseline}
-.hcard-row:last-child{margin-bottom:0}
-.hcard-lbl{font-size:9px;font-weight:500;letter-spacing:.4px;text-transform:uppercase;color:var(--txt3);min-width:70px;flex-shrink:0}
-.hcard-val{color:var(--txt);line-height:1.4}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .oi{border-radius:var(--r2);padding:9px 11px;margin-bottom:5px;border-left:2px solid var(--bord2)}
 .oi.maleza{border-left-color:#e67e22}.oi.plaga{border-left-color:var(--red)}.oi.enfermedad{border-left-color:#8e44ad}.oi.general{border-left-color:var(--blu)}.oi.fertilidad{border-left-color:var(--grn)}
@@ -213,7 +202,9 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 .ep{font-size:8px;font-weight:500;letter-spacing:.4px;text-transform:uppercase;padding:2px 6px;border-radius:3px}
 .ep-pendiente{background:rgba(38,115,168,.08);color:var(--blu)}
 .ep-completada{background:rgba(74,158,74,.08);color:var(--grn)}
+.ep-ok{background:rgba(74,158,74,.08);color:var(--grn)}
 .ep-anulada{background:rgba(184,50,50,.08);color:var(--red)}
+.ep-cancelado{background:rgba(184,50,50,.08);color:var(--red)}
 .rform{padding:14px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
 .rfs{font-size:9px;font-weight:500;letter-spacing:.7px;text-transform:uppercase;color:var(--txt3);margin:14px 0 8px}
 .rfr{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
@@ -242,19 +233,6 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 .lote-thumb{width:100%;height:80px;border-radius:var(--r2);background:var(--surf2);border:1px solid var(--bord);margin-top:5px;position:relative;overflow:hidden;cursor:pointer}
 .lote-thumb canvas{width:100%;height:100%;display:block}
 .lote-thumb-label{position:absolute;bottom:4px;right:6px;font-size:9px;color:var(--txt3);font-weight:300}
-#sb-tabs{flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bord);display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-#sb-tabs::-webkit-scrollbar{display:none}
-.sb-item{padding:9px 14px;border-bottom:1px solid var(--bord);display:flex;gap:10px;align-items:flex-start}
-.sb-item:last-child{border-bottom:none}
-.sb-chk{width:22px;height:22px;flex-shrink:0;margin-top:2px;cursor:pointer;-webkit-appearance:none;appearance:none;border:2px solid var(--bord2);border-radius:5px;background:var(--surf);position:relative;outline:none}
-.sb-chk:checked{background:var(--acc);border-color:var(--acc)}
-.sb-chk:checked::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700}
-.sb-fields{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:5px}
-.sb-fields input{background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r2);padding:6px 9px;font-size:11px;font-family:var(--f);outline:none;width:100%}
-.sb-fields input:focus{border-color:var(--acc)}
-.sb-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
-.sb-trigo .sb-dot{background:#2d7a2d}
-.sb-cebada .sb-dot{background:#7ec850}
 
 /* SUELOS */
 #s-suelos{background:var(--bg)}
@@ -284,10 +262,12 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 <div id="s-login" class="screen active">
   <div class="lw">
     <div class="ll">
-      <svg width="160" height="62" viewBox="0 0 160 62" xmlns="http://www.w3.org/2000/svg">
-        <text x="80" y="32" text-anchor="middle" font-family="DM Sans,system-ui" font-weight="200" font-size="38" fill="#cc5c08" letter-spacing="2">TWIN</text>
-        <text x="80" y="55" text-anchor="middle" font-family="DM Sans,system-ui" font-weight="400" font-size="13" fill="#2b6b2b" letter-spacing="4">FIELD SUITE</text>
+      <svg width="80" height="22" viewBox="0 0 80 22" xmlns="http://www.w3.org/2000/svg">
+        <text x="0" y="17" font-family="DM Sans,system-ui" font-weight="200" font-size="18" fill="#cc5c08" letter-spacing="1">TW</text>
+        <text x="37" y="17" font-family="DM Sans,system-ui" font-weight="200" font-size="18" fill="#cc5c08" letter-spacing="1">N</text>
+        <g transform="translate(33,1)"><ellipse cx="3.5" cy="13" rx="2.8" ry="3.5" fill="#cc5c08"/><ellipse cx="1" cy="11" rx="2" ry="2.8" fill="#cc5c08" transform="rotate(-20,1,11)"/><ellipse cx="6" cy="11" rx="2" ry="2.8" fill="#cc5c08" transform="rotate(20,6,11)"/><ellipse cx="0.5" cy="8" rx="1.5" ry="2.2" fill="#cc5c08" transform="rotate(-35,0.5,8)"/><ellipse cx="6.5" cy="8" rx="1.5" ry="2.2" fill="#cc5c08" transform="rotate(35,6.5,8)"/><path d="M3.5,16 Q3.5,19 3.5,21" stroke="#cc5c08" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M3.5,18 Q1,17 0,15" stroke="#cc5c08" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M3.5,17 Q6,16 7,14" stroke="#cc5c08" stroke-width="1" fill="none" stroke-linecap="round"/></g>
       </svg>
+      <div class="lt">Field Suite</div>
     </div>
     <div class="ls">Ing. Agr. Marcos Fernández</div>
     <div class="lf"><label>Usuario</label><input type="text" id="li-u" autocapitalize="none" spellcheck="false" placeholder="usuario"></div>
@@ -299,31 +279,21 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 
 <!-- HOME -->
 <div id="s-home" class="screen">
-  <div class="hh"><div class="hht"><div><div class="hg">Bienvenido</div><div class="hu" id="h-user">—</div></div>
-<svg width="120" height="46" viewBox="0 0 160 62" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
-  <text x="80" y="32" text-anchor="middle" font-family="DM Sans,system-ui" font-weight="200" font-size="38" fill="#cc5c08" letter-spacing="2">TWIN</text>
-  <text x="80" y="55" text-anchor="middle" font-family="DM Sans,system-ui" font-weight="400" font-size="13" fill="#2b6b2b" letter-spacing="4">FIELD SUITE</text>
-</svg>
-<button class="hlo" onclick="doLogout()">Salir</button></div>
-<div id="h-cli-sel-wrap" style="display:none;margin-top:10px">
-  <select id="h-cli-sel" onchange="homeCambioCli(this.value)" style="width:100%;font-family:var(--f);font-size:13px;font-weight:300;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:9px 12px;color:var(--txt);outline:none">
-  </select>
-</div></div>
+  <div class="hh"><div class="hht"><div><div class="hg">Bienvenido</div><div class="hu" id="h-user">—</div></div><button class="hlo" onclick="doLogout()">Salir</button></div></div>
   <div class="hb">
     <div class="hlbl">Módulos</div>
     <div class="mg">
       <div class="mc c-s" onclick="openMod('schedule')"><div class="mac"></div><div class="mi">📅</div><div class="mn">Schedule</div><div class="md">Mapa de lotes y cultivos</div></div>
-      <div class="mc c-rec" onclick="openMod('recorridas')"><div class="mac"></div><div class="mi">📝</div><div class="mn">Recorridas</div><div class="md">Observaciones en campo</div></div>
+      <div class="mc c-rec" onclick="openMod('recorridas')"><div class="mac"></div><div class="mi">🚜</div><div class="mn">Recorridas</div><div class="md">Observaciones en campo</div></div>
       <div class="mc c-r" onclick="openMod('recetas')"><div class="mac"></div><div class="mi">💧</div><div class="mn">Recetas</div><div class="md">Gestión de pulverizaciones</div></div>
-      <div class="mc c-su" onclick="openMod('suelos')"><div class="mac"></div><div class="mi">🧪</div><div class="mn">Análisis de Suelos</div><div class="md">Análisis de laboratorio</div></div>
-      <div class="mc c-sb" onclick="openMod('siembra')"><div class="mac"></div><div class="mi">🚜</div><div class="mn">Siembra</div><div class="md">Avance del plan de siembra</div></div>
+      <div class="mc c-su" onclick="openMod('suelos')"><div class="mac"></div><div class="mi">🌱</div><div class="mn">Suelos</div><div class="md">Análisis de laboratorio</div></div>
     </div>
   </div>
 </div>
 
 <!-- SCHEDULE -->
 <div id="s-schedule" class="screen">
-  <div class="ah"><button class="ab" onclick="closeMod('schedule')">Inicio</button><div class="at" id="s-hcli" style="font-size:13px;color:var(--txt2)">—</div></div>
+  <div class="ah"><button class="ab" onclick="closeMod('schedule')">Inicio</button><div class="at" id="s-hcli" style="font-size:13px;color:var(--txt2)">—</div><select id="s-cli-sel" onchange="schCambioCli(this.value)" style="display:none;font-family:var(--f);font-size:11px;font-weight:300;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:4px 8px;color:var(--txt);outline:none"></select></div>
   <div id="sct"></div>
   <div id="smw">
     <canvas id="scv"></canvas>
@@ -349,16 +319,9 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
   <div id="ret-body" style="flex:1;overflow-y:auto;padding:10px 14px 40px;-webkit-overflow-scrolling:touch"></div>
 </div>
 
-<!-- SIEMBRA -->
-<div id="s-siembra" class="screen">
-  <div class="ah"><button class="ab" onclick="closeMod('siembra')">Inicio</button><div class="at">Siembra</div></div>
-  <div id="sb-tabs"></div>
-  <div id="sb-body" class="rb"></div>
-</div>
-
 <!-- SUELOS -->
 <div id="s-suelos" class="screen">
-  <div class="ah"><button class="ab" onclick="closeMod('suelos')">Inicio</button><div class="at">Análisis de Suelos</div></div>
+  <div class="ah"><button class="ab" onclick="closeMod('suelos')">Inicio</button><div class="at">Suelos</div></div>
   <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
     <div class="uz" onclick="document.getElementById('si').click()"><div class="uz-i">📄</div><div class="uz-t">Subir informe de laboratorio</div><div class="uz-s">FERTILAB · SUELOFERTIL · PDF o Excel</div></div>
     <input type="file" id="si" accept=".pdf,.xlsx,.xls" style="display:none" onchange="sueloFile(this)">
@@ -418,8 +381,12 @@ const USERS = {
   "hollender": {h:"350853890fb39f0fcfdd9d754bf3536b4c2a28a14818fc6da9f357218b1ed7fb",r:"cliente",c:["hollender"]},
   "almarmat":  {h:"dc4513e5e59b19f255710c9db029e6b54f2bac4a4afae12b1efb780566dbefff",r:"cliente",c:["almarmat"]},
   // nueva_empresa: {h:"HASH_SHA256_PASSWORD",r:"cliente",c:["nueva_empresa"]},
-  // aplicadores — agregar uno por cliente con password propio
+  // aplicadores — uno por cliente (contraseñas: cliente2026)
   "aplicador_la_alicia": {h:"a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",r:"aplicador",c:["la_alicia"]},
+  "aplicador_dam":       {h:"f8964b7411cbcd3c9e1cad3233c2ee6ceb3204fb74de5ad7f701aff8a8000f69",r:"aplicador",c:["dam"]},
+  "aplicador_hollender": {h:"82e652d9f42e1fdce80926c9d9ced572418656da0b1fb1901f183e5fc8252d34",r:"aplicador",c:["hollender"]},
+  "aplicador_mauricio":  {h:"995172f450b0a720400c3a5dfd6b97680b7900955e35673ce914f73d5e61c5f2",r:"aplicador",c:["mauricio"]},
+  "aplicador_almarmat":  {h:"baead63e9fe849dde879fc369eab05c39c7ee85a935d3bc082c3b171be4b5a71",r:"aplicador",c:["almarmat"]},
 };
 
 // CLIENTES CONFIG — agregar nuevo cliente acá + carpeta en Dropbox/TwinField/shp/
@@ -431,9 +398,7 @@ const CFG = {
   almarmat:{lbl:'Almarmat',campos:{el_cholo:{lbl:'El Cholo',shp:'el_cholo.zip'},la_chicha:{lbl:'La Chicha',shp:'la_chicha.zip'}},pulv:'almarmat.xlsx',pm:{}},
 };
 
-const CLAUDE_PROXY='https://twin-field-proxy.marcosf009.workers.dev';
 let PRODUCTOS=[];
-let ACTIVE_CLI='la_alicia';
 
 // STATE
 let SESSION=null, D=null;
@@ -445,6 +410,7 @@ function toast(m,ms=2400){const el=document.getElementById('toast');el.textConte
 async function dbxDL(p){const r=await fetch('https://content.dropboxapi.com/2/files/download',{method:'POST',headers:{'Authorization':'Bearer '+DBX_TOKEN,'Dropbox-API-Arg':JSON.stringify({path:p}),'Content-Type':'text/plain'}});if(!r.ok)throw new Error('DBX '+r.status+': '+p);return r.arrayBuffer();}
 async function sbG(t,p=''){const r=await fetch(SB_URL+'/rest/v1/'+t+'?'+p,{headers:SBH});if(!r.ok)throw new Error('SB '+r.status);return r.json();}
 async function sbI(t,b){const r=await fetch(SB_URL+'/rest/v1/'+t,{method:'POST',headers:SBH,body:JSON.stringify(b)});if(!r.ok)throw new Error('SBI '+r.status);return r.json();}
+async function sbUp(t,conflict,b){const r=await fetch(SB_URL+'/rest/v1/'+t+'?on_conflict='+conflict,{method:'POST',headers:{...SBH,'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(b)});if(!r.ok)throw new Error('SBU '+r.status);return r.json();}
 
 // AUTH
 async function doLogin(){
@@ -458,26 +424,10 @@ async function doLogin(){
 }
 function doLogout(){sessionStorage.removeItem('ts');SESSION=null;D=null;SS('login');}
 function chkS(){const s=sessionStorage.getItem('ts');if(s){SESSION=JSON.parse(s);return true;}document.getElementById('li-p').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});return false;}
-function goHome(){
-  document.getElementById('h-user').textContent=SESSION.u==='marcos'?'Marcos Fernández':SESSION.u;
-  if(SESSION.c[0]==='all'){
-    document.getElementById('h-cli-sel-wrap').style.display='block';
-    const sel=document.getElementById('h-cli-sel');
-    sel.innerHTML=Object.entries(CFG).map(([k,v])=>`<option value="${k}">${v.lbl}</option>`).join('');
-    const saved=sessionStorage.getItem('active_cli');
-    ACTIVE_CLI=saved&&CFG[saved]?saved:'la_alicia';
-    sel.value=ACTIVE_CLI;
-  }
-  SS('home');
-}
-function homeCambioCli(ck2){
-  ACTIVE_CLI=ck2;
-  sessionStorage.setItem('active_cli',ck2);
-  D=null; // forzar recarga de datos del nuevo cliente
-}
+function goHome(){document.getElementById('h-user').textContent=SESSION.u==='marcos'?'Marcos Fernández':SESSION.u;SS('home');}
 
 // NAV
-function openMod(m){SS(m);if(m==='schedule')schInit();else if(m==='recorridas')recInit();else if(m==='recetas')retInit();else if(m==='suelos')suelInit();else if(m==='siembra')siembraInit();}
+function openMod(m){SS(m);if(m==='schedule')schInit();else if(m==='recorridas')recInit();else if(m==='recetas')retInit();else if(m==='suelos')suelInit();}
 function closeMod(m){SS('home');if(m==='schedule'){schCP();schCR();}}
 
 // CROP COLORS
@@ -525,15 +475,22 @@ let sVp={cx:0,cy:0,scale:1},sDrg={on:false},sPnch={on:false};
 const sCV=document.getElementById('scv'),sCX=sCV.getContext('2d');
 
 function schInit(){
-  if(D){schBT();schR();schIV();schDraw();document.getElementById('slod').style.display='none';if(!Object.keys(SB_AVANCE).length)siembraLoadAvance().then(schRT);return;}
+  // poblar selector si es admin
+  const sel=document.getElementById('s-cli-sel');
+  if(SESSION.c[0]==='all'){
+    sel.style.display='block';
+    sel.innerHTML=Object.entries(CFG).map(([k,v])=>`<option value="${k}">${v.lbl}</option>`).join('');
+  }
+  if(D){schBT();schR();schIV();schDraw();document.getElementById('slod').style.display='none';return;}
   schLoad();
 }
+function schCambioCli(ck2){D=null;sSel=null;schLoad(ck2);}
 async function schLoad(clienteKey){
   await dbxRefreshToken();
   document.getElementById('slod').style.display='flex';
   D=null;
   try{
-    const ck2=clienteKey||(SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0]);
+    const ck2=clienteKey||(SESSION.c[0]==='all'?'la_alicia':SESSION.c[0]);
     const cfg=CFG[ck2];if(!cfg)throw new Error('Cliente no configurado');
     const sr=await Promise.all(Object.entries(cfg.campos).map(async([k,ci])=>{
       try{
@@ -556,7 +513,6 @@ async function schLoad(clienteKey){
     document.getElementById('slod').style.display='none';
     schBT();schR();schIV();schDraw();
   }catch(e){document.getElementById('slod').innerHTML='<div style="color:var(--red);text-align:center;padding:20px;font-size:12px">Error cargando datos<br><span style="color:var(--txt3)">'+e.message+'</span></div>';console.error(e);}
-  await siembraLoadAvance();
 }
 
 function pPulv(buf,pm){
@@ -567,7 +523,7 @@ function pPulv(buf,pm){
   for(let i=14;i<hr.length;i++){const h=String(hr[i]||'').trim();if(h&&h!=='nan')pc[i]=h;}
   for(let ri=7;ri<rows.length;ri++){
     const r=rows[ri];if(!r||!r[1])continue;
-    const raw=String(r[1]).trim();const ck2=pm[raw.toUpperCase()]||raw.toLowerCase();if(!ck2)continue;
+    const ck2=pm[String(r[1]).trim().toUpperCase()];if(!ck2)continue;
     const lr=String(r[2]||'').trim();if(!lr||lr==='nan')continue;
     const lk=lr.toUpperCase().startsWith('LOTE')?lr.toUpperCase():'LOTE '+lr.toUpperCase();
     const prods=Object.entries(pc).map(([i,n])=>({n,d:String(r[i]||'').trim()})).filter(p=>p.d&&p.d!=='nan'&&p.d!=='0');
@@ -579,7 +535,6 @@ function pPulv(buf,pm){
 }
 function pSuelos(buf,ck2){
   const PARAMS=['N-NO3','Fósforo','N Min.','S-Sulfato','MO','Zinc','pH','Humedad','Boro'];
-  const EXTRA=['CE','Calcio','Magnesio','Potasio','Sodio','PSI','CIC','Hierro','Cobre','Manganeso','Arena','Arcilla','Limo'];
   const wb=XLSX.read(buf,{type:'array'});
   const ws=wb.Sheets['Datos Completos']||wb.Sheets[wb.SheetNames[0]];if(!ws)return{};
   const rows=XLSX.utils.sheet_to_json(ws,{header:1});
@@ -595,21 +550,10 @@ function pSuelos(buf,ck2){
     su[ck3]=su[ck3]||{};su[ck3][lote]=su[ck3][lote]||{};
     if(!su[ck3][lote][anio])su[ck3][lote][anio]={arch,perfiles:[]};
     const perf={prof:String(r[ci['Prof.']]||'').trim()};
-    PARAMS.forEach(p=>{const v=r[ci[p]];if(v!==undefined&&v!==null&&v!==''&&ci[p]!==undefined)perf[p]=parseFloat(v);});
-    EXTRA.forEach(p=>{const v=r[ci[p]];if(v!==undefined&&v!==null&&v!==''&&ci[p]!==undefined)perf[p]=parseFloat(v);});
+    PARAMS.forEach(p=>{const v=r[ci[p]];if(v!==undefined&&v!==null&&v!=='')perf[p]=parseFloat(v);});
     su[ck3][lote][anio].perfiles.push(perf);
   }
   return su;
-}
-function fmtFecha(v){
-  if(!v)return'';
-  if(typeof v==='number'){
-    const d=new Date(Math.round((v-25569)*86400*1000));
-    return String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear();
-  }
-  const s=String(v).trim();
-  if(/^\d{4}-\d{2}-\d{2}/.test(s)){const[y,m,d]=s.split('-');return d+'/'+m+'/'+y;}
-  return s;
 }
 function pSiembra(buf,ck2){
   const wb=XLSX.read(buf,{type:'array'});
@@ -626,9 +570,8 @@ function pSiembra(buf,ck2){
     res[cmk]=res[cmk]||{};
     res[cmk][lk]={
       cultivo:String(r[ci['Cultivo 1ra']]||'').trim(),variedad:String(r[ci['Variedad']]||'').trim(),
-      area:parseFloat(r[ci['Area_ha']])||0,
       kg_ha:parseFloat(r[ci['Kg_ha']])||0,p_fuente:String(r[ci['P_fuente']]||'').trim(),p_dosis:parseFloat(r[ci['P_dosis']])||0,
-      ant:String(r[ci['Antecesor']]||'').trim(),siembra_fecha:fmtFecha(r[ci['siembra_fecha']]),pg:parseFloat(r[ci['PG']])||0,p1000:parseFloat(r[ci['P1000']])||0,
+      ant:String(r[ci['Antecesor']]||'').trim(),pg:parseFloat(r[ci['PG']])||0,p1000:parseFloat(r[ci['P1000']])||0,
       analisis:String(r[ci['Analisis']]||'').trim(),curasemilla:String(r[ci['Curasemilla']]||'').trim(),
       siembra_modo:String(r[ci['Siembra_modo']]||'').trim(),ferti_modo:String(r[ci['ferti_modo']]||'').trim(),
       semilla_modo:String(r[ci['semilla_modo']]||'').trim(),
@@ -677,17 +620,16 @@ function schDraw(){
     if(ha>=10||sVp.scale>200){
       sCX.save();
       const nm=l.name.toUpperCase();
-      const numFont='500 '+Math.max(12,Math.min(16,ha/8+10))+'px DM Sans,sans-serif';
-      sCX.font=numFont;
+      sCX.font='300 '+Math.max(9,Math.min(12,ha/10+8))+'px DM Sans,sans-serif';
       const tw=sCX.measureText(nm).width;
       const cvFont='300 '+Math.max(7,Math.min(10,ha/12+6))+'px DM Sans,sans-serif';
       sCX.font=cvFont;const cw=val?sCX.measureText(cl(val)).width:0;
-      const pw=Math.max(tw,cw)+8,ph=val?26:16;
+      const pw=Math.max(tw,cw)+8,ph=val?22:12;
       sCX.fillStyle='rgba(255,255,255,.78)';
       sCX.beginPath();const rx=px-pw/2,ry=py-ph/2-1,rw=pw,rh=ph,rr=3;sCX.moveTo(rx+rr,ry);sCX.lineTo(rx+rw-rr,ry);sCX.arcTo(rx+rw,ry,rx+rw,ry+rr,rr);sCX.lineTo(rx+rw,ry+rh-rr);sCX.arcTo(rx+rw,ry+rh,rx+rw-rr,ry+rh,rr);sCX.lineTo(rx+rr,ry+rh);sCX.arcTo(rx,ry+rh,rx,ry+rh-rr,rr);sCX.lineTo(rx,ry+rr);sCX.arcTo(rx,ry,rx+rr,ry,rr);sCX.closePath();sCX.fill();
-      sCX.font=numFont;
-      sCX.fillStyle='rgba(0,0,0,.88)';sCX.textAlign='center';sCX.textBaseline='middle';sCX.fillText(nm,px,val?py-6:py);
-      if(val){sCX.font=cvFont;sCX.fillStyle='rgba(0,0,0,.65)';sCX.fillText(cl(val),px,py+8);}
+      sCX.font='300 '+Math.max(9,Math.min(12,ha/10+8))+'px DM Sans,sans-serif';
+      sCX.fillStyle='rgba(0,0,0,.85)';sCX.textAlign='center';sCX.textBaseline='middle';sCX.fillText(nm,px,val?py-5:py);
+      if(val){sCX.font=cvFont;sCX.fillStyle='rgba(0,0,0,.75)';sCX.fillText(cl(val),px,py+7);}
       sCX.restore();
     }
   });
@@ -713,96 +655,74 @@ function schSK(l){const d=D.siembra?.[l.layer];if(!d)return null;return fK(d,l.n
 function schSuK(l){const d=D.suelos?.[l.layer];if(!d)return null;return fK(d,l.name)||null;}
 
 const MOS=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-async function schRPulv(){
+function schRPulv(){
   const body=document.getElementById('spb');
-  body.innerHTML='<div class="empty">Cargando...</div>';
-  const cd=D.pulv[sSel.layer]||{};
-  const key=schPK(sSel);let apps=cd[key]?[...cd[key]]:[];
-  if(!apps.length){const n=key.replace('LOTE ','').trim().toLowerCase();for(const[k,v] of Object.entries(cd)){if(k.replace('LOTE ','').trim().toLowerCase()===n){apps=[...v];break;}}}
-  // Agregar recetas aplicadas desde Supabase
-  try{
-    const recs=await sbG('recetas','cliente_id=eq.'+(D.ck||ACTIVE_CLI)+'&campo_id=eq.'+sSel.layer+'&lote_id=eq.'+sSel.name+'&estado=eq.ok&order=fecha_aplicacion.desc');
-    recs.forEach(r=>{
-      const f=r.fecha_aplicacion||r.fecha;
-      let fdisp=f;
-      if(f&&/^\d{4}-\d{2}-\d{2}/.test(f)){const[y,m,d]=f.split('-');fdisp=d+'/'+m+'/'+y;}
-      apps.push({f:fdisp,c:r.cultivo||'',e:'ok',r:r.numero_receta||'',o:[r.observaciones,r.obs_aplicacion].filter(Boolean).join(' — '),p:(r.productos||[]).map(p=>({n:p.nombre||p.n,d:p.dosis||p.d}))});
-    });
-  }catch(e){console.warn('recetas sb',e.message);}
-  if(!apps.length){body.innerHTML='<div class="empty">Sin registros para '+key+'</div>';return;}
-  // Agrupar por mes/año (parse dd/mm/yyyy)
-  const gr={};apps.forEach(a=>{const pts=(a.f||'').split('/');const mk=(pts[1]||'?')+'/'+(pts[2]||'?');if(!gr[mk])gr[mk]=[];gr[mk].push(a);});
-  // Ordenar grupos por fecha desc
-  const sortedKeys=Object.keys(gr).sort((a,b)=>{const[ma,ya]=a.split('/'),[mb,yb]=b.split('/');return (yb+mb).localeCompare(ya+ma);});
+  const cd=D.pulv[sSel.layer];if(!cd){body.innerHTML='<div class="empty">Sin datos de pulverizaciones</div>';return;}
+  const key=schPK(sSel);let apps=cd[key];
+  if(!apps?.length){const n=key.replace('LOTE ','').trim().toLowerCase();for(const[k,v] of Object.entries(cd)){if(k.replace('LOTE ','').trim().toLowerCase()===n){apps=v;break;}}}
+  if(!apps?.length){body.innerHTML='<div class="empty">Sin registros para '+key+'</div>';return;}
+  const gr={};apps.forEach(a=>{const pts=a.f.split('/');const mk=(pts[1]||'?')+'/'+(pts[2]||'?');if(!gr[mk])gr[mk]=[];gr[mk].push(a);});
   let html='';
-  for(const mk of sortedKeys){
-    const list=gr[mk];
-    const[m,y2]=mk.split('/');html+='<div class="pg"><div class="pgh">'+(MOS[+m]||m)+' '+y2+'</div>';
+  for(const[mk,list] of Object.entries(gr)){
+    const[m,y2]=mk.split('/');html+='<div class="pg"><div class="pgh">'+MOS[+m]+' '+y2+'</div>';
     list.forEach(a=>{const e=(a.e||'').toLowerCase();let c='ok',b='bok';if(e.includes('anulado')){c='an';b='ban';}else if(e.includes('suspendido')){c='su';b='bsu';}else if(e.includes('pendiente')){c='pe';b='bpe';}
     html+='<div class="pc '+c+'"><div class="ptop"><div><div class="pdate">'+a.f+'</div><div class="pcult">'+a.c+'</div></div><span class="badge '+b+'">'+a.e+'</span></div>'+(a.o?'<div class="pobs">'+a.o+'</div>':'')+'<div>'+(a.p||[]).map(p=>'<div class="prow"><span>'+p.n+'</span><span style="color:var(--txt3)">'+p.d+' l/ha</span></div>').join('')+'</div>'+(a.r?'<div class="prec">Rec. '+a.r+'</div>':'')+'</div>';});
     html+='</div>';
   }
   body.innerHTML=html||'<div class="empty">Sin registros</div>';
 }
-async function schRSuelos(){
+function schRSuelos(){
   const body=document.getElementById('spb');
-  body.innerHTML='<div class="empty">Cargando...</div>';
+  const key=schSuK(sSel);if(!key){body.innerHTML='<div class="empty">Sin análisis para este lote</div>';return;}
+  const an=D.suelos[sSel.layer]?.[key];if(!an){body.innerHTML='<div class="empty">Sin datos</div>';return;}
   const PARAMS=['N-NO3','Fósforo','N Min.','S-Sulfato','MO','Zinc','pH','Humedad','Boro'];
   let html='';
-  // 1. Datos del Excel (histórico)
-  const key=schSuK(sSel);
-  if(key){
-    const an=D.suelos[sSel.layer]?.[key];
-    if(an){
-      const EXTRA=['CE','Calcio','Magnesio','Potasio','Sodio','PSI','CIC','Hierro','Cobre','Manganeso','Arena','Arcilla','Limo'];
-      const EXTRA_U={'CE':'dS/m','Calcio':'meq/100g','Magnesio':'meq/100g','Potasio':'meq/100g','Sodio':'meq/100g','PSI':'%','CIC':'meq/100g','Hierro':'ppm','Cobre':'ppm','Manganeso':'ppm','Arena':'%','Arcilla':'%','Limo':'%'};
-      Object.keys(an).sort((a,b)=>b-a).forEach(yr2=>{
-        const a=an[yr2];const perf=a.perfiles||[];if(!perf.length)return;
-        const cols=PARAMS.filter(p=>perf.some(r=>r[p]!==undefined));
-        html+='<div class="sy"><div class="sytit">Análisis '+yr2+'</div><table class="stbl"><thead><tr><th>Prof.</th>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+perf.map(r=>'<tr><td><b>'+r.prof+'</b></td>'+cols.map(c=>'<td>'+(r[c]!==undefined?r[c]:'—')+'</td>').join('')+'</tr>').join('')+'</tbody></table><div style="font-size:9px;color:var(--txt3);margin-top:3px">'+a.arch+'</div></div>';
-        // Otros parámetros (extra)
-        const extraVals=EXTRA.filter(p=>perf.some(r=>r[p]!==undefined));
-        if(extraVals.length){
-          html+='<div style="background:var(--surf2);border-radius:7px;padding:8px 10px;margin:4px 0 10px"><div style="font-size:8px;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:var(--txt3);margin-bottom:5px">Otros parámetros</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
-          extraVals.forEach(p=>{
-            const r=perf.find(x=>x[p]!==undefined);
-            html+='<div style="background:var(--surf);border-radius:5px;padding:4px 8px;font-size:11px"><span style="color:var(--txt3);font-size:9px">'+p+'</span><br><b>'+r[p]+'</b> <span style="font-size:9px;color:var(--txt3)">'+(EXTRA_U[p]||'')+'</span></div>';
-          });
-          html+='</div></div>';
-        }
-      });
-    }
-  }
-  // 2. Datos de Supabase (cargados desde módulo Suelos)
-  try{
-    const rows=await sbG('analisis_suelos','establecimiento=ilike.*'+encodeURIComponent(sSel.campo||'')+'*&lote=eq.'+encodeURIComponent(sSel.name)+'&order=fecha.desc');
-    if(rows?.length){
-      // Agrupar por fecha+ambiente
-      const grupos={};
-      rows.forEach(r=>{const k=(r.fecha||'')+'|'+(r.ambiente||'');if(!grupos[k])grupos[k]={fecha:r.fecha,ambiente:r.ambiente,lab:r.laboratorio,arch:r.archivo,perfiles:[]};grupos[k].perfiles.push(r);});
-      Object.values(grupos).forEach(g=>{
-        const cols=PARAMS.filter(p=>{const map={'N-NO3':'n_no3','Fósforo':'fosforo','N Min.':'n_min','S-Sulfato':'s_sulfato','MO':'mo','Zinc':'zinc','pH':'ph','Humedad':'humedad','Boro':'boro'};return g.perfiles.some(r=>r[map[p]]!=null);});
-        const map={'N-NO3':'n_no3','Fósforo':'fosforo','N Min.':'n_min','S-Sulfato':'s_sulfato','MO':'mo','Zinc':'zinc','pH':'ph','Humedad':'humedad','Boro':'boro'};
-        html+='<div class="sy"><div class="sytit">'+(g.ambiente?g.ambiente+' — ':'')+(g.fecha||'')+(g.lab?' ('+g.lab+')':'')+'</div><table class="stbl"><thead><tr><th>Prof.</th>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+g.perfiles.map(r=>'<tr><td><b>'+(r.profundidad||'—')+'</b></td>'+cols.map(c=>'<td>'+(r[map[c]]??'—')+'</td>').join('')+'</tr>').join('')+'</tbody></table>'+(g.arch?'<div style="font-size:9px;color:var(--txt3);margin-top:3px">'+g.arch+'</div>':'')+'</div>';
-      });
-    }
-  }catch(e){console.warn('analisis_suelos sb',e.message);}
-  body.innerHTML=html||'<div class="empty">Sin análisis para este lote</div>';
+  Object.keys(an).sort((a,b)=>b-a).forEach(yr2=>{
+    const a=an[yr2];const perf=a.perfiles||[];if(!perf.length)return;
+    const cols=PARAMS.filter(p=>perf.some(r=>r[p]!==undefined));
+    html+='<div class="sy"><div class="sytit">Análisis '+yr2+'</div><table class="stbl"><thead><tr><th>Prof.</th>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+perf.map(r=>'<tr><td><b>'+r.prof+'</b></td>'+cols.map(c=>'<td>'+(r[c]!==undefined?r[c]:'—')+'</td>').join('')+'</tr>').join('')+'</tbody></table><div style="font-size:9px;color:var(--txt3);margin-top:3px">'+a.arch+'</div></div>';
+  });
+  body.innerHTML=html||'<div class="empty">Sin datos</div>';
 }
 function mpill(v,isVar){if(!v)return'';return'<span class="mp '+(isVar?'mp-v':'mp-f')+'">'+v+'</span>';}
-function schRSiembra(){
+async function schRSiembra(){
   const body=document.getElementById('spb');
   const key=schSK(sSel);if(!key){body.innerHTML='<div class="empty">Sin datos de siembra para este lote</div>';return;}
-  const s={...(D.siembra[sSel.layer]?.[key]||{})};if(!Object.keys(s).length){body.innerHTML='<div class="empty">Sin datos</div>';return;}
-  const avK=sSel.layer+'|'+sSel.name.toUpperCase();const av=SB_AVANCE[avK];
-  if(av?.sembrado&&av.fecha){s.siembra_fecha=fmtFecha(av.fecha);}
+  const s=D.siembra[sSel.layer]?.[key];if(!s){body.innerHTML='<div class="empty">Sin datos</div>';return;}
+  const campana={r26:'2026',r25:'2025',r24:'2024',r23:'2023'}[sYr]||sYr;
+  const cliId=D.ck||SESSION.c[0];
+  let edit={};
+  try{
+    const rows=await sbG('siembra_edits','cliente_id=eq.'+encodeURIComponent(cliId)+'&campo_id=eq.'+encodeURIComponent(sSel.layer)+'&lote_key=eq.'+encodeURIComponent(key)+'&campana=eq.'+campana+'&order=created_at.desc&limit=1');
+    if(rows&&rows.length)edit=rows[0];
+  }catch(e){}
   const antL={'GR':'Girasol','TR':'Trigo','CB':'Cebada','MZ':'Maíz','SJ':'Soja'}[s.ant]||s.ant||'—';
   const mp=(v)=>{if(!v)return'';const lv=v.toLowerCase();return'<span class="mp '+(lv==='variable'?'mp-v':lv==='directa'?'mp-d':lv==='conv'||lv==='convencional'?'mp-c':'mp-f')+'">'+v+'</span>';};
+  const varActual=edit.variedad||s.variedad||'';
+  const fechaActual=edit.fecha_siembra||'';
   let fert='';
   if(s.p_dosis>0)fert+='<div class="srow"><span class="sr-l">Fósforo ('+s.p_fuente+')</span><span class="sr-v">'+s.p_dosis+' kg/ha '+mp(s.ferti_modo)+'</span></div>';
   if(s.n1_dosis>0)fert+='<div class="srow"><span class="sr-l">N1 — '+s.n1_fuente+(s.n1_fecha?' · '+s.n1_fecha:'')+'</span><span class="sr-v">'+s.n1_dosis+' kg/ha '+mp(s.n1_modo)+'</span></div>';
   if(s.n2_dosis>0)fert+='<div class="srow"><span class="sr-l">N2 — '+s.n2_fuente+(s.n2_fecha?' · '+s.n2_fecha:'')+'</span><span class="sr-v">'+s.n2_dosis+' kg/ha '+mp(s.n2_modo)+'</span></div>';
-  body.innerHTML='<div class="scard"><div class="scult">'+cl(s.cultivo)+'</div><div class="svar">'+(s.variedad||'—')+'</div><div class="sgrid"><div class="si"><div class="si-l">Semilla</div><div class="si-v">'+(s.kg_ha||'—')+' <span class="si-u">kg/ha</span> '+mp(s.semilla_modo)+'</div></div><div class="si"><div class="si-l">Siembra</div><div class="si-v">'+mp(s.siembra_modo||'—')+(s.siembra_fecha?' · '+s.siembra_fecha:'')+'</div></div><div class="si"><div class="si-l">Antecesor</div><div class="si-v">'+antL+'</div></div>'+(s.curasemilla?'<div class="si"><div class="si-l">Curasemilla</div><div class="si-v" style="font-size:11px">'+s.curasemilla+'</div></div>':'')+'</div>'+(fert?'<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Fertilización</div>'+fert:'')+'<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Calidad semilla</div><div class="srow"><span class="sr-l">Poder germinativo</span><span class="sr-v">'+(s.pg?(s.pg*100).toFixed(0)+'%':'—')+'</span></div><div class="srow"><span class="sr-l">Peso mil semillas</span><span class="sr-v">'+(s.p1000||'—')+' g</span></div><div class="srow"><span class="sr-l">N° análisis</span><span class="sr-v">'+(s.analisis||'—')+'</span></div></div>';
+  const canEdit=SESSION.r==='aplicador'||SESSION.r==='admin';
+  const editPanel=canEdit?`<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:8px">Confirmar datos</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><div style="flex:1;min-width:120px"><div style="font-size:10px;color:var(--txt3);margin-bottom:3px">Fecha siembra</div><input id="sie-fecha" type="date" value="${fechaActual}" style="width:100%;box-sizing:border-box;border:1px solid var(--brd);border-radius:6px;padding:6px 8px;font-size:12px;background:var(--surf2);color:var(--txt1)"></div><div style="flex:1;min-width:120px"><div style="font-size:10px;color:var(--txt3);margin-bottom:3px">Variedad</div><input id="sie-var" type="text" value="${varActual.replace(/"/g,'&quot;')}" placeholder="${(s.variedad||'Variedad').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;border:1px solid var(--brd);border-radius:6px;padding:6px 8px;font-size:12px;background:var(--surf2);color:var(--txt1)"></div></div><button onclick="schSaveSiembraEdit()" style="width:100%;background:var(--grn);color:#fff;border:none;border-radius:7px;padding:8px;font-size:13px;font-weight:600;cursor:pointer">Guardar</button>${edit.usuario?'<div style="font-size:10px;color:var(--txt3);margin-top:6px;text-align:right">Última edición: '+edit.usuario+(edit.created_at?' · '+edit.created_at.split('T')[0]:'')+'</div>':''}`:''
+  body.innerHTML='<div class="scard"><div class="scult">'+cl(s.cultivo)+'</div><div class="svar">'+(varActual||'—')+'</div>'+(fechaActual?'<div style="font-size:11px;color:var(--txt3);margin-bottom:4px">Siembra: '+fechaActual+'</div>':'')+'<div class="sgrid"><div class="si"><div class="si-l">Semilla</div><div class="si-v">'+(s.kg_ha||'—')+' <span class="si-u">kg/ha</span> '+mp(s.semilla_modo)+'</div></div><div class="si"><div class="si-l">Siembra</div><div class="si-v">'+mp(s.siembra_modo||'—')+'</div></div><div class="si"><div class="si-l">Antecesor</div><div class="si-v">'+antL+'</div></div>'+(s.curasemilla?'<div class="si"><div class="si-l">Curasemilla</div><div class="si-v" style="font-size:11px">'+s.curasemilla+'</div></div>':'')+'</div>'+(fert?'<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Fertilización</div>'+fert:'')+'<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Calidad semilla</div><div class="srow"><span class="sr-l">Poder germinativo</span><span class="sr-v">'+(s.pg?(s.pg*100).toFixed(0)+'%':'—')+'</span></div><div class="srow"><span class="sr-l">Peso mil semillas</span><span class="sr-v">'+(s.p1000||'—')+' g</span></div><div class="srow"><span class="sr-l">N° análisis</span><span class="sr-v">'+(s.analisis||'—')+'</span></div>'+editPanel+'</div>';
+}
+async function schSaveSiembraEdit(){
+  const key=schSK(sSel);if(!key){toast('Sin lote seleccionado');return;}
+  const campana={r26:'2026',r25:'2025',r24:'2024',r23:'2023'}[sYr]||sYr;
+  const cliId=D.ck||SESSION.c[0];
+  const fecha=document.getElementById('sie-fecha')?.value||'';
+  const variedad=(document.getElementById('sie-var')?.value||'').trim();
+  if(!fecha&&!variedad){toast('Ingresá fecha o variedad');return;}
+  try{
+    await sbUp('siembra_edits','cliente_id,campo_id,lote_key,campana',{
+      cliente_id:cliId,campo_id:sSel.layer,lote_key:key,campana:campana,
+      fecha_siembra:fecha||null,variedad:variedad||null,usuario:SESSION.u
+    });
+    toast('Guardado ✓');
+    schRSiembra();
+  }catch(e){toast('Error al guardar: '+e.message);}
 }
 
 function schTogR(){sRO=!sRO;if(sRO){schCP();schRR();document.getElementById('srpnl').classList.add('open');}else schCR();}
@@ -836,17 +756,8 @@ let sTs=0;document.getElementById('spnl').addEventListener('touchstart',e=>{sTs=
 
 // RECORRIDAS
 let rStk=[],rObs={},rMic=false;
-async function recInit(){
-  rStk=[];
-  const target=SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];
-  if(!D||D.ck!==target){
-    const body=document.querySelector('#s-recorridas .rb');
-    if(body)body.innerHTML='<div class="empty">Cargando...</div>';
-    await schLoad(target);
-  }
-  recR();
-}
-function recBack(){if(rStk.length<=1){closeMod('recorridas');return;}rStk.pop();recR();}
+function recInit(){rStk=[];recR();}
+function recBack(){if(!rStk.length){closeMod('recorridas');return;}rStk.pop();recR();}
 function recR(){
   const body=document.getElementById('r-body');
   document.getElementById('r-title').textContent=rStk.length?rStk[rStk.length-1].title:'Recorridas';
@@ -854,9 +765,8 @@ function recR(){
 }
 function rP(s){rStk.push(s);recR();}
 function recRC(body){
-  const ck=SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];
-  rStk.push({type:'cam',ck:ck,title:CFG[ck]?.lbl||ck});
-  recRCam(body,ck);
+  const cs=SESSION.c[0]==='all'?Object.entries(CFG).map(([k,v])=>({key:k,...v})):SESSION.c.map(k=>({key:k,...CFG[k]}));
+  body.innerHTML=`<div class="rsec">Clientes</div>`+cs.map(c=>`<div class="rc" data-ck="${c.key}" data-lbl="${c.lbl}" onclick="rP({type:'cam',ck:this.dataset.ck,title:this.dataset.lbl})"><div class="rc-n">${c.lbl}</div><div class="rc-m">${Object.keys(c.campos||{}).length} campos</div></div>`).join('');
 }
 function recRCam(body,ck2){
   const cfg=CFG[ck2];
@@ -865,178 +775,26 @@ function recRCam(body,ck2){
     return `<div class="rc" data-lk="${k}" data-ck="${ck2}" data-lbl="${v.lbl}" onclick="rP({type:'lots',lk:this.dataset.lk,ck:this.dataset.ck,title:this.dataset.lbl})"><div class="rc-n">${v.lbl}</div><div class="rc-m"><span>${ls.length} lotes</span><span>${Math.round(ha)} ha</span></div></div>`;
   }).join('');
 }
-async function recInformePDF(lk,ck2){
-  const hoy=new Date().toISOString().split('T')[0];
-  const hoyFmt=hoy.split('-').reverse().join('/');
-  const campoLbl=CFG[ck2]?.campos[lk]?.lbl||lk;
-  const cliLbl=CFG[ck2]?.lbl||ck2;
-  const ls=D?.lotes.filter(l=>l.layer===lk)||[];
-  // Cargar historial del día de hoy para todos los lotes
-  let hist=[];
-  try{hist=await sbG('historial_lotes',`cliente_id=eq.${ck2}&campo_id=eq.${lk}&fecha=eq.${hoy}&order=lote_id.asc`);}catch(e){}
-  // Combinar con rObs del día
-  const obsHoy={};
-  ls.forEach(l=>{
-    const k=l.name+lk;
-    const local=(rObs[k]||[]).filter(o=>o.fecha===hoy);
-    const remote=hist.filter(h=>h.lote_id===l.name);
-    const all=[...local,...remote];
-    if(all.length)obsHoy[l.name]=all;
-  });
-  if(!Object.keys(obsHoy).length){toast('No hay observaciones de hoy para generar informe');return;}
-  // Generar PDF con jsPDF
-  const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});
-  const W=210,M=14;let y=20;
-  // Header
-  doc.setDrawColor(43,107,43);doc.setLineWidth(0.5);doc.line(0,22,W,22);
-  doc.setFontSize(20);doc.setFont('helvetica','bold');
-  doc.setTextColor(204,92,8);doc.text('TWIN',M,14);
-  const tw=doc.getTextWidth('TWIN');
-  doc.setTextColor(204,92,8);doc.text(' FIELD',M+tw,14);
-  doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(60,60,60);
-  doc.text('Ing. Agr. Marcos Fernández',W-M,7,{align:'right'});
-  doc.text('(+54) 2983 618926  |  CIAFBA n°737',W-M,12,{align:'right'});
-  doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
-  doc.text(`${cliLbl} — ${campoLbl}`,W/2,10,{align:'center'});
-  doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);
-  doc.text('Informe de Recorrida',W/2,15,{align:'center'});
-  y=30;
-  // Fecha
-  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(43,107,43);
-  doc.text('Fecha: '+hoyFmt,M,y);
-  y+=8;
-  // Lotes
-  const LABELS=[['cultivo','Cultivo'],['maleza','Malezas'],['plaga','Plagas'],['enfermedad','Enfermedades'],['fertilidad','Fertilidad'],['obs','Observaciones']];
-  Object.entries(obsHoy).sort(([a],[b])=>a.localeCompare(b,undefined,{numeric:true})).forEach(([loteId,obs])=>{
-    if(y>270){doc.addPage();y=20;}
-    // Header lote
-    doc.setFillColor(43,107,43);doc.rect(M,y,W-M*2,6,'F');
-    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
-    const loteObj=ls.find(l=>l.name===loteId);
-    const val=loteObj?schGC(loteObj):'';
-    doc.text(`Lote ${loteId.toUpperCase()}${loteObj?' · '+loteObj.area+' ha':''}${val?' · '+cl(val):''}`,M+2,y+4);
-    y+=8;
-    // Obs del lote (tomar la más reciente)
-    const ob=obs[0];
-    const txt=ob.texto||'';
-    const partes={};
-    if(txt.includes('|')){txt.split('|').forEach(p=>{const pm=p.trim().match(/^([^:]+):\s*(.*)/);if(pm)partes[pm[1].trim().toLowerCase()]=pm[2].trim();else if(p.trim())partes['obs']=(partes['obs']?partes['obs']+' ':'')+p.trim();});}
-    else{partes['obs']=txt;}
-    LABELS.forEach(([k,lbl])=>{
-      if(!partes[k]||partes[k].toLowerCase()==='no') return;
-      if(y>275){doc.addPage();y=20;}
-      doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(80,80,80);
-      doc.text(lbl+':',M+2,y);
-      doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);
-      const lines=doc.splitTextToSize(partes[k],W-M*2-28);
-      doc.text(lines,M+28,y);
-      y+=lines.length*4+1;
-    });
-    y+=4;
-  });
-  // Footer
-  doc.setFontSize(7);doc.setTextColor(150,150,150);
-  doc.text('Generado '+hoyFmt+' — Twin Field Suite',W/2,290,{align:'center'});
-  doc.save(`Recorrida_${campoLbl}_${hoy}.pdf`);
-  toast('PDF generado ✓');
-}
-
 function recRLots(body,lk,ck2){
-  const hoy=new Date().toISOString().split('T')[0];
-  const campoLbl=CFG[ck2]?.campos[lk]?.lbl||lk;
-  // Lotes del SHP o fallback desde siembra
-  let ls=D?.lotes.filter(l=>l.layer===lk)||[];
-  if(!ls.length&&D?.siembra?.[lk]){
-    ls=Object.keys(D.siembra[lk]).map(k=>({
-      name:k.replace(/^LOTE\s*/i,'').trim(),
-      layer:lk,
-      area:D.siembra[lk][k]?.area||''
-    }));
-  }
-  body.innerHTML=`<div style="padding:10px 14px 0;display:flex;justify-content:space-between;align-items:center">
-    <div class="rsec" style="margin:0">${ls.length} lotes</div>
-    <button onclick="recInformePDF('${lk}','${ck2}')" style="background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:7px 12px;font-size:11px;font-weight:400;font-family:var(--f)">📄 Informe</button>
-  </div>`+ls.map(l=>{
+  const ls=D?.lotes.filter(l=>l.layer===lk)||[];const hoy=new Date().toISOString().split('T')[0];
+  body.innerHTML='<div class="rsec">'+ls.length+' lotes</div>'+ls.map(l=>{
     const obs=rObs[l.name+lk]||[];const th=obs.some(o=>o.fecha===hoy);const val=schGC(l);
     return `<div class="rc" data-lid="${l.name}" data-lk="${lk}" onclick="rP({type:'lot',lid:this.dataset.lid,lk:this.dataset.lk,title:'Lote '+this.dataset.lid.toUpperCase()})"><div class="rc-n">${l.name.toUpperCase()}</div><div class="rc-m"><span>${l.area} ha</span><span style="color:${cc(val)}">${cl(val)}</span>${th?'<span class="bh">✓ hoy</span>':''}</div></div>`;
-  }).join('')||'<div class="empty">Sin lotes disponibles</div>';
+  }).join('');
 }
-function fmtHCard(o){
-  // Parsear el texto guardado (puede venir como "cultivo|M:...|P:...|E:...|F:...|O:..." o texto libre)
-  const txt=o.texto||o.descripcion||'';
-  const partes={};
-  // Intentar parsear formato estructurado con separador |
-  if(txt.includes('|')){
-    txt.split('|').forEach(p=>{
-      const pm=p.trim().match(/^([^:]+):\s*(.*)/);
-      if(pm){partes[pm[1].trim().toLowerCase()]=pm[2].trim();}
-      else if(p.trim()) partes['obs']=(partes['obs']?partes['obs']+' ':'')+p.trim();
-    });
-  } else {
-    // Texto libre — mostrar como observación
-    partes['obs']=txt;
-  }
-  const LABELS=[['cultivo','Cultivo'],['maleza','Malezas'],['plaga','Plagas'],['enfermedad','Enfermedades'],['fertilidad','Fertilidad'],['obs','Obs.']];
-  const rows=LABELS.filter(([k])=>partes[k]&&partes[k].toLowerCase()!=='no').map(([k,lbl])=>`<div class="hcard-row"><span class="hcard-lbl">${lbl}</span><span class="hcard-val">${partes[k]}</span></div>`).join('');
-  return `<div class="hcard"><div class="hcard-fecha"><span>${o.fecha||''}</span><span style="color:var(--txt3)">${o.usuario||''}</span></div><div class="hcard-body">${rows||`<div class="hcard-val" style="color:var(--txt2)">${txt}</div>`}</div></div>`;
-}
-
-async function recRLot(body,lid,lk){
+function recRLot(body,lid,lk){
   const l=D?.lotes.find(x=>x.name===lid&&x.layer===lk);
   const val=schGC(l||{});const ok=lid+lk;const obs=rObs[ok]||[];
-  const ck2=D?.ck||(SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0]);
-  let hist=[];
-  try{hist=await sbG('historial_lotes',`cliente_id=eq.${ck2}&campo_id=eq.${lk}&lote_id=eq.${lid}&order=fecha.desc&limit=100`);}catch(e){hist=[];}
-  const todosObs=[...obs.map(o=>({...o})),...hist].sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
-  body.innerHTML=`<div class="lhb"><div class="lhn">${lid.toUpperCase()}</div><div class="lhs">${l?.campo||''} · ${l?.area||'?'} ha</div>${val?`<div class="lcp"><span style="display:inline-block;width:7px;height:7px;border-radius:1px;background:${cc(val)}"></span>${cl(val)}</div>`:''}</div>
-  <div style="padding:12px 14px">
-    <div class="of">
-      <div class="of-t">Nueva observación</div>
-      <div class="of-field"><label>Cultivo / Estado fenológico</label><input type="text" id="o-cultivo" placeholder="Ej: Trigo B802 Z3.2"></div>
-      <div class="of-field"><label>Malezas</label><input type="text" id="o-maleza" placeholder="Ej: Rye grass, nabon"></div>
-      <div class="of-field"><label>Plagas</label><input type="text" id="o-plaga" placeholder="Ej: No"></div>
-      <div class="of-field"><label>Enfermedades</label><input type="text" id="o-enfermedad" placeholder="Ej: Roya amarilla baja"></div>
-      <div class="of-field"><label>Fertilidad</label><input type="text" id="o-fertilidad" placeholder="Ej: Aplicado solmix"></div>
-      <div class="of-field"><label>Observaciones</label><textarea id="o-obs" rows="2" style="width:100%;background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r2);padding:8px 10px;font-size:12px;font-family:var(--f);outline:none" placeholder="Notas adicionales..."></textarea></div>
-      <div class="oacts"><button class="omic" id="omic" onclick="recMicObs()">🎤</button><button class="osave" onclick="recSave('${lid}','${lk}')">Guardar</button></div>
-    </div>
-    <div class="rsec">Historial (${todosObs.length})</div>
-    <div id="ol">${todosObs.length?todosObs.map(fmtHCard).join(''):'<div class="empty">Sin observaciones registradas</div>'}</div>
-  </div>`;
+  const TIPOS=['Maleza','Plaga','Enfermedad','Fertilidad','General'];
+  body.innerHTML=`<div class="lhb"><div class="lhn">${lid.toUpperCase()}</div><div class="lhs">${l?.campo||''} · ${l?.area||'?'} ha</div>${val?`<div class="lcp"><span style="display:inline-block;width:7px;height:7px;border-radius:1px;background:${cc(val)}"></span>${cl(val)}</div>`:''}</div><div style="padding:12px 14px"><div class="of"><div class="of-t">Nueva observación</div><div class="tipos">${TIPOS.map(t=>`<div class="tipo-btn" id="ot-${t.toLowerCase()}" onclick="recST('${t.toLowerCase()}')">${t}</div>`).join('')}</div><textarea class="ota" id="ota" rows="3" placeholder="Describí lo que observás..."></textarea><div class="oacts"><button class="omic" id="omic" onclick="recMicT()">🎤</button><button class="osave" onclick="recSave('${lid}','${lk}')">Guardar</button></div></div><div class="rsec">Anteriores</div><div id="ol">${obs.length?obs.map(o=>`<div class="oi ${o.tipo||'general'}"><div class="oi-top"><span class="oi-tipo">${o.tipo||'general'}</span><span class="oi-fecha">${o.fecha||''}</span></div><div class="oi-txt">${o.texto}</div></div>`).join(''):'<div class="empty">Sin observaciones</div>'}</div></div>`;
 }
 let rTipo='general';
 function recST(t){rTipo=t;document.querySelectorAll('.tipo-btn').forEach(b=>b.classList.toggle('on',b.id==='ot-'+t));}
-function recMicObs(){
-  // Dictado sobre el campo de obs
-  const btn=document.getElementById('omic');
-  if(rMic){if(window._sr){window._sr.stop();}return;}
-  const sr=new (window.SpeechRecognition||window.webkitSpeechRecognition)();
-  window._sr=sr;sr.lang='es-AR';sr.continuous=true;sr.interimResults=false;
-  sr.onresult=e=>{const t=e.results[e.results.length-1][0].transcript;const el=document.getElementById('o-obs');if(el)el.value=(el.value?el.value+' ':'')+t;};
-  sr.onerror=sr.onend=()=>{rMic=false;if(btn){btn.textContent='🎤';btn.classList.remove('rec');}};
-  sr.start();rMic=true;if(btn){btn.textContent='🔴';btn.classList.add('rec');}
-}
 async function recSave(lid,lk){
-  const cultivo=document.getElementById('o-cultivo')?.value?.trim()||'';
-  const maleza=document.getElementById('o-maleza')?.value?.trim()||'';
-  const plaga=document.getElementById('o-plaga')?.value?.trim()||'';
-  const enferm=document.getElementById('o-enfermedad')?.value?.trim()||'';
-  const ferti=document.getElementById('o-fertilidad')?.value?.trim()||'';
-  const obs=document.getElementById('o-obs')?.value?.trim()||'';
-  if(!cultivo&&!maleza&&!plaga&&!enferm&&!ferti&&!obs){toast('Completá al menos un campo');return;}
-  // Armar texto estructurado con separador |
-  const partes=[];
-  if(cultivo)partes.push('cultivo: '+cultivo);
-  if(maleza)partes.push('maleza: '+maleza);
-  if(plaga)partes.push('plaga: '+plaga);
-  if(enferm)partes.push('enfermedad: '+enferm);
-  if(ferti)partes.push('fertilidad: '+ferti);
-  if(obs)partes.push('obs: '+obs);
-  const txt=partes.join(' | ');
-  const tipo=maleza?'Maleza':plaga&&plaga.toLowerCase()!=='no'?'Plaga':enferm&&enferm.toLowerCase()!=='no'?'Enfermedad':ferti?'Fertilidad':'General';
-  const ck2=D?.ck||(SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0]);
-  const ob={lote_id:lid,campo_id:lk,cliente_id:ck2,tipo,texto:txt,fecha:new Date().toISOString().split('T')[0],usuario:SESSION.u};
-  try{await sbI('historial_lotes',ob);}catch(e){console.warn('offline',e.message);}
+  const txt=document.getElementById('ota')?.value?.trim();if(!txt){toast('Escribí una observación');return;}
+  const ob={lote_id:lid,campo_id:lk,tipo:rTipo,texto:txt,fecha:new Date().toISOString().split('T')[0],usuario:SESSION.u};
+  try{await sbI('observaciones',ob);}catch(e){console.warn('offline');}
+  const k=lid+lk;if(!rObs[k])rObs[k]=[];rObs[k].unshift({...ob});
   toast('Guardado ✓');recRLot(document.getElementById('r-body'),lid,lk);
 }
 function recMicT(){
@@ -1048,132 +806,12 @@ function recMicT(){
   sr.start();rMic=true;btn.textContent='🔴';btn.classList.add('rec');
 }
 
-// ══════════════════════════════════════════════════════
-// SIEMBRA
-// ══════════════════════════════════════════════════════
-let SB_AVANCE={},sbGroup='';
-
-async function siembraLoadAvance(){
-  const ck2=D?.ck||(SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0]);
-  try{
-    const rows=await sbG('siembra_avance','cliente_id=eq.'+ck2);
-    SB_AVANCE={};rows.forEach(r=>{SB_AVANCE[r.campo_id+'|'+r.lote_id.toUpperCase()]=r;});
-  }catch(e){SB_AVANCE={};}
-}
-
-async function siembraInit(){
-  const target=SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];
-  if(!D||D.ck!==target){
-    document.getElementById('sb-body').innerHTML='<div class="empty">Cargando...</div>';
-    await schLoad(target);
-  }
-  if(!Object.keys(SB_AVANCE).length)await siembraLoadAvance();
-  siembraBuildTabs();
-}
-
-function siembraGroups(){
-  const groups={};
-  if(!D)return groups;
-  Object.entries(D.siembra||{}).forEach(([campoKey,lotes])=>{
-    Object.entries(lotes).forEach(([loteKey,s])=>{
-      const cultivo=s.cultivo;if(!cultivo)return;
-      const k=ck(cultivo);if(k==='default')return;
-      let gkey=k,glbl=cl(cultivo);
-      if(k==='trigo'||k==='cebada'){gkey='fina';glbl='Trigo / Cebada';}
-      const loteName=loteKey.replace(/^LOTE\s*/i,'');
-      const lote=D.lotes.find(l=>l.layer===campoKey&&l.name.toUpperCase()===loteName.toUpperCase());
-      const haRaw=lote?parseFloat(lote.area)||0:0;
-      const ha=haRaw||parseFloat(s.area||s.sup||0)||0;
-      if(!groups[gkey])groups[gkey]={label:glbl,items:[]};
-      groups[gkey].items.push({campoKey,campoLbl:CFG[D.ck]?.campos[campoKey]?.lbl||campoKey,loteId:loteName,ha,cultivo:s.cultivo,variedadPlan:s.variedad||''});
-    });
-  });
-  return groups;
-}
-
-function siembraBuildTabs(){
-  const groups=siembraGroups();
-  const keys=Object.keys(groups).sort((a,b)=>groups[b].items.reduce((s,i)=>s+i.ha,0)-groups[a].items.reduce((s,i)=>s+i.ha,0));
-  if(!sbGroup||!groups[sbGroup])sbGroup=keys[0]||'';
-  document.getElementById('sb-tabs').innerHTML=keys.map(k=>`<div class="ctab ${k===sbGroup?'on':''}" data-g="${k}" onclick="sbSwitch(this)">${groups[k].label}</div>`).join('');
-  siembraRender();
-}
-function sbSwitch(el){sbGroup=el.dataset.g;document.querySelectorAll('#sb-tabs .ctab').forEach(x=>x.classList.remove('on'));el.classList.add('on');siembraRender();}
-
-function siembraRender(){
-  const body=document.getElementById('sb-body');
-  const groups=siembraGroups();
-  const g=groups[sbGroup];
-  if(!g){body.innerHTML='<div class="empty">Sin plan de siembra</div>';return;}
-  const items=[...g.items].sort((a,b)=>a.campoLbl.localeCompare(b.campoLbl)||a.loteId.localeCompare(b.loteId,undefined,{numeric:true}));
-  const totalHa=items.reduce((s,i)=>s+i.ha,0);
-  const isFina=sbGroup==='fina';
-  const sembrado=(i)=>{const av=SB_AVANCE[i.campoKey+'|'+i.loteId.toUpperCase()];return !!(av?.sembrado||av?.fecha);};
-  // Para la barra, usar 1 ha mínimo por lote si no hay área disponible
-  const totalHa2=items.reduce((s,i)=>s+(i.ha||1),0);
-  const sembHa=items.reduce((s,i)=>s+(sembrado(i)?(i.ha||1):0),0);
-  const pct=totalHa2>0?(sembHa/totalHa2*100):0;
-  let barInner;
-  if(isFina){
-    const trigoT=items.filter(i=>ck(i.cultivo)==='trigo').reduce((s,i)=>s+i.ha,0);
-    const cebadaT=items.filter(i=>ck(i.cultivo)==='cebada').reduce((s,i)=>s+i.ha,0);
-    const trigoS=items.filter(i=>ck(i.cultivo)==='trigo'&&sembrado(i)).reduce((s,i)=>s+i.ha,0);
-    const cebadaS=items.filter(i=>ck(i.cultivo)==='cebada'&&sembrado(i)).reduce((s,i)=>s+i.ha,0);
-    const pT=totalHa2>0?trigoS/totalHa2*100:0,pC=totalHa2>0?cebadaS/totalHa2*100:0;
-    barInner=`<div style="display:flex;width:100%;height:100%"><div style="width:${pT}%;background:#2d7a2d;transition:width .3s"></div><div style="width:${pC}%;background:#7ec850;transition:width .3s"></div></div>`;
-  }else{
-    barInner=`<div class="rb-fill" style="width:${pct}%;background:var(--acc)"></div>`;
-  }
-  let html=`<div style="padding:12px 14px 0">
-    <div class="rb-wrap">
-      <div class="rb-lbl"><span>${g.label} — Avance de siembra</span><span style="color:var(--txt3)">${Math.round(sembHa)} / ${Math.round(totalHa2)} ha · ${pct.toFixed(0)}%</span></div>
-      <div class="rb-tr" style="height:16px;overflow:hidden">${barInner}</div>
-      ${isFina?`<div style="display:flex;gap:14px;margin-top:5px;font-size:10px;color:var(--txt3)"><span><span class="sb-dot" style="background:#2d7a2d"></span>Trigo</span><span><span class="sb-dot" style="background:#7ec850"></span>Cebada</span></div>`:''}
-    </div>
-  </div>`;
-  html+=`<div class="rsec" style="padding:0 14px">Lotes (${items.length})</div><div style="background:var(--surf);border-top:1px solid var(--bord);border-bottom:1px solid var(--bord);margin-bottom:20px">`;
-  items.forEach(i=>{
-    const key=i.campoKey+'|'+i.loteId.toUpperCase();
-    const av=SB_AVANCE[key]||{};
-    const ck3=ck(i.cultivo);
-    const dotClass=sbGroup==='fina'?(ck3==='trigo'?'sb-trigo':ck3==='cebada'?'sb-cebada':''):'';
-    html+=`<div class="sb-item ${dotClass}">
-      <input type="checkbox" class="sb-chk" ${av.sembrado?'checked':''} onchange="sbSetField('${i.campoKey}','${i.loteId}','sembrado',this.checked)">
-      <div style="flex:1">
-        <div style="display:flex;justify-content:space-between;align-items:baseline">
-          <div style="font-size:13px;font-weight:400">${dotClass?'<span class="sb-dot"></span>':''}${i.campoLbl} · Lote ${i.loteId.toUpperCase()}</div>
-          <div style="font-size:11px;color:var(--txt3)">${i.ha} ha</div>
-        </div>
-        <div style="font-size:11px;color:var(--txt2)">${cl(i.cultivo)}${i.variedadPlan?' · '+i.variedadPlan+' (plan)':''}</div>
-        <div class="sb-fields">
-          <input type="date" value="${av.fecha||''}" onchange="sbSetField('${i.campoKey}','${i.loteId}','fecha',this.value)" placeholder="Fecha siembra">
-          <input type="text" value="${av.variedad||''}" placeholder="Variedad/Híbrido" onchange="sbSetField('${i.campoKey}','${i.loteId}','variedad',this.value)">
-        </div>
-      </div>
-    </div>`;
-  });
-  html+='</div>';
-  body.innerHTML=html;
-}
-
-async function sbSetField(campoKey,loteId,field,val){
-  const ck2=D?.ck||(SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0]);
-  const key=campoKey+'|'+loteId.toUpperCase();
-  const rec=SB_AVANCE[key]||{cliente_id:ck2,campo_id:campoKey,lote_id:loteId,sembrado:false,fecha:null,variedad:''};
-  rec[field]=val;
-  SB_AVANCE[key]=rec;
-  try{
-    await fetch(SB_URL+'/rest/v1/siembra_avance?on_conflict=cliente_id,campo_id,lote_id',{method:'POST',headers:{...SBH,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rec)});
-  }catch(e){console.warn('sb_avance',e.message);}
-  siembraRender();
-}
-
 // RECETAS
 let retStk=[],retP=[],retR=[];
 let retOrdenMode=false,retSel=new Set(),retRepMode=false;
 async function retInit(){
-  retStk=[];retOrdenMode=false;retRepMode=false;retFiltroPend=false;retSel=new Set();
-  document.getElementById('ret-title').textContent=SESSION.c[0]==='all'?'Recetas — '+(CFG[ACTIVE_CLI]?.lbl||''):'Recetas';
+  retStk=[];retOrdenMode=false;retRepMode=false;retSel=new Set();
+  document.getElementById('ret-title').textContent='Recetas';
   document.getElementById('ret-add').style.display=SESSION.r==='admin'?'block':'none';
   document.getElementById('ret-orden-btn').style.display='block';document.getElementById('ret-rep-btn').style.display='block';
   // Cargar productos desde Dropbox si no están cargados
@@ -1184,23 +822,18 @@ async function retInit(){
       const wb=XLSX.read(buf,{type:'array'});
       const ws=wb.Sheets[wb.SheetNames[0]];
       const rows=XLSX.utils.sheet_to_json(ws,{raw:false});
-      PRODUCTOS=rows.map(r=>({nombre:String(r.nombre||'').trim(),categoria:String(r.categoria||'').trim(),unidad:String(r.unidad||'L/ha').trim(),pa:String(r.principio_activo||'').trim()})).filter(p=>p.nombre);
+      PRODUCTOS=rows.map(r=>({nombre:String(r.nombre||'').trim(),categoria:String(r.categoria||'').trim(),unidad:String(r.unidad||'L/ha').trim()})).filter(p=>p.nombre);
     }catch(e){console.warn('productos.xlsx no disponible',e.message);}
   }
   try{
-    let q;
-    if(SESSION.r==='aplicador'){q='cliente_id=eq.'+SESSION.c[0]+'&order=fecha.desc&limit=200';}
-    else if(SESSION.c[0]==='all'){
-      q='cliente_id=eq.'+ACTIVE_CLI+'&order=created_at.desc&limit=200';
-    }
-    else{q='cliente_id=eq.'+SESSION.c[0]+'&order=created_at.desc&limit=200';}
+    const q=SESSION.r==='aplicador'?'cliente_id=eq.'+SESSION.c[0]+'&order=fecha.desc&limit=200':'order=created_at.desc&limit=200';
     retR=await sbG('recetas',q);
     retR.sort((a,b)=>{if(a.estado==='pendiente'&&b.estado!=='pendiente')return -1;if(b.estado==='pendiente'&&a.estado!=='pendiente')return 1;return new Date(b.fecha)-new Date(a.fecha);});
   }catch(e){retR=[];}
   retRend();
 }
 function retBack(){if(!retStk.length){closeMod('recetas');return;}retStk.pop();retRend();}
-function retNueva(){retEditId=null;retStk.push({type:'nueva'});retP=[];drawState.annotation=null;retRend();}
+function retNueva(){retStk.push({type:'nueva'});retP=[];drawState.annotation=null;retRend();}
 function retRend(){
   const body=document.getElementById('ret-body');const t=retStk[retStk.length-1];
   document.getElementById('ret-add').style.display=(!t&&SESSION.r==='admin')?'block':'none';
@@ -1210,40 +843,20 @@ function retRend(){
 function retDashboard(){
   const pend=retR.filter(r=>r.estado==='pendiente').length;
   const ok=retR.filter(r=>r.estado==='ok').length;
+  const canc=retR.filter(r=>r.estado==='cancelado').length;
   const anul=retR.filter(r=>r.estado==='anulada').length;
-  const pOn=retFiltroPend;
   return `<div style="display:flex;gap:8px;padding:10px 14px 0;flex-wrap:wrap">
-    <div onclick="retTogglePend()" style="cursor:pointer;background:${pOn?'var(--blu)':'rgba(38,115,168,.08)'};border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center;transition:all .15s">
-      <div style="font-size:22px;font-weight:200;color:${pOn?'#fff':'var(--blu)'}">${pend}</div>
-      <div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:${pOn?'#fff':'var(--blu)'}">Pendientes</div>
+    <div style="background:rgba(38,115,168,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center">
+      <div style="font-size:22px;font-weight:200;color:var(--blu)">${pend}</div>
+      <div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--blu)">Pendientes</div>
     </div>
     <div style="background:rgba(74,158,74,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center">
       <div style="font-size:22px;font-weight:200;color:var(--grn)">${ok}</div>
       <div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--grn)">Aplicadas</div>
     </div>
+    ${canc?`<div style="background:rgba(184,50,50,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center"><div style="font-size:22px;font-weight:200;color:var(--red)">${canc}</div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--red)">Canceladas</div></div>`:''}
     ${anul?`<div style="background:rgba(184,50,50,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center"><div style="font-size:22px;font-weight:200;color:var(--red)">${anul}</div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--red)">Anuladas</div></div>`:''}
   </div>`;
-}
-let retFiltroPend=false;
-function retTogglePend(){retFiltroPend=!retFiltroPend;retRend();}
-function retRenderPendDetalle(){
-  const pend=retR.filter(r=>r.estado==='pendiente');
-  if(!pend.length)return `<div class="empty">No hay recetas pendientes</div>`;
-  return pend.map(r=>{
-    const campoLbl=CFG[r.cliente_id]?.campos[r.campo_id]?.lbl||r.campo_id||'—';
-    const urgColor=r.urgencia==='YA'?'var(--red)':r.urgencia?.toLowerCase().includes('2-3')?'var(--ora)':'var(--txt2)';
-    return `<div class="rli" data-id="${r.id}" onclick="retStk.push({type:'ver',id:this.dataset.id});retRend()" style="cursor:pointer">
-      <div class="rli-top">
-        <div class="rli-n">${campoLbl} · Lote ${(r.lote_id||'?').toUpperCase()}</div>
-        ${r.numero_receta?`<span style="font-size:10px;color:var(--txt3)">Rec. ${r.numero_receta}</span>`:''}
-      </div>
-      <div class="rli-m" style="margin-bottom:4px"><span>📅 ${r.fecha}</span><span>${cl(r.cultivo)||r.cultivo||'—'}</span>${r.objetivo?`<span style="background:var(--surf2);border-radius:3px;padding:1px 6px;font-size:10px">${r.objetivo}</span>`:''}${r.urgencia?`<span style="color:${urgColor}">⏱ ${r.urgencia}</span>`:''}</div>
-      <div style="display:flex;flex-direction:column;gap:2px">
-        ${(r.productos||[]).map(p=>`<div class="prow" style="font-size:11px"><span>${p.nombre||p.n}</span><span style="color:var(--txt3)">${p.dosis||p.d} ${p.unidad||p.u||''}</span></div>`).join('')}
-      </div>
-      ${r.observaciones?`<div style="font-size:11px;color:var(--txt2);font-style:italic;margin-top:4px">${r.observaciones}</div>`:''}
-    </div>`;
-  }).join('');
 }
 function retRL(body){
   const dash=retDashboard();
@@ -1253,7 +866,7 @@ function retRL(body){
     return;
   }
   if(retOrdenMode){
-    body.innerHTML=dash+`<div style="padding:10px 14px 0;display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-size:11px;color:var(--txt2)">Seleccioná las recetas para incluir</span><button onclick="retGenPDF()" style="background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:7px 12px;font-size:11px;font-weight:400;font-family:var(--f);white-space:nowrap">PDF (${retSel.size})</button></div>`+
+    body.innerHTML=dash+`<div style="padding:10px 14px 0;font-size:11px;color:var(--txt2)">Seleccioná las recetas para incluir en la orden</div>`+
     retR.map(r=>{
       const sel=retSel.has(r.id);
       return `<div class="rli" data-id="${r.id}" onclick="retToggleSel(this)" style="display:flex;align-items:center;gap:10px;${sel?'border-color:var(--acc);background:rgba(43,107,43,.04)':''}">
@@ -1265,29 +878,14 @@ function retRL(body){
     `<div style="padding:10px 14px"><button onclick="retGenPDF()" style="width:100%;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:12px;font-size:13px;font-weight:400;font-family:var(--f)">Generar PDF (${retSel.size} receta${retSel.size!==1?'s':''})</button></div>`;
     return;
   }
-  if(retFiltroPend){
-    body.innerHTML=dash+`<div style="padding:10px 14px 0;font-size:11px;color:var(--blu)">Mostrando solo pendientes — tocá el chip para ver todas</div>`+retRenderPendDetalle();
-    return;
-  }
-  body.innerHTML=dash+retR.map(r=>{
-    const campoLbl=CFG[r.cliente_id]?.campos[r.campo_id]?.lbl||r.campo_id||'—';
-    const urgColor=r.urgencia==='YA'?'var(--red)':r.urgencia?.toLowerCase().includes('2-3')?'var(--ora)':'var(--txt2)';
-    return `<div class="rli" data-id="${r.id}" onclick="retStk.push({type:'ver',id:this.dataset.id});retRend()">
-      <div class="rli-top">
-        <div class="rli-n">${campoLbl} · Lote ${(r.lote_id||'?').toUpperCase()}</div>
-        <span class="ep ep-${r.estado||'pendiente'}">${r.estado||'pendiente'}</span>
-      </div>
-      <div class="rli-m" style="margin-bottom:3px"><span>📅 ${r.fecha}</span><span>${cl(r.cultivo)||r.cultivo||'—'}</span>${r.numero_receta?`<span>Rec. ${r.numero_receta}</span>`:''}</div>
-      ${r.objetivo||r.urgencia?`<div class="rli-m" style="gap:6px">${r.objetivo?`<span style="background:var(--surf2);border-radius:3px;padding:1px 6px;font-size:10px">${r.objetivo}</span>`:''}${r.urgencia?`<span style="color:${urgColor};font-weight:400">⏱ ${r.urgencia}</span>`:''}</div>`:''}
-    </div>`;
-  }).join('');
+  body.innerHTML=dash+retR.map(r=>`<div class="rli" data-id="${r.id}" onclick="retStk.push({type:'ver',id:this.dataset.id});retRend()"><div class="rli-top"><div class="rli-n">Rec. ${r.numero_receta||'—'} · ${r.lote_id||'?'}</div><span class="ep ep-${r.estado||'pendiente'}">${r.estado||'pendiente'}</span></div><div class="rli-m"><span>📅 ${r.fecha}</span><span>${r.cultivo||'—'}</span><span>${r.objetivo||''}</span></div></div>`).join('');
 }
 function retRF(body){
-  const copts=Object.entries(CFG).map(([k,v])=>'<option value="'+k+'"'+(SESSION.c[0]==='all'&&k===ACTIVE_CLI?' selected':'')+'>'+v.lbl+'</option>').join('');
+  const copts=Object.entries(CFG).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join('');
   body.innerHTML=`<div class="rform">
 <div class="rfs">Ubicación</div>
 <div class="rfr"><div class="rff"><label>Cliente</label><select id="rc" onchange="retUC()"><option value="">—</option>${copts}</select></div><div class="rff"><label>Campo</label><select id="rcm" onchange="retUL()"><option value="">—</option></select></div></div>
-<div class="rfr"><div class="rff"><label>Lote</label><select id="rl" onchange="retUA()"><option value="">—</option></select></div><div class="rff"><label>Ha</label><input type="number" id="rha" placeholder="0" readonly></div></div>
+<div id="rl-wrap" style="display:none;padding:8px 14px 0"></div>
 <div id="ret-draw-wrap"></div>
 <div class="rfs">Detalle</div>
 <div class="rfr"><div class="rff"><label>Cultivo</label><select id="rcu"><option value="">—</option><option>Cebada</option>
@@ -1377,51 +975,70 @@ function retRF(body){
 <div id="rpl"></div>
 <button class="rfsave" onclick="retG()">Guardar receta</button>
 </div>`;
+  // Pre-seleccionar cliente si el usuario tiene uno solo asignado
+  const userCli=SESSION.c[0];
+  if(userCli&&userCli!=='all'&&CFG[userCli]){
+    document.getElementById('rc').value=userCli;
+    retUC();
+  }
 }
 function retUC(){
   const ck2=document.getElementById('rc').value;
   const cfg=CFG[ck2];
-  document.getElementById('rcm').innerHTML='<option value="">—</option>'+(cfg?Object.entries(cfg.campos).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join(''):'');
-  document.getElementById('rl').innerHTML='<option value="">—</option>';
-  // Si el cliente seleccionado no es el que está cargado en D, precargar siembra
+  const rcm=document.getElementById('rcm');
+  rcm.innerHTML='<option value="">—</option>'+(cfg?Object.entries(cfg.campos).map(([k,v])=>'<option value="'+k+'">'+v.lbl+'</option>').join(''):'');
+  const rlWrap=document.getElementById('rl-wrap');if(rlWrap){rlWrap.style.display='none';rlWrap.innerHTML='';}
   if(ck2&&(!D||D.ck!==ck2)){
-    schLoad(ck2);
+    rcm.disabled=true;
+    schLoad(ck2).then(()=>{rcm.disabled=false;}).catch(()=>{rcm.disabled=false;});
   }
 }
 function retUL(){
   const cm=document.getElementById('rcm').value;
-  // Usar lotes del SHP si están cargados, sino usar lista maestra de siembra
+  const wrap=document.getElementById('rl-wrap');
+  if(!cm){wrap.style.display='none';wrap.innerHTML='';return;}
+  const ck2=document.getElementById('rc').value;
+  if(!D||D.ck!==ck2){
+    wrap.style.display='block';
+    wrap.innerHTML='<div style="font-size:11px;color:var(--txt3);padding:4px 0"><span class="spin" style="display:inline-block;width:12px;height:12px;border:2px solid var(--brd);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px"></span>Cargando lotes...</div>';
+    const poll=setInterval(()=>{if(D&&D.ck===ck2){clearInterval(poll);retUL();}},400);
+    return;
+  }
   let lotes=D?.lotes.filter(l=>l.layer===cm)||[];
   if(!lotes.length&&D?.siembra?.[cm]){
-    // Fallback: lotes desde siembra
     lotes=Object.keys(D.siembra[cm]).map(k=>({name:k.replace(/^LOTE\s*/i,''),layer:cm,area:''}));
   }
-  document.getElementById('rl').innerHTML='<option value="">—</option>'+lotes.map(l=>'<option value="'+l.name+'">'+l.name.toUpperCase()+(l.area?' ('+l.area+' ha)':'')+'</option>').join('');
+  lotes=[...lotes].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+  wrap.style.display='block';
+  wrap.innerHTML='<div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Lotes <span id="rl-count" style="color:var(--acc)"></span></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:5px;margin-bottom:4px">'
+    +lotes.map(l=>{
+      const id='rlc-'+l.name.replace(/\s+/g,'_');
+      return `<label for="${id}" style="display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--bord);border-radius:var(--r2);cursor:pointer;background:var(--surf2);font-size:12px" onclick="retULCount()">
+        <input type="checkbox" id="${id}" value="${l.name}" data-ha="${l.area||''}" style="width:15px;height:15px;accent-color:var(--acc);cursor:pointer">
+        <span>${l.name.toUpperCase()}</span>${l.area?'<span style="color:var(--txt3);font-size:10px;margin-left:auto">'+l.area+' ha</span>':''}
+      </label>`;
+    }).join('')
+    +'</div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:4px">'
+    +'<button onclick="retULAll(true)" style="font-size:11px;padding:4px 10px;border:1px solid var(--bord);border-radius:20px;background:var(--surf);cursor:pointer;color:var(--txt2)">Todos</button>'
+    +'<button onclick="retULAll(false)" style="font-size:11px;padding:4px 10px;border:1px solid var(--bord);border-radius:20px;background:var(--surf);cursor:pointer;color:var(--txt2)">Ninguno</button>'
+    +'</div>';
+  retULCount();
 }
-function retUA(){
-  const cm=document.getElementById('rcm').value,lo=document.getElementById('rl').value;
-  const l=D?.lotes.find(x=>x.layer===cm&&x.name===lo);
-  const haInput=document.getElementById('rha');
-  if(l){
-    haInput.value=l.area;haInput.readOnly=false;
-  }else{
-    haInput.value='';haInput.readOnly=false;haInput.placeholder='Ingresar ha';
-  }
-  if(lo&&l){
-    // Mostrar botón dibujar y thumbnail (solo si hay geometría SHP)
-    const existing=document.getElementById('ret-draw-wrap');
-    if(existing)existing.remove();
-    const wrap=document.createElement('div');wrap.id='ret-draw-wrap';
-    wrap.innerHTML=`<button class="lote-draw-btn" onclick="drawOpen('${cm}','${lo}')">🗺 Anotar sobre el lote</button>
-    <div id="ret-thumb" class="lote-thumb" onclick="drawOpen('${cm}','${lo}')" style="display:none">
-      <canvas id="ret-thumb-cv"></canvas>
-      <div class="lote-thumb-label">Toca para editar</div>
-    </div>`;
-    document.getElementById('rl').closest('.rfr').after(wrap);
-  }else{
-    document.getElementById('ret-draw-wrap')?.remove();
-  }
+function retULCount(){
+  const sel=retLotesSeleccionados();
+  const span=document.getElementById('rl-count');
+  if(span)span.textContent=sel.length?'('+sel.length+' seleccionado'+(sel.length>1?'s':'')+')':'';
 }
+function retULAll(check){
+  document.querySelectorAll('#rl-wrap input[type=checkbox]').forEach(cb=>cb.checked=check);
+  retULCount();
+}
+function retLotesSeleccionados(){
+  return [...document.querySelectorAll('#rl-wrap input[type=checkbox]:checked')].map(cb=>({name:cb.value,ha:cb.dataset.ha}));
+}
+function retUA(){}
 function retFiltrarProd(q){
   const box=document.getElementById('rpn-sugg');if(!box)return;
   if(!q||q.length<1){
@@ -1438,81 +1055,33 @@ function retFiltrarProd(q){
   box.style.display='block';
   box.innerHTML=matches.map(p=>`<div onclick="retSelProd('${p.nombre.replace(/'/g,"\'")}','${p.unidad}')" style="padding:7px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--bord);display:flex;justify-content:space-between;align-items:center"><span>${p.nombre}</span><span style="font-size:10px;color:var(--txt3)">${p.categoria}</span></div>`).join('');
 }
-let retSelPA='';
-function retSelProd(nombre,unidad,pa){
-  retSelPA=pa||'';
+function retSelProd(nombre,unidad){
   const inp=document.getElementById('rpn');if(inp)inp.value=nombre;
   const su=document.getElementById('rpn-sugg');if(su)su.style.display='none';
   const pu=document.getElementById('rpu');
   if(pu){const u=unidad.toLowerCase();if(u.includes('kg'))pu.value='kg/ha';else if(u.includes('cc'))pu.value='cc/ha';else if(u.includes('gr')||u.includes('g/'))pu.value='g/ha';else pu.value='L/ha';}
-  // mostrar principio activo debajo del input
-  let paEl=document.getElementById('rpn-pa');
-  if(!paEl){paEl=document.createElement('div');paEl.id='rpn-pa';paEl.style.cssText='font-size:10px;color:var(--txt3);margin-top:2px';inp.parentElement.appendChild(paEl);}
-  paEl.textContent=pa||'';
   document.getElementById('rpd')?.focus();
 }
-function retAP(){const n=document.getElementById('rpn').value.trim();if(!n){toast('Nombre requerido');return;}const su=document.getElementById('rpn-sugg');if(su)su.style.display='none';retP.push({nombre:n,dosis:document.getElementById('rpd').value,unidad:document.getElementById('rpu').value,pa:retSelPA});document.getElementById('rpn').value='';document.getElementById('rpd').value='';retSelPA='';const paEl=document.getElementById('rpn-pa');if(paEl)paEl.textContent='';retRP();}
-function retRP(){const el=document.getElementById('rpl');if(!el)return;el.innerHTML=retP.map((p,i)=>'<div class="pr"><div><div class="pr-n">'+p.nombre+'</div>'+(p.pa?'<div style="font-size:10px;color:var(--txt3)">'+p.pa+'</div>':'')+'</div><div class="pr-d">'+p.dosis+' '+p.unidad+'</div><button class="pr-del" onclick="retP.splice('+i+',1);retRP()">✕</button></div>').join('');}
+function retAP(){const n=document.getElementById('rpn').value.trim();if(!n){toast('Nombre requerido');return;}const su=document.getElementById('rpn-sugg');if(su)su.style.display='none';retP.push({nombre:n,dosis:document.getElementById('rpd').value,unidad:document.getElementById('rpu').value});document.getElementById('rpn').value='';document.getElementById('rpd').value='';retRP();}
+function retRP(){const el=document.getElementById('rpl');if(!el)return;el.innerHTML=retP.map((p,i)=>'<div class="pr"><div class="pr-n">'+p.nombre+'</div><div class="pr-d">'+p.dosis+' '+p.unidad+'</div><button class="pr-del" onclick="retP.splice('+i+',1);retRP()">✕</button></div>').join('');}
 async function retG(){
-  const lo=document.getElementById('rl').value;if(!lo){toast('Seleccioná un lote');return;}if(!retP.length){toast('Agregá al menos un producto');return;}
-  if(retEditId){
-    const rec={lote_id:lo,campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,anotacion:drawState.annotation||null,cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('robj').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rha')?.value)||null,observaciones:document.getElementById('rob').value,productos:retP};
-    try{
-      const res=await fetch(SB_URL+'/rest/v1/recetas?id=eq.'+retEditId,{method:'PATCH',headers:SBH,body:JSON.stringify(rec)});
-      if(!res.ok)throw new Error(await res.text());
-      toast('Receta actualizada ✓');retEditId=null;retStk=[];retInit();
-    }catch(e){toast('Error: '+e.message);}
-    return;
-  }
-  const rec={lote_id:lo,campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,anotacion:drawState.annotation||null,fecha:new Date().toISOString().split('T')[0],cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('robj').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rcau')?.value)||null,observaciones:document.getElementById('rob').value,usuario:SESSION.u,estado:'pendiente',productos:retP};
-  try{await sbI('recetas',rec);toast('Receta guardada ✓');retStk=[];retInit();}catch(e){toast('Error: '+e.message);}
-}
-async function retEliminar(id){
-  if(!confirm('¿Eliminar esta receta? Esta acción no se puede deshacer.'))return;
+  const lotes=retLotesSeleccionados();
+  if(!lotes.length){toast('Seleccioná al menos un lote');return;}
+  if(!retP.length){toast('Agregá al menos un producto');return;}
+  const base={campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,fecha:new Date().toISOString().split('T')[0],cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('robj').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rcau')?.value)||null,observaciones:document.getElementById('rob').value,usuario:SESSION.u,estado:'pendiente',productos:retP};
   try{
-    const r=await fetch(SB_URL+'/rest/v1/recetas?id=eq.'+id,{method:'DELETE',headers:SBH});
-    if(!r.ok)throw new Error(await r.text());
-    toast('Receta eliminada');
-    retR=retR.filter(x=>x.id!==id);
-    retStk.pop();retRend();
+    for(const l of lotes){
+      await sbI('recetas',{...base,lote_id:l.name,ha:parseFloat(l.ha)||null,anotacion:null});
+    }
+    toast(lotes.length>1?lotes.length+' recetas guardadas ✓':'Receta guardada ✓');
+    retStk=[];retInit();
   }catch(e){toast('Error: '+e.message);}
 }
-let retEditId=null;
-function retEditar(id){
-  retEditId=id;
-  retStk.push({type:'nueva'});
-  retP=[];
-  retRend();
-  // Precargar datos después de renderizar el form
-  setTimeout(()=>{
-    const r=retR.find(x=>x.id===id);if(!r)return;
-    const set=(elId,val)=>{const el=document.getElementById(elId);if(el&&val!=null)el.value=val;};
-    set('rc',r.cliente_id);retUC();
-    setTimeout(()=>{
-      set('rcm',r.campo_id);retUL();
-      setTimeout(()=>{
-        set('rl',r.lote_id);retUA();
-        set('rha',r.caudal);
-        set('rcu',r.cultivo);
-        set('ru',r.urgencia);
-        set('rd',r.destino);
-        set('robj',r.objetivo);
-        set('rob',r.observaciones);
-        retP=JSON.parse(JSON.stringify(r.productos||[]));
-        retRP();
-        drawState.annotation=r.anotacion||null;
-        const btn=document.querySelector('.rfsave');
-        if(btn)btn.textContent='Guardar cambios';
-      },400);
-    },400);
-  },50);
-}
-
 function retRD(body,id){
   const r=retR.find(x=>x.id===id);if(!r){body.innerHTML='<div class="empty">No encontrada</div>';return;}
   body.innerHTML='<div class="rform"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><div style="font-size:22px;font-weight:200;letter-spacing:-.5px">Rec. '+(r.numero_receta||'—')+'</div><div style="font-size:11px;color:var(--txt2)">'+r.fecha+'</div></div><span class="ep ep-'+(r.estado||'pendiente')+'" style="font-size:10px;padding:4px 8px">'+(r.estado||'pendiente')+'</span></div><div class="sgrid"><div class="si"><div class="si-l">Lote</div><div class="si-v" style="font-size:12px">'+(r.lote_id||'—')+'</div></div><div class="si"><div class="si-l">Cultivo</div><div class="si-v" style="font-size:12px">'+(r.cultivo||'—')+'</div></div><div class="si"><div class="si-l">Urgencia</div><div class="si-v" style="font-size:12px">'+(r.urgencia||'—')+'</div></div><div class="si"><div class="si-l">Caudal</div><div class="si-v" style="font-size:12px">'+(r.caudal||'—')+' L/ha</div></div></div>'+(r.objetivo?'<div style="background:var(--surf2);border-radius:6px;padding:9px 11px;margin:8px 0;font-size:12px"><span style="font-size:8px;font-weight:500;text-transform:uppercase;color:var(--txt3);display:block;margin-bottom:2px">Objetivo</span>'+r.objetivo+'</div>':'')+'<div class="rfs">Productos</div>'+(r.productos||[]).map(p=>'<div class="pr"><div class="pr-n">'+(p.nombre||p.n||'—')+'</div><div class="pr-d">'+(p.dosis||p.d||'—')+' '+(p.unidad||p.u||'')+'</div></div>').join('')+(r.observaciones?'<div class="rfs">Obs.</div><div style="font-size:12px;line-height:1.5">'+r.observaciones+'</div>':'')
     +(r.anotacion?'<div class="rfs">Anotación</div><img src="'+r.anotacion+'" style="width:100%;border-radius:var(--r);border:1px solid var(--bord);margin-top:4px">':'')+
-    ((SESSION.r==='aplicador'||SESSION.r==='admin'||SESSION.r==='cliente')&&r.estado==='pendiente'?`
+    ((SESSION.r==='aplicador'||SESSION.r==='admin')&&r.estado==='pendiente'?`
     <div class="rfs">Acción</div>
     <div style="background:var(--surf2);border-radius:var(--r);padding:12px 13px;margin-bottom:8px">
       <div style="font-size:9px;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:var(--txt3);margin-bottom:8px">Marcar como aplicado</div>
@@ -1521,438 +1090,19 @@ function retRD(body,id){
         <div class="rff"><label>Operador</label><input type="text" id="apl-op" placeholder="Nombre operador"></div>
       </div>
       <div class="rff" style="margin-bottom:8px"><label>Observación</label><textarea id="apl-obs" rows="2" style="background:var(--surf);border:1px solid var(--bord);border-radius:var(--r2);padding:8px 10px;font-size:12px;width:100%;outline:none;resize:none;font-family:var(--f)" placeholder="Condiciones, equipo, etc..."></textarea></div>
-      <button onclick="retMarcarAplicado('${r.id}')" style="width:100%;background:var(--grn);color:#fff;border:none;border-radius:var(--r2);padding:11px;font-size:12px;font-weight:400;font-family:var(--f)">✓ Marcar como aplicado</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button onclick="retMarcarAplicado('${r.id}')" style="background:var(--grn);color:#fff;border:none;border-radius:var(--r2);padding:11px;font-size:12px;font-weight:400;font-family:var(--f)">✓ Aplicado</button>
+        <button onclick="retCancelar('${r.id}')" style="background:var(--red);color:#fff;border:none;border-radius:var(--r2);padding:11px;font-size:12px;font-weight:400;font-family:var(--f)">✕ Cancelado</button>
+      </div>
     </div>`
-    :r.estado==='ok'&&r.fecha_aplicacion?`<div style="background:rgba(74,158,74,.08);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--grn);display:flex;justify-content:space-between;align-items:center"><span>✓ Aplicado el ${r.fecha_aplicacion}${r.operador?' por '+r.operador:''}</span>${SESSION.r==='admin'?`<button onclick="retRevertir('${r.id}')" style="background:none;border:1px solid var(--bord2);border-radius:var(--r2);padding:4px 9px;font-size:10px;color:var(--txt3);font-family:var(--f);cursor:pointer">↩ Pendiente</button>`:''}</div>`:'')
-    +`<div style="display:flex;gap:8px;margin-top:16px">
-      <button onclick="retStk.pop();retRend()" style="flex:1;background:none;border:1px solid var(--bord2);border-radius:var(--r2);padding:11px;font-size:12px;color:var(--txt2);font-family:var(--f)">Cancelar</button>
-      ${SESSION.r==='admin'?`<button onclick="retEditar('${r.id}')" style="flex:1;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:11px;font-size:12px;color:var(--txt);font-family:var(--f)">Editar</button>
-      <button onclick="retEliminar('${r.id}')" style="flex:1;background:none;border:1px solid var(--red);border-radius:var(--r2);padding:11px;font-size:12px;color:var(--red);font-family:var(--f)">Eliminar</button>`:''}
-    </div>`
+    :r.estado==='ok'&&r.fecha_aplicacion?`<div style="background:rgba(74,158,74,.08);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--grn)">✓ Aplicado el ${r.fecha_aplicacion}${r.operador?' por '+r.operador:''}</div>`
+    :r.estado==='cancelado'?`<div style="background:rgba(184,50,50,.08);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--red)">✕ Cancelado</div>`:'')
     +'</div>';
 }
 
 // SUELOS
 let sHist=[];
-let SUELOS_DATA=[];
-
-async function suelInit(){
-  const ck2=SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];
-  const hist=document.getElementById('shist');
-  if(!DBX_TOKEN)await dbxRefreshToken();
-
-  // Listar PDFs pendientes en Dropbox
-  let pendientes=[];
-  try{
-    const r=await fetch('https://api.dropboxapi.com/2/files/list_folder',{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+DBX_TOKEN,'Content-Type':'application/json'},
-      body:JSON.stringify({path:TF+'/laboratorio/pendientes'})
-    });
-    const d=await r.json();
-    pendientes=(d.entries||[]).filter(e=>e.name.match(/\.(pdf|xlsx?)$/i));
-  }catch(e){pendientes=[];}
-
-  // Cargar historial desde analisis_suelos.xlsx
-  let histRows=[];
-  try{
-    const buf=await dbxDL(TF+'/xlsx/analisis_suelos.xlsx');
-    const wb=XLSX.read(buf,{type:'array'});
-    const ws=wb.Sheets['Datos Completos']||wb.Sheets[wb.SheetNames[0]];
-    histRows=XLSX.utils.sheet_to_json(ws,{raw:false}).filter(r=>String(r['Cliente']||'').toLowerCase()===ck2);
-  }catch(e){}
-
-  // Render
-  let html='';
-
-  // Sección: pendientes
-  if(pendientes.length){
-    html+=`<div style="background:rgba(204,92,8,.06);border:1px solid rgba(204,92,8,.2);border-radius:var(--r);padding:12px 14px;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:500;color:var(--ora);margin-bottom:8px">📂 ${pendientes.length} archivo${pendientes.length>1?'s':''} pendiente${pendientes.length>1?'s':''} en Dropbox</div>
-      ${pendientes.map(f=>`<div style="font-size:12px;color:var(--txt2);margin-bottom:3px">· ${f.name}</div>`).join('')}
-      <button onclick="suelProcesar('${ck2}')" style="margin-top:10px;width:100%;background:var(--ora);color:#fff;border:none;border-radius:var(--r2);padding:10px;font-size:12px;font-weight:400;font-family:var(--f)">⚡ Procesar todos</button>
-    </div>`;
-  }
-
-  // Selector de campo + tabla
-  if(histRows.length){
-    const campos=[...new Set(histRows.map(r=>String(r['Campo']||'').trim()))].filter(Boolean).sort();
-    html+=`<div style="margin-bottom:12px">
-      <select id="suel-campo" onchange="suelMostrar()" style="width:100%;font-family:var(--f);font-size:13px;font-weight:300;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:9px 12px;color:var(--txt);outline:none">
-        <option value="">— Ver análisis por campo —</option>
-        ${campos.map(c=>`<option value="${c}">${c}</option>`).join('')}
-      </select>
-    </div>
-    <div id="suel-tabla"></div>`;
-  } else {
-    html+=`<div class="empty">Sin análisis cargados para este cliente</div>`;
-  }
-
-  hist.innerHTML=html;
-}
-
-async function suelProcesar(ck2){
-  const hist=document.getElementById('shist');
-  // Listar archivos pendientes
-  const rList=await fetch('https://api.dropboxapi.com/2/files/list_folder',{
-    method:'POST',
-    headers:{'Authorization':'Bearer '+DBX_TOKEN,'Content-Type':'application/json'},
-    body:JSON.stringify({path:TF+'/laboratorio/pendientes'})
-  });
-  const dList=await rList.json();
-  const archivos=(dList.entries||[]).filter(e=>e.name.match(/\.(pdf|xlsx?)$/i));
-  if(!archivos.length){toast('No hay archivos pendientes');return;}
-
-  // Descargar Excel actual
-  let existingRows=[];
-  try{
-    const buf=await dbxDL(TF+'/xlsx/analisis_suelos.xlsx');
-    const wb=XLSX.read(buf,{type:'array'});
-    const ws=wb.Sheets['Datos Completos']||wb.Sheets[wb.SheetNames[0]];
-    existingRows=XLSX.utils.sheet_to_json(ws,{header:1});
-  }catch(e){}
-
-  const HDRS=['Cliente','Campo','Lote','Año','Archivo','Prof.','N-NO3','Fósforo','N Min.','S-Sulfato','MO','Zinc','pH','Humedad','Boro','CE','Calcio','Magnesio','Potasio','Sodio','PSI','CIC','Hierro','Cobre','Manganeso','Arena','Arcilla','Limo'];
-  const cliLbl=CFG[ck2]?.lbl||ck2;
-  let totalNuevas=0;
-  let errores=[];
-
-  for(let i=0;i<archivos.length;i++){
-    const f=archivos[i];
-    hist.innerHTML=`<div class="empty">⏳ Procesando ${i+1}/${archivos.length}: ${f.name}...</div>`;
-    try{
-      // Descargar archivo de Dropbox
-      const fileBuf=await dbxDL(f.path_lower);
-      const b64=btoa(String.fromCharCode(...new Uint8Array(fileBuf)));
-      const isPdf=f.name.match(/\.pdf$/i);
-      const mediaType=isPdf?'application/pdf':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-
-      // Llamar Claude via proxy
-      const payload={
-        model:'claude-sonnet-4-6',
-        max_tokens:4000,
-        messages:[{role:'user',content:[
-          {type:'document',source:{type:'base64',media_type:mediaType,data:b64}},
-          {type:'text',text:`Sos un asistente agrícola. Extraé los datos de análisis de suelo de este informe para el cliente "${cliLbl}".
-Devolvé SOLO JSON válido sin markdown:
-{"establecimiento":"nombre campo","laboratorio":"nombre lab","archivo":"código planilla","fecha":"DD/MM/AAAA","lotes":[{"lote":"número sin LOTE","ambiente":"P1 etc o vacío","perfiles":[{"profundidad":"0-20","fosforo":null,"mo":null,"n_no3":null,"n_min":null,"s_sulfato":null,"zinc":null,"boro":null,"ph":null,"ce":null,"calcio":null,"magnesio":null,"potasio":null,"sodio":null,"psi":null,"cic":null,"hierro":null,"cobre":null,"manganeso":null,"arena":null,"arcilla":null,"limo":null}]}]}`}
-        ]}]
-      };
-      const resp=await fetch(CLAUDE_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-      const data=await resp.json();
-      const txt=data.content?.[0]?.text||'';
-      const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
-
-      // Verificar duplicado por código planilla
-      const archivoBase=parsed.archivo||f.name;
-      const hdrsRow=existingRows[0]||HDRS;
-      const archivoIdx=Array.isArray(hdrsRow)?hdrsRow.findIndex(h=>String(h).trim()==='Archivo'):4;
-      const yaExiste=archivoBase&&existingRows.slice(1).some(r=>String(r[archivoIdx]||'').includes(archivoBase));
-
-      if(!yaExiste){
-        const año=parsed.fecha?parsed.fecha.split('/')[2]||new Date().getFullYear():new Date().getFullYear();
-        const campoNorm=(parsed.establecimiento||'').toLowerCase().replace(/\s+/g,'_').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-        parsed.lotes?.forEach(l=>{
-          l.perfiles?.forEach(p=>{
-            const row={};
-            row['Cliente']=ck2;row['Campo']=campoNorm;row['Lote']=l.lote;row['Año']=año;
-            row['Archivo']=(archivoBase)+(l.ambiente?' ('+l.ambiente+')':'');row['Prof.']=p.profundidad;
-            if(p.n_no3!=null)row['N-NO3']=p.n_no3;if(p.fosforo!=null)row['Fósforo']=p.fosforo;
-            if(p.n_min!=null)row['N Min.']=p.n_min;if(p.s_sulfato!=null)row['S-Sulfato']=p.s_sulfato;
-            if(p.mo!=null)row['MO']=p.mo;if(p.zinc!=null)row['Zinc']=p.zinc;if(p.ph!=null)row['pH']=p.ph;
-            if(p.boro!=null)row['Boro']=p.boro;if(p.ce!=null)row['CE']=p.ce;
-            if(p.calcio!=null)row['Calcio']=p.calcio;if(p.magnesio!=null)row['Magnesio']=p.magnesio;
-            if(p.potasio!=null)row['Potasio']=p.potasio;if(p.sodio!=null)row['Sodio']=p.sodio;
-            if(p.psi!=null)row['PSI']=p.psi;if(p.cic!=null)row['CIC']=p.cic;
-            if(p.hierro!=null)row['Hierro']=p.hierro;if(p.cobre!=null)row['Cobre']=p.cobre;
-            if(p.manganeso!=null)row['Manganeso']=p.manganeso;
-            if(p.arena!=null)row['Arena']=p.arena;if(p.arcilla!=null)row['Arcilla']=p.arcilla;if(p.limo!=null)row['Limo']=p.limo;
-            const arr=HDRS.map(h=>row[h]!=null?row[h]:'');
-            existingRows.push(arr);
-            totalNuevas++;
-          });
-        });
-      }
-
-      // Mover a /procesados/
-      await fetch('https://api.dropboxapi.com/2/files/move_v2',{
-        method:'POST',
-        headers:{'Authorization':'Bearer '+DBX_TOKEN,'Content-Type':'application/json'},
-        body:JSON.stringify({from_path:f.path_lower,to_path:TF+'/laboratorio/procesados/'+f.name,autorename:true})
-      });
-
-    }catch(e){errores.push(f.name+': '+e.message);}
-  }
-
-  // Guardar Excel actualizado
-  if(totalNuevas>0){
-    const wb2=XLSX.utils.book_new();
-    const ws2=XLSX.utils.aoa_to_sheet(existingRows.length?existingRows:[HDRS]);
-    XLSX.utils.book_append_sheet(wb2,ws2,'Datos Completos');
-    const out=XLSX.write(wb2,{type:'array',bookType:'xlsx'});
-    await fetch('https://content.dropboxapi.com/2/files/upload',{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+DBX_TOKEN,'Dropbox-API-Arg':JSON.stringify({path:TF+'/xlsx/analisis_suelos.xlsx',mode:'overwrite'}),'Content-Type':'application/octet-stream'},
-      body:new Uint8Array(out)
-    });
-  }
-
-  const msg=`✓ ${archivos.length} archivo${archivos.length>1?'s':''} procesado${archivos.length>1?'s':''}. ${totalNuevas} filas nuevas agregadas.${errores.length?' Errores: '+errores.join(', '):''}`;
-  toast(msg);
-  suelInit();
-}
-
-function suelMostrar(){
-  const campo=document.getElementById('suel-campo')?.value;
-  const el=document.getElementById('suel-tabla');
-  if(!campo||!el)return;
-  const filas=SUELOS_DATA.filter(r=>String(r['Campo']||'').trim()===campo);
-  if(!filas.length){el.innerHTML='<div class="empty">Sin datos para este campo</div>';return;}
-
-  // Parámetros disponibles
-  const PARAMS=['N-NO3','Fósforo','N Min.','S-Sulfato','MO','Zinc','pH','Boro','CE','Calcio','Magnesio','Potasio','Sodio','PSI','CIC','Hierro','Cobre','Manganeso','Arena','Arcilla','Limo'];
-  const usados=PARAMS.filter(p=>filas.some(r=>r[p]!=null&&r[p]!==''));
-
-  // Agrupar por Lote → Año → Archivo
-  const lotes={};
-  filas.forEach(r=>{
-    const l=String(r['Lote']||'').trim();
-    const a=String(r['Año']||'').trim();
-    const arch=String(r['Archivo']||'').trim();
-    const prof=String(r['Prof.']||'').trim();
-    if(!lotes[l])lotes[l]={};
-    const key=a+'|'+arch.replace(/\s*\(.*\)/,'').trim();
-    if(!lotes[l][key])lotes[l][key]={año:a,arch:arch.replace(/\s*\(.*\)/,'').trim(),perfiles:[]};
-    lotes[l][key].perfiles.push(r);
-  });
-
-  let html='';
-  Object.keys(lotes).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).forEach(lote=>{
-    html+=`<div style="margin-bottom:16px">
-      <div style="font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--acc);padding:6px 0 4px;border-bottom:2px solid var(--acc);margin-bottom:6px">Lote ${lote}</div>`;
-    Object.values(lotes[lote]).sort((a,b)=>b.año-a.año).forEach(g=>{
-      html+=`<div style="margin-bottom:10px">
-        <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">${g.arch} · ${g.año}</div>
-        <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:11px">
-          <thead><tr style="background:var(--surf2)">
-            <th style="padding:5px 8px;text-align:left;border:1px solid var(--bord);font-weight:500;color:var(--txt2)">Prof.</th>
-            ${usados.map(p=>`<th style="padding:5px 8px;text-align:right;border:1px solid var(--bord);font-weight:500;color:var(--txt2);white-space:nowrap">${p}</th>`).join('')}
-          </tr></thead>
-          <tbody>
-            ${g.perfiles.sort((a,b)=>String(a['Prof.']).localeCompare(String(b['Prof.']))).map(r=>`
-              <tr>
-                <td style="padding:5px 8px;border:1px solid var(--bord);font-weight:500">${r['Prof.']||'—'}</td>
-                ${usados.map(p=>`<td style="padding:5px 8px;text-align:right;border:1px solid var(--bord);color:${r[p]!=null&&r[p]!==''?'var(--txt)':'var(--txt3)'}">${r[p]!=null&&r[p]!==''?r[p]:'—'}</td>`).join('')}
-              </tr>`).join('')}
-          </tbody>
-        </table></div>
-      </div>`;
-    });
-    html+='</div>';
-  });
-  el.innerHTML=html;
-}
-
-async function sueloFile(input){
-  const file=input.files[0];if(!file)return;
-  const prev=document.getElementById('sprev');
-  prev.innerHTML='<div class="empty">⏳ Procesando con IA...</div>';
-  try{
-    // Leer como base64
-    const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
-    const isXlsx=file.name.match(/\.xlsx?$/i);
-    const ck2=SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];
-    const cliLbl=CFG[ck2]?.lbl||ck2;
-
-    // Llamar a Claude via proxy
-    const payload={
-      model:'claude-sonnet-4-6',
-      max_tokens:4000,
-      messages:[{
-        role:'user',
-        content:[
-          {type:isXlsx?'document':'document',source:{type:'base64',media_type:isXlsx?'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'application/pdf',data:b64}},
-          {type:'text',text:`Sos un asistente agrícola. Extraé los datos de análisis de suelo de este informe de laboratorio para el cliente "${cliLbl}".
-
-Devolvé SOLO un JSON válido (sin markdown, sin texto extra) con esta estructura:
-{
-  "establecimiento": "nombre del campo/establecimiento",
-  "laboratorio": "nombre del laboratorio",
-  "archivo": "código de planilla",
-  "fecha": "DD/MM/AAAA",
-  "lotes": [
-    {
-      "lote": "número de lote (solo el número, sin 'LOTE')",
-      "ambiente": "P1, P2, etc o vacío",
-      "perfiles": [
-        {
-          "profundidad": "0-20",
-          "fosforo": 0,
-          "mo": 0,
-          "n_no3": 0,
-          "n_min": 0,
-          "s_sulfato": 0,
-          "zinc": 0,
-          "boro": 0,
-          "ph": null,
-          "ce": null,
-          "calcio": null,
-          "magnesio": null,
-          "potasio": null,
-          "sodio": null,
-          "psi": null,
-          "cic": null,
-          "hierro": null,
-          "cobre": null,
-          "manganeso": null,
-          "arena": null,
-          "arcilla": null,
-          "limo": null
-        }
-      ]
-    }
-  ]
-}
-Solo incluí los parámetros que el informe reporte. Usá null para los que no estén. Los números deben ser numéricos, no strings.`}
-        ]
-      }]
-    };
-
-    const resp=await fetch(CLAUDE_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const data=await resp.json();
-    const txt=data.content?.[0]?.text||'';
-    const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
-
-    // Mostrar preview para confirmar
-    sueloPreview(parsed, ck2, file.name);
-  }catch(e){
-    document.getElementById('sprev').innerHTML=`<div style="padding:14px;color:var(--red)">Error: ${e.message}</div>`;
-  }
-  input.value='';
-}
-
-function sueloPreview(data, ck2, filename){
-  const prev=document.getElementById('sprev');
-  let html=`<div style="padding:12px 14px;background:var(--surf2);border-bottom:1px solid var(--bord)">
-    <div style="font-size:11px;font-weight:500;color:var(--txt2);margin-bottom:6px">Vista previa — confirmá antes de guardar</div>
-    <div style="font-size:12px"><b>${data.establecimiento||'—'}</b> · ${data.archivo||filename}</div>
-    <div style="font-size:11px;color:var(--txt3)">${data.laboratorio||''} · ${data.fecha||''}</div>
-  </div>`;
-  
-  data.lotes?.forEach(l=>{
-    html+=`<div style="padding:9px 14px;border-bottom:1px solid var(--bord)">
-      <div style="font-size:12px;font-weight:500">Lote ${l.lote}${l.ambiente?' ('+l.ambiente+')':''}</div>`;
-    l.perfiles?.forEach(p=>{
-      const vals=Object.entries(p).filter(([k,v])=>k!=='profundidad'&&v!=null).map(([k,v])=>`<span style="font-size:10px;background:var(--surf2);border-radius:3px;padding:2px 5px;margin:1px">${k}: ${v}</span>`).join('');
-      html+=`<div style="margin-top:4px"><span style="font-size:10px;color:var(--txt3)">${p.profundidad}</span> ${vals}</div>`;
-    });
-    html+='</div>';
-  });
-  
-  html+=`<div style="padding:12px 14px;display:flex;gap:8px">
-    <button onclick="document.getElementById('sprev').innerHTML=''" style="flex:1;background:none;border:1px solid var(--bord2);border-radius:var(--r2);padding:10px;font-size:12px;color:var(--txt2);font-family:var(--f)">Cancelar</button>
-    <button onclick="sueloGuardar(${JSON.stringify(JSON.stringify({data,ck2}))})" style="flex:1;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:10px;font-size:12px;font-family:var(--f)">Guardar en planilla</button>
-  </div>`;
-  prev.innerHTML=html;
-}
-
-async function sueloGuardar(jsonStr){
-  const {data,ck2}=JSON.parse(jsonStr);
-  document.getElementById('sprev').innerHTML='<div class="empty">⏳ Actualizando planilla...</div>';
-  try{
-    // Descargar analisis_suelos.xlsx actual
-    if(!DBX_TOKEN)await dbxRefreshToken();
-    let existingRows=[];
-    let existingWb=null;
-    try{
-      const buf=await dbxDL(TF+'/xlsx/analisis_suelos.xlsx');
-      const wb=XLSX.read(buf,{type:'array'});
-      const ws=wb.Sheets['Datos Completos']||wb.Sheets[wb.SheetNames[0]];
-      existingRows=XLSX.utils.sheet_to_json(ws,{header:1});
-      existingWb=wb;
-    }catch(e){existingRows=[];}
-
-    const HDRS=['Cliente','Campo','Lote','Año','Archivo','Prof.','N-NO3','Fósforo','N Min.','S-Sulfato','MO','Zinc','pH','Humedad','Boro','CE','Calcio','Magnesio','Potasio','Sodio','PSI','CIC','Hierro','Cobre','Manganeso','Arena','Arcilla','Limo'];
-    
-    // Preparar nuevas filas
-    const año=data.fecha?data.fecha.split('/')[2]||new Date().getFullYear():new Date().getFullYear();
-    const campoNorm=(data.establecimiento||'').toLowerCase().replace(/\s+/g,'_').replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u');
-    
-    const newRows=[];
-    data.lotes?.forEach(l=>{
-      l.perfiles?.forEach(p=>{
-        const row={};
-        row['Cliente']=ck2;
-        row['Campo']=campoNorm;
-        row['Lote']=l.lote;
-        row['Año']=año;
-        row['Archivo']=(data.archivo||'')+(l.ambiente?' ('+l.ambiente+')':'');
-        row['Prof.']=p.profundidad;
-        if(p.n_no3!=null)row['N-NO3']=p.n_no3;
-        if(p.fosforo!=null)row['Fósforo']=p.fosforo;
-        if(p.n_min!=null)row['N Min.']=p.n_min;
-        if(p.s_sulfato!=null)row['S-Sulfato']=p.s_sulfato;
-        if(p.mo!=null)row['MO']=p.mo;
-        if(p.zinc!=null)row['Zinc']=p.zinc;
-        if(p.ph!=null)row['pH']=p.ph;
-        if(p.boro!=null)row['Boro']=p.boro;
-        if(p.ce!=null)row['CE']=p.ce;
-        if(p.calcio!=null)row['Calcio']=p.calcio;
-        if(p.magnesio!=null)row['Magnesio']=p.magnesio;
-        if(p.potasio!=null)row['Potasio']=p.potasio;
-        if(p.sodio!=null)row['Sodio']=p.sodio;
-        if(p.psi!=null)row['PSI']=p.psi;
-        if(p.cic!=null)row['CIC']=p.cic;
-        if(p.hierro!=null)row['Hierro']=p.hierro;
-        if(p.cobre!=null)row['Cobre']=p.cobre;
-        if(p.manganeso!=null)row['Manganeso']=p.manganeso;
-        if(p.arena!=null)row['Arena']=p.arena;
-        if(p.arcilla!=null)row['Arcilla']=p.arcilla;
-        if(p.limo!=null)row['Limo']=p.limo;
-        newRows.push(row);
-      });
-    });
-
-    // Reconstruir Excel
-    const wb2=XLSX.utils.book_new();
-    const wsData=existingRows.length?existingRows:[[...HDRS]];
-    // Si no hay header en existingRows, agregar
-    if(!existingRows.length){wsData[0]=HDRS;}
-    // Verificar duplicados por código de planilla (columna Archivo)
-    const archivoBase=data.archivo||'';
-    const hdrsRow=existingRows[0]||[];
-    const archivoIdx=hdrsRow.findIndex(h=>String(h).trim()==='Archivo');
-    const yaExiste=archivoBase&&archivoIdx>=0&&existingRows.slice(1).some(r=>{
-      const arch=String(r[archivoIdx]||'');
-      return arch.includes(archivoBase);
-    });
-    if(yaExiste){
-      document.getElementById('sprev').innerHTML=`<div style="padding:14px;color:var(--ora)">⚠️ El código de planilla <b>${archivoBase}</b> ya existe en la planilla. No se agregaron filas para evitar duplicados.</div>`;
-      return;
-    }
-    // Agregar filas nuevas
-    newRows.forEach(row=>{
-      const arr=HDRS.map(h=>row[h]!=null?row[h]:'');
-      wsData.push(arr);
-    });
-    const ws2=XLSX.utils.aoa_to_sheet(wsData);
-    XLSX.utils.book_append_sheet(wb2,ws2,'Datos Completos');
-    const out=XLSX.write(wb2,{type:'array',bookType:'xlsx'});
-
-    // Subir a Dropbox
-    const token=DBX_TOKEN;
-    await fetch('https://content.dropboxapi.com/2/files/upload',{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+token,'Dropbox-API-Arg':JSON.stringify({path:TF+'/xlsx/analisis_suelos.xlsx',mode:'overwrite'}),'Content-Type':'application/octet-stream'},
-      body:new Uint8Array(out)
-    });
-    document.getElementById('sprev').innerHTML=`<div style="padding:14px;color:var(--grn)">✓ Guardado correctamente — ${newRows.length} filas agregadas a analisis_suelos.xlsx</div>`;
-    toast('Análisis guardado ✓');
-  }catch(e){
-    document.getElementById('sprev').innerHTML=`<div style="padding:14px;color:var(--red)">Error al guardar: ${e.message}</div>`;
-  }
-}
+function suelInit(){document.getElementById('shist').innerHTML='<div class="empty">Sin análisis cargados</div>';}
 async function sueloFile(input){
   const file=input.files[0];if(!file)return;
   const prev=document.getElementById('sprev');
@@ -1960,7 +1110,7 @@ async function sueloFile(input){
   try{
     const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
     const isPdf=file.name.toLowerCase().endsWith('.pdf');
-    const resp=await fetch(CLAUDE_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:[isPdf?{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}}:{type:'text',text:'no pdf'},{type:'text',text:'Extraé los datos de este informe de análisis de suelos argentino. Solo JSON sin markdown: {"laboratorio":"FERTILAB o SUELOFERTIL o OTRO","productor":"","establecimiento":"","lote":"","fecha":"DD/MM/YYYY","numero_analisis":"","muestras":[{"ambiente":"P3 o Loma etc","perfiles":[{"profundidad":"0-20","fosforo":null,"mo":null,"n_no3":null,"n_min":null,"s_sulfato":null,"zinc":null,"boro":null,"ph":null,"cic":null}]}]}'}]}]})});
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:[isPdf?{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}}:{type:'text',text:'no pdf'},{type:'text',text:'Extraé los datos de este informe de análisis de suelos argentino. Solo JSON sin markdown: {"laboratorio":"FERTILAB o SUELOFERTIL o OTRO","productor":"","establecimiento":"","lote":"","fecha":"DD/MM/YYYY","numero_analisis":"","muestras":[{"ambiente":"P3 o Loma etc","perfiles":[{"profundidad":"0-20","fosforo":null,"mo":null,"n_no3":null,"n_min":null,"s_sulfato":null,"zinc":null,"boro":null,"ph":null,"cic":null}]}]}'}]}]})});
     const data=await resp.json();
     const txt=data.content?.find(c=>c.type==='text')?.text||'{}';
     const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
@@ -2156,18 +1306,16 @@ async function retGenPDF(){
   retToggleOrden();
 }
 
-async function retRevertir(id){
-  if(!confirm('¿Revertir esta receta a pendiente?'))return;
+async function retCancelar(id){
+  if(!confirm('¿Marcar esta receta como CANCELADA?'))return;
   try{
-    const r=await fetch(SB_URL+'/rest/v1/recetas?id=eq.'+id,{method:'PATCH',headers:{...SBH,'Prefer':'return=minimal'},body:JSON.stringify({estado:'pendiente',fecha_aplicacion:null,operador:null,obs_aplicacion:null})});
+    const r=await fetch(SB_URL+'/rest/v1/recetas?id=eq.'+id,{method:'PATCH',headers:{...SBH,'Prefer':'return=representation'},body:JSON.stringify({estado:'cancelado'})});
     if(!r.ok)throw new Error(await r.text());
-    toast('Revertida a pendiente ✓');
-    retR=await (async()=>{const q=SESSION.c[0]==='all'?'cliente_id=eq.'+ACTIVE_CLI+'&order=created_at.desc&limit=200':'cliente_id=eq.'+SESSION.c[0]+'&order=created_at.desc&limit=200';return sbG('recetas',q);})();
-    retR.sort((a,b)=>{if(a.estado==='pendiente'&&b.estado!=='pendiente')return -1;if(b.estado==='pendiente'&&a.estado!=='pendiente')return 1;return new Date(b.fecha)-new Date(a.fecha);});
+    toast('Receta cancelada');
+    retR=await sbG('recetas','order=created_at.desc&limit=100');
     retStk.pop();retRend();
   }catch(e){toast('Error: '+e.message);}
 }
-
 async function retMarcarAplicado(id){
   const fecha=document.getElementById('apl-fecha')?.value||new Date().toISOString().split('T')[0];
   const op=document.getElementById('apl-op')?.value||'';
