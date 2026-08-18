@@ -1512,7 +1512,10 @@ async function retG(){
   const lotes=retLotesSeleccionados();
   if(!lotes.length){toast('Seleccioná al menos un lote');return;}
   try{
-    for(const l of lotes){await sbI('recetas',{...base,lote_id:l.name,anotacion:null});}
+    for(const l of lotes){
+      const caudal=base.caudal||parseFloat(l.ha)||null;
+      await sbI('recetas',{...base,caudal,lote_id:l.name,anotacion:null});
+    }
     toast(lotes.length>1?lotes.length+' recetas guardadas ✓':'Receta guardada ✓');
     retStk=[];retInit();
   }catch(e){toast('Error: '+e.message);}
