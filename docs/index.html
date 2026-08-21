@@ -1779,26 +1779,6 @@ function planosDrawCanvas(campo){
     ctx.fillStyle='rgba(27,35,24,.5)';
     ctx.fillText((parseFloat(l.area)||0).toFixed(1)+' ha',lx,ly+12);
 
-    // side length labels
-    for(let i=0;i<pts.length-1;i++){
-      const a=pts[i],b=pts[i+1];
-      const alat=Array.isArray(a)?a[1]:a.lat||a[1];
-      const alon=Array.isArray(a)?a[0]:a.lng||a[0];
-      const blat=Array.isArray(b)?b[1]:b.lat||b[1];
-      const blon=Array.isArray(b)?b[0]:b.lng||b[0];
-      const dist=haversineM(alat,alon,blat,blon);
-      if(dist<5)continue;
-      const{x:ax,y:ay}=toXY(alon,alat);
-      const{x:bx,y:by}=toXY(blon,blat);
-      const mx=(ax+bx)/2,my=(ay+by)/2;
-      ctx.save();
-      ctx.font=`300 ${Math.max(6,Math.min(8,scale*0.25))}px DM Sans,system-ui,sans-serif`;
-      ctx.textAlign='center';
-      ctx.textBaseline='middle';
-      ctx.fillStyle='rgba(100,120,90,.85)';
-      ctx.fillText(fmtM(dist),mx,my);
-      ctx.restore();
-    }
   });
 }
 
