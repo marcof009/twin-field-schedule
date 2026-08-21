@@ -1668,14 +1668,9 @@ function planosRender(campoKey){
 
   html+=`<div style="display:flex;flex-direction:column;gap:8px" id="pl-lot-list">`;
   campo.lotes.forEach(l=>{
-    const sides=planosGetSides(l.rings);
-    const sidesHtml=sides.map((s,i)=>`<span style="font-size:10px;color:var(--txt2);background:var(--surf2);border-radius:3px;padding:2px 5px">L${i+1}: ${fmtM(s)}</span>`).join('');
-    html+=`<div style="background:var(--surf);border:1px solid var(--bord);border-radius:var(--r2);padding:12px 14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:13px;font-weight:400">${l.name}</span>
-        <span style="font-size:12px;color:var(--txt2)">${(parseFloat(l.area)||0).toFixed(2)} ha</span>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px">${sidesHtml}</div>
+    html+=`<div style="background:var(--surf);border:1px solid var(--bord);border-radius:var(--r2);padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;font-weight:400">${l.name}</span>
+      <span style="font-size:12px;color:var(--txt2)">${(parseFloat(l.area)||0).toFixed(2)} ha</span>
     </div>`;
   });
   html+=`</div>`;
