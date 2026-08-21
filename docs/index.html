@@ -1664,7 +1664,7 @@ function planosRender(campoKey){
     <div style="font-size:12px;color:var(--txt2);margin-top:2px">Total: <b>${totalHa.toFixed(2)} ha</b> · ${campo.lotes.length} lotes</div>
   </div>`;
 
-  html+=`<canvas id="pl-canvas" style="width:100%;border-radius:var(--r);border:1px solid var(--bord);display:block;margin-bottom:20px"></canvas>`;
+  html+=`<canvas id="pl-canvas" style="width:100%;border-radius:var(--r);border:1px solid var(--bord2);display:block;margin-bottom:20px;box-shadow:var(--sh)"></canvas>`;
 
   html+=`<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:4px">
     <thead><tr style="border-bottom:2px solid var(--bord2)">
@@ -1703,26 +1703,22 @@ function planosGetSides(rings){
   return sides;
 }
 
-function planosDrawCanvas(campo){
-  const cv=document.getElementById('pl-canvas');
+function planosDrawCanvas(campo,cv,W,H,pad){
+  if(!cv)cv=document.getElementById('pl-canvas');
   if(!cv)return;
-  const W=cv.parentElement.clientWidth-2;
+  if(!W){W=cv.parentElement.clientWidth-2;}
+  if(!H){H=Math.round(W*0.75);}
+  if(pad===undefined)pad=36;
   const DPR=window.devicePixelRatio||1;
-  const H=Math.round(W*0.65);
   cv.width=W*DPR; cv.height=H*DPR;
   cv.style.width=W+'px'; cv.style.height=H+'px';
   const ctx=cv.getContext('2d');
   ctx.scale(DPR,DPR);
 
-  // collect all ring pts
   const allPts=[];
   campo.lotes.forEach(l=>{
     const pts=l.rings&&(l.rings[0]||l.rings)||[];
-    pts.forEach(p=>{
-      const lon=Array.isArray(p)?p[0]:p.lng||p[0];
-      const lat=Array.isArray(p)?p[1]:p.lat||p[1];
-      allPts.push({lon,lat});
-    });
+    pts.forEach(p=>{allPts.push({lon:Array.isArray(p)?p[0]:p.lng||p[0],lat:Array.isArray(p)?p[1]:p.lat||p[1]});});
   });
   if(!allPts.length)return;
 
@@ -1731,110 +1727,168 @@ function planosDrawCanvas(campo){
   const minLat=Math.min(...allPts.map(p=>p.lat));
   const maxLat=Math.max(...allPts.map(p=>p.lat));
 
-  const pad=28;
   const scaleX=(W-pad*2)/(maxLon-minLon||1);
   const scaleY=(H-pad*2)/(maxLat-minLat||1);
   const scale=Math.min(scaleX,scaleY);
   const offX=(W-(maxLon-minLon)*scale)/2;
   const offY=(H-(maxLat-minLat)*scale)/2;
 
-  function toXY(lon,lat){
-    return{x:offX+(lon-minLon)*scale, y:H-offY-(lat-minLat)*scale};
-  }
+  function toXY(lon,lat){return{x:offX+(lon-minLon)*scale,y:H-offY-(lat-minLat)*scale};}
 
-  const FILL_COLORS=['rgba(43,107,43,.13)','rgba(38,115,168,.12)','rgba(204,92,8,.1)','rgba(94,122,138,.12)','rgba(141,110,99,.1)','rgba(205,164,52,.12)'];
-
-  ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#f6f7f4';
+  // background
+  ctx.fillStyle='#ffffff';
   ctx.fillRect(0,0,W,H);
+  // outer border
+  ctx.strokeStyle='#888';ctx.lineWidth=1;
+  ctx.strokeRect(1,1,W-2,H-2);
+
+  // lotes
+  const FILLS=['rgba(180,210,160,.55)','rgba(160,200,230,.45)','rgba(240,200,140,.45)','rgba(200,180,220,.4)','rgba(230,200,160,.45)','rgba(160,220,200,.4)'];
+  const STROKES=['#2b6b2b','#1e6a9a','#b06010','#7a5090','#8a6030','#207060'];
 
   campo.lotes.forEach((l,idx)=>{
     const pts=l.rings&&(l.rings[0]||l.rings)||[];
     if(!pts.length)return;
     ctx.beginPath();
     pts.forEach((p,i)=>{
-      const lon=Array.isArray(p)?p[0]:p.lng||p[0];
-      const lat=Array.isArray(p)?p[1]:p.lat||p[1];
-      const{x,y}=toXY(lon,lat);
+      const{x,y}=toXY(Array.isArray(p)?p[0]:p.lng||p[0],Array.isArray(p)?p[1]:p.lat||p[1]);
       i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
     });
     ctx.closePath();
-    ctx.fillStyle=FILL_COLORS[idx%FILL_COLORS.length];
+    ctx.fillStyle=FILLS[idx%FILLS.length];
     ctx.fill();
-    ctx.strokeStyle='rgba(43,107,43,.5)';
-    ctx.lineWidth=1.2;
+    ctx.strokeStyle=STROKES[idx%STROKES.length];
+    ctx.lineWidth=1.5;
     ctx.stroke();
 
-    // label: centroid
+    // centroid label
     let cx=0,cy=0,n=pts.length;
-    pts.forEach(p=>{
-      cx+=Array.isArray(p)?p[0]:p.lng||p[0];
-      cy+=Array.isArray(p)?p[1]:p.lat||p[1];
-    });
+    pts.forEach(p=>{cx+=Array.isArray(p)?p[0]:p.lng||p[0];cy+=Array.isArray(p)?p[1]:p.lat||p[1];});
     const{x:lx,y:ly}=toXY(cx/n,cy/n);
-    ctx.font=`500 ${Math.max(8,Math.min(11,scale*0.4))}px DM Sans,system-ui,sans-serif`;
-    ctx.textAlign='center';
-    ctx.textBaseline='middle';
-    ctx.fillStyle='rgba(27,35,24,.75)';
-    ctx.fillText(l.name,lx,ly);
-    ctx.font=`300 ${Math.max(7,Math.min(9,scale*0.3))}px DM Sans,system-ui,sans-serif`;
-    ctx.fillStyle='rgba(27,35,24,.5)';
-    ctx.fillText((parseFloat(l.area)||0).toFixed(1)+' ha',lx,ly+12);
-
+    const fs=Math.max(9,Math.min(14,scale*500));
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    // lot name in dark red/brown bold
+    ctx.font=`bold ${fs}px Arial,sans-serif`;
+    ctx.fillStyle='#8b1a00';
+    ctx.fillText(l.name,lx,ly-fs*0.55);
+    // hectares below in gray
+    ctx.font=`${fs*0.82}px Arial,sans-serif`;
+    ctx.fillStyle='#444';
+    ctx.fillText((parseFloat(l.area)||0).toFixed(2)+' ha',lx,ly+fs*0.55);
   });
+
+  // north arrow bottom-left
+  const nx=pad+2,ny=H-pad+2,aLen=20;
+  ctx.save();
+  ctx.translate(nx,ny);
+  // N text
+  ctx.font='bold 10px Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+  ctx.fillStyle='#222';ctx.fillText('N',0,-aLen-3);
+  // arrow shaft
+  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-aLen);
+  ctx.strokeStyle='#222';ctx.lineWidth=1.5;ctx.stroke();
+  // arrowhead
+  ctx.beginPath();ctx.moveTo(0,-aLen);ctx.lineTo(-4,-aLen+8);ctx.lineTo(4,-aLen+8);ctx.closePath();
+  ctx.fillStyle='#222';ctx.fill();
+  // circle
+  ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);
+  ctx.fillStyle='#222';ctx.fill();
+  ctx.restore();
+
+  // scale bar bottom-right — compute real metres per pixel
+  const midLat=(minLat+maxLat)/2;
+  const mPerPx=haversineM(midLat,minLon,midLat,minLon+1/scale*(Math.PI/180*6371000/111319));
+  // pick a nice round distance
+  const targetPx=W*0.15;
+  const mTotal=targetPx*(haversineM(midLat,minLon,midLat,minLon+(1/scale)*(1/111319)));
+  const niceM=[50,100,200,250,500,1000,2000,5000].find(v=>v>=mTotal)||5000;
+  const barPx=niceM/mTotal*targetPx;
+  const bx=W-pad-barPx,by=H-pad+6;
+  ctx.fillStyle='#333';ctx.fillRect(bx,by,barPx,3);
+  ctx.fillRect(bx,by-3,2,9);ctx.fillRect(bx+barPx-2,by-3,2,9);
+  ctx.font='9px Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='top';
+  ctx.fillStyle='#333';
+  ctx.fillText('0',bx,by+5);
+  ctx.fillText(niceM>=1000?niceM/1000+' km':niceM+' m',bx+barPx,by+5);
 }
 
 async function planosPDF(){
   const campo=PL_CAMPOS.find(c=>c.key===PL_CAMPO);
   if(!campo){toast('Sin campo seleccionado');return;}
-  if(typeof jspdf==='undefined'&&typeof window.jspdf==='undefined'){toast('jsPDF no disponible');return;}
+  if(typeof window.jspdf==='undefined'){toast('jsPDF no disponible');return;}
   const{jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const W=190,M=10;
-
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(18);
-  doc.setTextColor(43,107,43);
-  doc.text('TWIN FIELD SUITE — PLANO',M,18);
-  doc.setFontSize(13);
-  doc.setTextColor(30,35,28);
-  doc.text(campo.label,M,27);
-  const totalHa=campo.lotes.reduce((s,l)=>s+(parseFloat(l.area)||0),0);
-  doc.setFontSize(9);
-  doc.setTextColor(100,120,90);
-  doc.text(`Total: ${totalHa.toFixed(2)} ha · ${campo.lotes.length} lotes`,M,33);
-  doc.setDrawColor(220,225,215);
-  doc.line(M,36,M+W,36);
-
-  // canvas snapshot
-  const cv=document.getElementById('pl-canvas');
-  if(cv){
-    const imgData=cv.toDataURL('image/png');
-    const iW=W,iH=Math.round(W*0.65);
-    doc.addImage(imgData,'PNG',M,39,iW,iH);
-    let y=39+iH+8;
-
-    // table
-    const rows=campo.lotes.map(l=>[l.name,(parseFloat(l.area)||0).toFixed(2)+' ha']);
-    doc.autoTable({
-      startY:y,
-      head:[['Lote','Superficie']],
-      body:rows,
-      margin:{left:M,right:M},
-      styles:{font:'helvetica',fontSize:9,cellPadding:3},
-      headStyles:{fillColor:[43,107,43],textColor:255,fontStyle:'normal'},
-      columnStyles:{0:{cellWidth:120},1:{cellWidth:70}},
-      foot:[[{content:'Total',styles:{fontStyle:'bold'}},(campo.lotes.reduce((s,l)=>s+(parseFloat(l.area)||0),0)).toFixed(2)+' ha']],
-      footStyles:{fillColor:[240,244,237],textColor:[30,35,28]},
-    });
-  }
-
+  // A4 landscape for more map width
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const PW=287,PH=200,M=8;
   const today=new Date().toLocaleDateString('es-AR');
-  doc.setFontSize(7);
-  doc.setTextColor(160,170,150);
-  doc.text(`Generado ${today}`,M,285);
+  const totalHa=campo.lotes.reduce((s,l)=>s+(parseFloat(l.area)||0),0);
 
-  doc.save(`plano_${campo.label.replace(/\s/g,'_')}.pdf`);
+  // outer border
+  doc.setDrawColor(80,100,80);doc.setLineWidth(0.5);
+  doc.rect(M,M,PW-M*2,PH-M*2);
+
+  // header band
+  doc.setFillColor(43,90,43);
+  doc.rect(M,M,PW-M*2,14,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(255,255,255);
+  doc.text('TWIN FIELD SUITE',M+4,M+9.5);
+  doc.setFontSize(10);doc.setFont('helvetica','normal');
+  doc.text('Plano de campo — Superficies de lotes',M+52,M+9.5);
+  doc.setFontSize(8);doc.setTextColor(200,230,200);
+  doc.text(today,PW-M-4,M+9.5,{align:'right'});
+
+  // campo name
+  doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(30,60,30);
+  doc.text(campo.label,M+4,M+22);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(80,100,70);
+  doc.text(`Superficie total: ${totalHa.toFixed(2)} ha  ·  ${campo.lotes.length} lotes`,M+4,M+28);
+
+  // divider
+  doc.setDrawColor(180,200,170);doc.setLineWidth(0.3);
+  doc.line(M+2,M+30,PW-M-2,M+30);
+
+  // map area: left 68% of width
+  const mapW=Math.round((PW-M*2)*0.68);
+  const mapH=PH-M*2-32;
+  const mapX=M+1,mapY=M+32;
+
+  // render canvas offscreen at higher res
+  const cvOff=document.createElement('canvas');
+  const PX=3;
+  planosDrawCanvas(campo,cvOff,mapW*PX,mapH*PX,40*PX);
+  const imgData=cvOff.toDataURL('image/png');
+  doc.addImage(imgData,'PNG',mapX,mapY,mapW,mapH);
+  doc.setDrawColor(150,170,140);doc.setLineWidth(0.3);
+  doc.rect(mapX,mapY,mapW,mapH);
+
+  // right panel: table
+  const tX=mapX+mapW+4,tW=PW-M*2-mapW-6;
+  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(43,90,43);
+  doc.text('SUPERFICIES',tX,mapY+5);
+  doc.setDrawColor(43,90,43);doc.setLineWidth(0.4);
+  doc.line(tX,mapY+7,tX+tW,mapY+7);
+
+  const rows=campo.lotes.map(l=>[l.name,(parseFloat(l.area)||0).toFixed(2)]);
+  doc.autoTable({
+    startY:mapY+9,
+    body:rows,
+    head:[['Lote','ha']],
+    margin:{left:tX},
+    tableWidth:tW,
+    styles:{font:'helvetica',fontSize:7.5,cellPadding:1.8,textColor:[30,35,28]},
+    headStyles:{fillColor:[43,90,43],textColor:255,fontStyle:'bold',fontSize:7},
+    alternateRowStyles:{fillColor:[240,246,238]},
+    columnStyles:{0:{cellWidth:tW*0.6},1:{cellWidth:tW*0.4,halign:'right'}},
+    foot:[[{content:'TOTAL',styles:{fontStyle:'bold',fillColor:[220,235,215]}},(totalHa.toFixed(2))]],
+    footStyles:{fillColor:[220,235,215],textColor:[30,60,30],fontStyle:'bold',fontSize:8},
+  });
+
+  // footer
+  doc.setFontSize(6.5);doc.setFont('helvetica','normal');doc.setTextColor(150,160,140);
+  doc.text('Superficies expresadas en Hectáreas',M+4,PH-M-1.5);
+  doc.text('Twin Field Suite — Ing. Agr. Marcos Fernández',PW-M-4,PH-M-1.5,{align:'right'});
+
+  doc.save(`plano_${campo.label.replace(/\s+/g,'_')}.pdf`);
 }
 
 // SUELOS
