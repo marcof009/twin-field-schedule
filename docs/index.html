@@ -2554,15 +2554,33 @@ async function retGenXLS(){
 
   function getHa(r){const a=parseFloat(D?.lotes?.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area);return(!isNaN(a)&&a>0)?a:0;}
   const allProds=[...new Set(recetas.flatMap(r=>(r.productos||[]).map(p=>p.nombre||p.n||'')))].filter(Boolean);
+  // units per product
+  const prodUnit={};
+  allProds.forEach(p=>{const hit=recetas.flatMap(r=>r.productos||[]).find(x=>(x.nombre||x.n||'')==p);prodUnit[p]=hit?.unidad||hit?.u||'';});
 
-  // header rows
+  // column helper
+  function col(i){let s='',n=i+1;while(n>0){s=String.fromCharCode(65+(n-1)%26)+s;n=Math.floor((n-1)/26);}return s;}
+
+  // layout: A=Rec, B=Campo, C=Lote, D=Cultivo, E=Ha, F=Destino, G..=dosis cols, then Urgencia, Obs
+  // header is row 4 (1-based), data starts row 5
+  const HEADER_ROW=4;
+  const DATA_START=HEADER_ROW+1;
+  const DATA_END=DATA_START+recetas.length-1;
+  const TOTAL_ROW=DATA_END+1;
+
+  const COL_HA=4; // E (0-based)
+  const COL_DOSIS_START=6; // G (after Rec,Campo,Lote,Cultivo,Ha,Destino)
+  const COL_URG=COL_DOSIS_START+allProds.length;
+  const COL_OBS=COL_URG+1;
+
+  const head=['Rec.','Campo','Lote','Cultivo','Ha (ha)','Destino',...allProds.map(p=>p+(prodUnit[p]?' ('+prodUnit[p]+'/ha)':'')),'Urgencia','Observaciones'];
+
   const wb=XLSX.utils.book_new();
   const rows=[];
   rows.push(['ORDEN DE APLICACIÓN — '+cliLabel.toUpperCase()]);
   rows.push(['Generado:',hoy]);
   rows.push([]);
-  const head=['Rec.','Campo','Lote','Cultivo','Ha','Destino',...allProds.map(p=>p+' (dosis)'),...allProds.map(p=>p+' (total)'),'Urgencia','Observaciones'];
-  rows.push(head);
+  rows.push(head); // row 4
 
   recetas.forEach(r=>{
     const ha=getHa(r);
@@ -2573,24 +2591,26 @@ async function retGenXLS(){
       r.cultivo||'',
       ha||'',
       r.destino||'',
-      ...allProds.map(p=>{const prod=(r.productos||[]).find(x=>(x.nombre||x.n||'')==p);return prod?(prod.dosis||prod.d||'')+(prod.unidad||prod.u?(' '+(prod.unidad||prod.u)):''):''}),
-      ...allProds.map(p=>{const prod=(r.productos||[]).find(x=>(x.nombre||x.n||'')==p);if(!prod)return '';const d=parseFloat(prod.dosis||prod.d);return(!isNaN(d)&&ha>0)?(d*ha).toFixed(1)+' '+(prod.unidad||prod.u||''):''}),
+      ...allProds.map(p=>{const prod=(r.productos||[]).find(x=>(x.nombre||x.n||'')==p);const d=parseFloat(prod?.dosis||prod?.d);return (!isNaN(d))?d:'';}),
       r.urgencia||'',
       r.observaciones||''
     ]);
   });
 
-  // totals row
-  const totHa=recetas.reduce((s,r)=>s+getHa(r),0);
-  rows.push([
-    '','','','TOTAL',totHa>0?totHa.toFixed(2):'','',
-    ...allProds.map(()=>''),
-    ...allProds.map(p=>{let t=0;recetas.forEach(r=>{const prod=(r.productos||[]).find(x=>(x.nombre||x.n||'')==p);if(prod){const d=parseFloat(prod.dosis||prod.d);const h=getHa(r);if(!isNaN(d)&&h>0)t+=d*h;}});const u=recetas.flatMap(r=>r.productos||[]).find(p2=>(p2.nombre||p2.n||'')==p);return t>0?t.toFixed(1)+' '+(u?.unidad||u?.u||''):''}),
-    '',''
-  ]);
+  // totals row with SUMPRODUCT formulas
+  const haCol=col(COL_HA); // 'E'
+  const totRow=['','','','TOTAL',
+    {f:`SUM(${haCol}${DATA_START}:${haCol}${DATA_END})`}, // sum ha
+    '',
+    ...allProds.map((_,i)=>{
+      const dc=col(COL_DOSIS_START+i);
+      return {f:`SUMPRODUCT(${haCol}${DATA_START}:${haCol}${DATA_END},${dc}${DATA_START}:${dc}${DATA_END})`};
+    }),
+    '',''];
+  rows.push(totRow);
 
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=head.map((_,i)=>({wch:i<6?18:22}));
+  ws['!cols']=[{wch:8},{wch:18},{wch:14},{wch:14},{wch:8},{wch:12},...allProds.map(()=>({wch:22})),{wch:12},{wch:28}];
   XLSX.utils.book_append_sheet(wb,ws,'Orden');
   const fecha=recetas[0]?.fecha||hoy.replace(/\//g,'-');
   XLSX.writeFile(wb,'orden_'+cliLabel.toLowerCase().replace(/ /g,'_')+'_'+fecha+'.xlsx');
