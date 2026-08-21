@@ -1277,7 +1277,7 @@ function retRL(body){
     const nSel=retSel.size;
     const btnBar=`<div style="padding:10px 14px;display:flex;flex-direction:column;gap:7px;border-bottom:1px solid var(--bord)">
       <div style="font-size:10px;color:var(--txt3);margin-bottom:2px">${nSel} receta${nSel!==1?'s':''} seleccionada${nSel!==1?'s':''}</div>
-      <button onclick="retGenPDF()" style="width:100%;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:10px;font-size:12px;font-weight:400;font-family:var(--f);text-align:left;padding-left:14px">📄 Exportar PDF</button>
+      <button onclick="retAbrirModalObs()" style="width:100%;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:10px;font-size:12px;font-weight:400;font-family:var(--f);text-align:left;padding-left:14px">📄 Exportar PDF</button>
       <button onclick="retGenXLS()" style="width:100%;background:#1d6f42;color:#fff;border:none;border-radius:var(--r2);padding:10px;font-size:12px;font-weight:400;font-family:var(--f);text-align:left;padding-left:14px">📊 Exportar Excel</button>
       <button onclick="retGenPlano()" style="width:100%;background:var(--blu);color:#fff;border:none;border-radius:var(--r2);padding:10px;font-size:12px;font-weight:400;font-family:var(--f);text-align:left;padding-left:14px">🗺️ Exportar Plano</button>
     </div>`;
@@ -2417,7 +2417,19 @@ function retToggleSel(el){
   if(retSel.has(id))retSel.delete(id);else retSel.add(id);
   retRend();
 }
-async function retGenPDF(){
+function obsModalCancel(){document.getElementById('obs-modal').style.display='none';}
+function obsModalConfirm(){
+  const txt=document.getElementById('obs-modal-txt').value.trim();
+  document.getElementById('obs-modal').style.display='none';
+  retGenPDF(txt);
+}
+function retAbrirModalObs(){
+  if(!retSel.size){alert('Seleccioná al menos una receta');return;}
+  document.getElementById('obs-modal-txt').value='';
+  document.getElementById('obs-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('obs-modal-txt').focus(),100);
+}
+async function retGenPDF(_obsTexto=''){
   if(!retSel.size){alert('Seleccioná al menos una receta');return;}
   const recetas=retR.filter(r=>retSel.has(r.id));
   const cliente=recetas[0]?.cliente_id||'';
@@ -2440,13 +2452,18 @@ async function retGenPDF(){
   // TWIN en naranja — grande, peso fino
   doc.setFontSize(17);doc.setFont('helvetica','normal');
   doc.setTextColor(204,92,8);
-  doc.text('TWIN',M,13);
   const twinW=doc.getTextWidth('TWIN');
-  // FIELD SUITE en verde — pequeño, debajo
+  // FIELD SUITE en verde — pequeño con letra espaciada
   doc.setFontSize(6.5);doc.setFont('helvetica','normal');
   doc.setTextColor(43,107,43);
   doc.setCharSpace(2);
-  doc.text('FIELD SUITE',M+0.5,17.5);
+  const fsW=doc.getTextWidth('FIELD SUITE');
+  // center TWIN over FIELD SUITE
+  const logoX=M;
+  doc.setFontSize(17);doc.setFont('helvetica','normal');doc.setTextColor(204,92,8);
+  doc.text('TWIN',logoX+(fsW-twinW)/2,13);
+  doc.setFontSize(6.5);doc.setFont('helvetica','normal');doc.setTextColor(43,107,43);
+  doc.text('FIELD SUITE',logoX,17.5);
   doc.setCharSpace(0);
 
   // Datos asesor — derecha
@@ -2536,11 +2553,13 @@ async function retGenPDF(){
 
   // Observaciones generales
   const finalY=doc.lastAutoTable.finalY+6;
-  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
-  doc.text('OBSERVACIONES GENERALES:',M,finalY);
-  doc.setFont('helvetica','normal');
-  doc.setDrawColor(180,180,180);
-  doc.rect(M,finalY+2,W-M*2,18);
+  if(_obsTexto){
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
+    doc.text('OBSERVACIONES:',M,finalY);
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(50,50,50);
+    const lines=doc.splitTextToSize(_obsTexto,W-M*2);
+    doc.text(lines,M,finalY+5);
+  }
 
   // Guardar
   const fecha=recetas[0]?.fecha||hoy.replace(/\//g,'-');
@@ -2882,5 +2901,17 @@ function drawColor(el){
 // INIT
 if(!chkS()){SS('login');}else{goHome();setTimeout(()=>{if(document.getElementById('s-schedule').classList.contains('active'))schLoad();},300);}
 </script>
+<!-- MODAL OBSERVACIONES ORDEN -->
+<div id="obs-modal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surf);border-radius:var(--r3);padding:24px 20px;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+    <div style="font-size:15px;font-weight:400;margin-bottom:6px">Observaciones generales</div>
+    <div style="font-size:12px;color:var(--txt2);margin-bottom:14px">Opcional — se incluirán al pie de la orden</div>
+    <textarea id="obs-modal-txt" rows="4" style="width:100%;border:1px solid var(--bord2);border-radius:var(--r2);padding:10px 12px;font-family:var(--f);font-size:13px;font-weight:300;resize:vertical;outline:none;color:var(--txt)" placeholder="Ej: Aplicar con viento menor a 15 km/h..."></textarea>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button onclick="obsModalCancel()" style="flex:1;border:1px solid var(--bord2);background:var(--surf2);border-radius:var(--r2);padding:11px;font-family:var(--f);font-size:13px;color:var(--txt2);cursor:pointer">Cancelar</button>
+      <button onclick="obsModalConfirm()" style="flex:2;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:11px;font-family:var(--f);font-size:13px;font-weight:400;cursor:pointer">Generar PDF</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
