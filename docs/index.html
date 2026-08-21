@@ -2674,30 +2674,30 @@ async function retGenPlano(){
       ctx.strokeStyle=isSelected?'#1a5a9a':'#7a9a70';
       ctx.lineWidth=isSelected?1.2:0.6;
       ctx.stroke();
-      // centroid label
+      // centroid label — fixed small font proportional to canvas logical size
       let cx=0,cy=0,n=pts.length;
       pts.forEach(p=>{cx+=Array.isArray(p)?p[0]:p[0];cy+=Array.isArray(p)?p[1]:p[1];});
       const{x:lx,y:ly}=toXY2(cx/n,cy/n);
-      // font size: fixed small, capped so labels don't overflow
-      const fs=Math.max(5,Math.min(9,sc*0.08));
+      const fs=Math.max(4,Math.min(8,LW/40));
       ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.font=`bold ${fs}px Arial,sans-serif`;
       ctx.fillStyle=isSelected?'#0d3d6e':'#3a5a30';
-      ctx.fillText(l.name,lx,ly-(fs*0.6));
-      ctx.font=`${fs*0.85}px Arial,sans-serif`;
+      ctx.fillText(l.name,lx,ly-(fs*0.65));
+      ctx.font=`${fs*0.8}px Arial,sans-serif`;
       ctx.fillStyle=isSelected?'#1a5a9a':'#5a7a50';
-      ctx.fillText((parseFloat(l.area)||0).toFixed(1)+' ha',lx,ly+(fs*0.6));
+      ctx.fillText((parseFloat(l.area)||0).toFixed(1)+' ha',lx,ly+(fs*0.65));
     });
 
-    // north arrow — bottom left, compact
-    const aLen=10, ax=pad-4, ay=LH-pad+4;
-    ctx.font='bold 6px Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+    // north arrow — bottom left, sized relative to canvas
+    const aLen=LH*0.07, ax=pad*0.7, ay=LH-pad*0.7;
+    const nfs=Math.max(4,Math.min(8,LW/38));
+    ctx.font=`bold ${nfs}px Arial,sans-serif`;ctx.textAlign='center';ctx.textBaseline='bottom';
     ctx.fillStyle='#333';ctx.fillText('N',ax,ay-aLen-1);
     ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(ax,ay-aLen);
-    ctx.strokeStyle='#333';ctx.lineWidth=0.8;ctx.stroke();
-    ctx.beginPath();ctx.moveTo(ax,ay-aLen);ctx.lineTo(ax-3,ay-aLen+5);ctx.lineTo(ax+3,ay-aLen+5);ctx.closePath();
+    ctx.strokeStyle='#333';ctx.lineWidth=0.5;ctx.stroke();
+    ctx.beginPath();ctx.moveTo(ax,ay-aLen);ctx.lineTo(ax-aLen*0.3,ay-aLen*0.55);ctx.lineTo(ax+aLen*0.3,ay-aLen*0.55);ctx.closePath();
     ctx.fillStyle='#333';ctx.fill();
-    ctx.beginPath();ctx.arc(ax,ay,2.5,0,Math.PI*2);ctx.fillStyle='#333';ctx.fill();
+    ctx.beginPath();ctx.arc(ax,ay,aLen*0.18,0,Math.PI*2);ctx.fillStyle='#333';ctx.fill();
 
     doc.addImage(cvOff.toDataURL('image/png'),'PNG',mapX,mapY,mapW,mapH);
     doc.setDrawColor(100,130,160);doc.setLineWidth(0.3);doc.rect(mapX,mapY,mapW,mapH);
