@@ -2434,16 +2434,20 @@ async function retGenPDF(){
 
   // Header fondo blanco con línea verde inferior
   doc.setDrawColor(43,107,43);
-  doc.setLineWidth(0.8);
+  doc.setLineWidth(0.6);
   doc.line(0,20,W,20);
 
-  // TWIN (naranja) + FIELD (verde) — izquierda
-  doc.setFontSize(18);doc.setFont('helvetica','bold');
-  doc.setTextColor(204,92,8); // naranja
+  // TWIN en naranja — grande, peso fino
+  doc.setFontSize(17);doc.setFont('helvetica','normal');
+  doc.setTextColor(204,92,8);
   doc.text('TWIN',M,13);
   const twinW=doc.getTextWidth('TWIN');
-  doc.setTextColor(204,92,8); // naranja
-  doc.text(' FIELD',M+twinW,13);
+  // FIELD SUITE en verde — pequeño, debajo
+  doc.setFontSize(6.5);doc.setFont('helvetica','normal');
+  doc.setTextColor(43,107,43);
+  doc.setCharSpace(2);
+  doc.text('FIELD SUITE',M+0.5,17.5);
+  doc.setCharSpace(0);
 
   // Datos asesor — derecha
   doc.setFontSize(7.5);doc.setFont('helvetica','normal');
