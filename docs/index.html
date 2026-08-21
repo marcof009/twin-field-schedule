@@ -1614,28 +1614,31 @@ function haversineM(lat1,lon1,lat2,lon2){
 
 function fmtM(m){return m>=1000?(m/1000).toFixed(2)+' km':Math.round(m)+' m';}
 
-function planosInit(){
+async function planosInit(){
+  document.getElementById('pl-body').innerHTML='<div style="padding:40px 0;text-align:center;color:var(--txt3)">Cargando...</div>';
+  document.getElementById('pl-tabs').innerHTML='';
+  if(!D){
+    try{
+      const target=SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];
+      await schLoad(target);
+    }catch(e){
+      document.getElementById('pl-body').innerHTML=`<div style="padding:40px 0;text-align:center;color:var(--red)">Error cargando datos: ${e.message}</div>`;
+      return;
+    }
+  }
   if(!D||!D.lotes||D.lotes.length===0){
-    document.getElementById('pl-body').innerHTML='<div class="empty" style="padding:40px 0;text-align:center;color:var(--txt3)">Sin datos de lotes cargados</div>';
-    document.getElementById('pl-tabs').innerHTML='';
+    document.getElementById('pl-body').innerHTML='<div style="padding:40px 0;text-align:center;color:var(--txt3)">Sin datos de lotes cargados</div>';
     return;
   }
-  const cliKey=SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];
-  const lotes=D.lotes.filter(l=>{
-    const cfg=CFG[cliKey];
-    if(!cfg)return true;
-    return Object.keys(cfg.campos||{}).includes(l.layer);
-  });
   const byC={};
-  lotes.forEach(l=>{
+  D.lotes.forEach(l=>{
     const k=l.layer||'sin_campo';
     if(!byC[k])byC[k]={key:k,label:l.campo||k,lotes:[]};
     byC[k].lotes.push(l);
   });
   PL_CAMPOS=Object.values(byC);
   if(!PL_CAMPOS.length){
-    document.getElementById('pl-body').innerHTML='<div class="empty" style="padding:40px 0;text-align:center;color:var(--txt3)">Sin campos disponibles</div>';
-    document.getElementById('pl-tabs').innerHTML='';
+    document.getElementById('pl-body').innerHTML='<div style="padding:40px 0;text-align:center;color:var(--txt3)">Sin campos disponibles</div>';
     return;
   }
   PL_CAMPO=PL_CAMPOS[0].key;
