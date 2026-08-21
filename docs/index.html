@@ -2413,11 +2413,16 @@ function retToggleSel(el){
 }
 async function retGenPDF(){
   if(!retSel.size){alert('Seleccioná al menos una receta');return;}
+  const recetas=retR.filter(r=>retSel.has(r.id));
+  const cliente=recetas[0]?.cliente_id||'';
+  // ensure D is loaded for the right client so we have ha per lot
+  if(!D||D.ck!==cliente){
+    toast('Cargando datos de lotes...');
+    try{await schLoad(cliente);}catch(e){console.warn('schLoad error',e);}
+  }
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const W=297,M=14;
-  const recetas=retR.filter(r=>retSel.has(r.id));
-  const cliente=recetas[0]?.cliente_id||'';
   const cliLabel=CFG[cliente]?.lbl||cliente||'';
   const hoy=new Date().toLocaleDateString('es-AR');
 
