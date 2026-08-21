@@ -2640,26 +2640,27 @@ async function retGenPlano(){
     doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
     doc.text(campo.label,M+2,M+19);
 
-    // draw map on offscreen canvas
+    // draw map on offscreen canvas — render at 2x for sharpness, keep logical sizes unscaled
     const cvOff=document.createElement('canvas');
-    const PX=3;
-
-    // custom draw: highlight selected lotes
-    const W2=mapW*PX,H2=mapH*PX,pad=40*PX;
-    cvOff.width=W2;cvOff.height=H2;
+    const DPR=2;
+    const CW=mapW*DPR, CH=mapH*DPR;
+    cvOff.width=CW; cvOff.height=CH;
     const ctx=cvOff.getContext('2d');
+    ctx.scale(DPR,DPR); // draw in logical mm-proportional px, DPR only for sharpness
+
+    const LW=mapW, LH=mapH; // logical canvas size
+    const pad=20;
 
     const allPts=[];
     campo.lotes.forEach(l=>{(l.rings&&(l.rings[0]||l.rings)||[]).forEach(p=>allPts.push({lon:Array.isArray(p)?p[0]:p[0],lat:Array.isArray(p)?p[1]:p[1]}));});
     if(!allPts.length)return;
     const minLon=Math.min(...allPts.map(p=>p.lon)),maxLon=Math.max(...allPts.map(p=>p.lon));
     const minLat=Math.min(...allPts.map(p=>p.lat)),maxLat=Math.max(...allPts.map(p=>p.lat));
-    const scX=(W2-pad*2)/(maxLon-minLon||1),scY=(H2-pad*2)/(maxLat-minLat||1),sc=Math.min(scX,scY);
-    const oX=(W2-(maxLon-minLon)*sc)/2,oY=(H2-(maxLat-minLat)*sc)/2;
-    function toXY2(lon,lat){return{x:oX+(lon-minLon)*sc,y:H2-oY-(lat-minLat)*sc};}
+    const scX=(LW-pad*2)/(maxLon-minLon||1),scY=(LH-pad*2)/(maxLat-minLat||1),sc=Math.min(scX,scY);
+    const oX=(LW-(maxLon-minLon)*sc)/2,oY=(LH-(maxLat-minLat)*sc)/2;
+    function toXY2(lon,lat){return{x:oX+(lon-minLon)*sc,y:LH-oY-(lat-minLat)*sc};}
 
-    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W2,H2);
-    ctx.strokeStyle='#aaa';ctx.lineWidth=0.5;ctx.strokeRect(1,1,W2-2,H2-2);
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,LW,LH);
 
     campo.lotes.forEach(l=>{
       const pts=l.rings&&(l.rings[0]||l.rings)||[];
@@ -2668,32 +2669,35 @@ async function retGenPlano(){
       ctx.beginPath();
       pts.forEach((p,i)=>{const{x,y}=toXY2(Array.isArray(p)?p[0]:p[0],Array.isArray(p)?p[1]:p[1]);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
       ctx.closePath();
-      ctx.fillStyle=isSelected?'rgba(38,115,168,.45)':'rgba(200,215,190,.4)';
+      ctx.fillStyle=isSelected?'rgba(38,115,168,.35)':'rgba(200,215,190,.45)';
       ctx.fill();
-      ctx.strokeStyle=isSelected?'#1a5a9a':'#6a8a60';
-      ctx.lineWidth=isSelected?2.5*PX:1.2*PX;
+      ctx.strokeStyle=isSelected?'#1a5a9a':'#7a9a70';
+      ctx.lineWidth=isSelected?1.2:0.6;
       ctx.stroke();
-      // label
+      // centroid label
       let cx=0,cy=0,n=pts.length;
       pts.forEach(p=>{cx+=Array.isArray(p)?p[0]:p[0];cy+=Array.isArray(p)?p[1]:p[1];});
       const{x:lx,y:ly}=toXY2(cx/n,cy/n);
-      const fs=Math.max(10,Math.min(18,sc*500))*PX;
+      // font size: fixed small, capped so labels don't overflow
+      const fs=Math.max(5,Math.min(9,sc*0.08));
       ctx.textAlign='center';ctx.textBaseline='middle';
       ctx.font=`bold ${fs}px Arial,sans-serif`;
       ctx.fillStyle=isSelected?'#0d3d6e':'#3a5a30';
-      ctx.fillText(l.name,lx,ly-fs*0.55);
-      ctx.font=`${fs*0.78}px Arial,sans-serif`;
+      ctx.fillText(l.name,lx,ly-(fs*0.6));
+      ctx.font=`${fs*0.85}px Arial,sans-serif`;
       ctx.fillStyle=isSelected?'#1a5a9a':'#5a7a50';
-      ctx.fillText((parseFloat(l.area)||0).toFixed(2)+' ha',lx,ly+fs*0.45);
+      ctx.fillText((parseFloat(l.area)||0).toFixed(1)+' ha',lx,ly+(fs*0.6));
     });
 
-    // north arrow
-    ctx.save();ctx.translate(pad*0.6,H2-pad*0.6);
-    ctx.font=`bold ${14*PX}px Arial,sans-serif`;ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillStyle='#222';ctx.fillText('N',0,-24*PX);
-    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-22*PX);ctx.strokeStyle='#222';ctx.lineWidth=2*PX;ctx.stroke();
-    ctx.beginPath();ctx.moveTo(0,-22*PX);ctx.lineTo(-5*PX,-14*PX);ctx.lineTo(5*PX,-14*PX);ctx.closePath();ctx.fillStyle='#222';ctx.fill();
-    ctx.beginPath();ctx.arc(0,0,5*PX,0,Math.PI*2);ctx.fillStyle='#222';ctx.fill();
-    ctx.restore();
+    // north arrow — bottom left, compact
+    const aLen=10, ax=pad-4, ay=LH-pad+4;
+    ctx.font='bold 6px Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+    ctx.fillStyle='#333';ctx.fillText('N',ax,ay-aLen-1);
+    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(ax,ay-aLen);
+    ctx.strokeStyle='#333';ctx.lineWidth=0.8;ctx.stroke();
+    ctx.beginPath();ctx.moveTo(ax,ay-aLen);ctx.lineTo(ax-3,ay-aLen+5);ctx.lineTo(ax+3,ay-aLen+5);ctx.closePath();
+    ctx.fillStyle='#333';ctx.fill();
+    ctx.beginPath();ctx.arc(ax,ay,2.5,0,Math.PI*2);ctx.fillStyle='#333';ctx.fill();
 
     doc.addImage(cvOff.toDataURL('image/png'),'PNG',mapX,mapY,mapW,mapH);
     doc.setDrawColor(100,130,160);doc.setLineWidth(0.3);doc.rect(mapX,mapY,mapW,mapH);
