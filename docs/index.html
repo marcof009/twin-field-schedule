@@ -58,7 +58,7 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
 .mc{background:var(--surf);border-radius:var(--r3);padding:20px 16px 18px;border:1px solid var(--bord);cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:10px;box-shadow:var(--sh)}
 .mc:active{transform:scale(.97);background:var(--surf2)}
 .mac{width:18px;height:1.5px;border-radius:1px;margin-bottom:2px}
-.c-s .mac{background:var(--acc)} .c-r .mac{background:var(--ora)} .c-rec .mac{background:var(--blu)} .c-su .mac{background:#8d6e63} .c-sb .mac{background:#cda434}
+.c-s .mac{background:var(--acc)} .c-r .mac{background:var(--ora)} .c-rec .mac{background:var(--blu)} .c-su .mac{background:#8d6e63} .c-sb .mac{background:#cda434} .c-pl .mac{background:#5e7a8a}
 .mi{font-size:22px} .mn{font-size:14px;font-weight:400;letter-spacing:-.2px} .md{font-size:11px;color:var(--txt2);line-height:1.4}
 
 /* SHARED HDR */
@@ -319,6 +319,7 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
       <div class="mc c-r" onclick="openMod('recetas')"><div class="mac"></div><div class="mi">💧</div><div class="mn">Recetas</div><div class="md">Gestión de pulverizaciones</div></div>
       <div class="mc c-su" onclick="openMod('suelos')"><div class="mac"></div><div class="mi">🧪</div><div class="mn">Análisis de Suelos</div><div class="md">Análisis de laboratorio</div></div>
       <div class="mc c-sb" onclick="openMod('siembra')"><div class="mac"></div><div class="mi">🚜</div><div class="mn">Siembra</div><div class="md">Avance del plan de siembra</div></div>
+      <div class="mc c-pl" onclick="openMod('planos')"><div class="mac"></div><div class="mi">🗺️</div><div class="mn">Planos</div><div class="md">Dimensiones y superficies</div></div>
     </div>
   </div>
 </div>
@@ -356,6 +357,17 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
   <div class="ah"><button class="ab" onclick="closeMod('siembra')">Inicio</button><div class="at">Siembra</div></div>
   <div id="sb-tabs"></div>
   <div id="sb-body" class="rb"></div>
+</div>
+
+<!-- PLANOS -->
+<div id="s-planos" class="screen">
+  <div class="ah">
+    <button class="ab" onclick="closeMod('planos')">Inicio</button>
+    <div class="at">Planos</div>
+    <button class="aa" onclick="planosPDF()" style="background:var(--acc)">PDF</button>
+  </div>
+  <div id="pl-tabs" style="flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bord);display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch"></div>
+  <div id="pl-body" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px"></div>
 </div>
 
 <!-- SUELOS -->
@@ -484,7 +496,7 @@ function homeCambioCli(ck2){
 }
 
 // NAV
-function openMod(m){SS(m);if(m==='schedule')schInit();else if(m==='recorridas')recInit();else if(m==='recetas')retInit();else if(m==='suelos')suelInit();else if(m==='siembra')siembraInit();}
+function openMod(m){SS(m);if(m==='schedule')schInit();else if(m==='recorridas')recInit();else if(m==='recetas')retInit();else if(m==='suelos')suelInit();else if(m==='siembra')siembraInit();else if(m==='planos')planosInit();}
 function closeMod(m){SS('home');if(m==='schedule'){schCP();schCR();}}
 
 // CROP COLORS
@@ -1587,6 +1599,258 @@ function retRD(body,id){
       <button onclick="retEliminar('${r.id}')" style="flex:1;background:none;border:1px solid var(--red);border-radius:var(--r2);padding:11px;font-size:12px;color:var(--red);font-family:var(--f)">Eliminar</button>`:''}
     </div>`
     +'</div>';
+}
+
+// PLANOS
+let PL_CAMPO=null;
+let PL_CAMPOS=[];
+
+function haversineM(lat1,lon1,lat2,lon2){
+  const R=6371000,r=Math.PI/180;
+  const φ1=lat1*r,φ2=lat2*r,Δφ=(lat2-lat1)*r,Δλ=(lon2-lon1)*r;
+  const a=Math.sin(Δφ/2)**2+Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function fmtM(m){return m>=1000?(m/1000).toFixed(2)+' km':Math.round(m)+' m';}
+
+function planosInit(){
+  if(!D||!D.lotes||D.lotes.length===0){
+    document.getElementById('pl-body').innerHTML='<div class="empty" style="padding:40px 0;text-align:center;color:var(--txt3)">Sin datos de lotes cargados</div>';
+    document.getElementById('pl-tabs').innerHTML='';
+    return;
+  }
+  const cliKey=SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];
+  const lotes=D.lotes.filter(l=>{
+    const cfg=CFG[cliKey];
+    if(!cfg)return true;
+    return Object.keys(cfg.campos||{}).includes(l.layer);
+  });
+  const byC={};
+  lotes.forEach(l=>{
+    const k=l.layer||'sin_campo';
+    if(!byC[k])byC[k]={key:k,label:l.campo||k,lotes:[]};
+    byC[k].lotes.push(l);
+  });
+  PL_CAMPOS=Object.values(byC);
+  if(!PL_CAMPOS.length){
+    document.getElementById('pl-body').innerHTML='<div class="empty" style="padding:40px 0;text-align:center;color:var(--txt3)">Sin campos disponibles</div>';
+    document.getElementById('pl-tabs').innerHTML='';
+    return;
+  }
+  PL_CAMPO=PL_CAMPOS[0].key;
+  planosBuildTabs();
+  planosRender(PL_CAMPO);
+}
+
+function planosBuildTabs(){
+  const el=document.getElementById('pl-tabs');
+  el.innerHTML=PL_CAMPOS.map(c=>`<div class="ctab${c.key===PL_CAMPO?' on':''}" onclick="planosRender('${c.key}')">${c.label}</div>`).join('');
+}
+
+function planosRender(campoKey){
+  PL_CAMPO=campoKey;
+  document.querySelectorAll('#pl-tabs .ctab').forEach((t,i)=>t.classList.toggle('on',PL_CAMPOS[i].key===campoKey));
+  const campo=PL_CAMPOS.find(c=>c.key===campoKey);
+  if(!campo)return;
+  const body=document.getElementById('pl-body');
+
+  const totalHa=campo.lotes.reduce((s,l)=>s+(parseFloat(l.area)||0),0);
+  let html=`<div style="margin-bottom:18px">
+    <div style="font-size:18px;font-weight:300;letter-spacing:-.3px">${campo.label}</div>
+    <div style="font-size:12px;color:var(--txt2);margin-top:2px">Total: <b>${totalHa.toFixed(2)} ha</b> · ${campo.lotes.length} lotes</div>
+  </div>`;
+
+  html+=`<canvas id="pl-canvas" style="width:100%;border-radius:var(--r);border:1px solid var(--bord);display:block;margin-bottom:20px"></canvas>`;
+
+  html+=`<div style="display:flex;flex-direction:column;gap:8px" id="pl-lot-list">`;
+  campo.lotes.forEach(l=>{
+    const sides=planosGetSides(l.rings);
+    const sidesHtml=sides.map((s,i)=>`<span style="font-size:10px;color:var(--txt2);background:var(--surf2);border-radius:3px;padding:2px 5px">L${i+1}: ${fmtM(s)}</span>`).join('');
+    html+=`<div style="background:var(--surf);border:1px solid var(--bord);border-radius:var(--r2);padding:12px 14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:13px;font-weight:400">${l.name}</span>
+        <span style="font-size:12px;color:var(--txt2)">${(parseFloat(l.area)||0).toFixed(2)} ha</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">${sidesHtml}</div>
+    </div>`;
+  });
+  html+=`</div>`;
+  body.innerHTML=html;
+
+  requestAnimationFrame(()=>planosDrawCanvas(campo));
+}
+
+function planosGetSides(rings){
+  if(!rings||!rings.length)return[];
+  const pts=rings[0]||rings;
+  if(!pts||pts.length<2)return[];
+  const sides=[];
+  for(let i=0;i<pts.length-1;i++){
+    const a=pts[i],b=pts[i+1];
+    if(!a||!b)continue;
+    const lat1=Array.isArray(a)?a[1]:a.lat||a[1];
+    const lon1=Array.isArray(a)?a[0]:a.lng||a[0];
+    const lat2=Array.isArray(b)?b[1]:b.lat||b[1];
+    const lon2=Array.isArray(b)?b[0]:b.lng||b[0];
+    sides.push(haversineM(lat1,lon1,lat2,lon2));
+  }
+  return sides;
+}
+
+function planosDrawCanvas(campo){
+  const cv=document.getElementById('pl-canvas');
+  if(!cv)return;
+  const W=cv.parentElement.clientWidth-2;
+  const DPR=window.devicePixelRatio||1;
+  const H=Math.round(W*0.65);
+  cv.width=W*DPR; cv.height=H*DPR;
+  cv.style.width=W+'px'; cv.style.height=H+'px';
+  const ctx=cv.getContext('2d');
+  ctx.scale(DPR,DPR);
+
+  // collect all ring pts
+  const allPts=[];
+  campo.lotes.forEach(l=>{
+    const pts=l.rings&&(l.rings[0]||l.rings)||[];
+    pts.forEach(p=>{
+      const lon=Array.isArray(p)?p[0]:p.lng||p[0];
+      const lat=Array.isArray(p)?p[1]:p.lat||p[1];
+      allPts.push({lon,lat});
+    });
+  });
+  if(!allPts.length)return;
+
+  const minLon=Math.min(...allPts.map(p=>p.lon));
+  const maxLon=Math.max(...allPts.map(p=>p.lon));
+  const minLat=Math.min(...allPts.map(p=>p.lat));
+  const maxLat=Math.max(...allPts.map(p=>p.lat));
+
+  const pad=28;
+  const scaleX=(W-pad*2)/(maxLon-minLon||1);
+  const scaleY=(H-pad*2)/(maxLat-minLat||1);
+  const scale=Math.min(scaleX,scaleY);
+  const offX=(W-(maxLon-minLon)*scale)/2;
+  const offY=(H-(maxLat-minLat)*scale)/2;
+
+  function toXY(lon,lat){
+    return{x:offX+(lon-minLon)*scale, y:H-offY-(lat-minLat)*scale};
+  }
+
+  const FILL_COLORS=['rgba(43,107,43,.13)','rgba(38,115,168,.12)','rgba(204,92,8,.1)','rgba(94,122,138,.12)','rgba(141,110,99,.1)','rgba(205,164,52,.12)'];
+
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#f6f7f4';
+  ctx.fillRect(0,0,W,H);
+
+  campo.lotes.forEach((l,idx)=>{
+    const pts=l.rings&&(l.rings[0]||l.rings)||[];
+    if(!pts.length)return;
+    ctx.beginPath();
+    pts.forEach((p,i)=>{
+      const lon=Array.isArray(p)?p[0]:p.lng||p[0];
+      const lat=Array.isArray(p)?p[1]:p.lat||p[1];
+      const{x,y}=toXY(lon,lat);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.closePath();
+    ctx.fillStyle=FILL_COLORS[idx%FILL_COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle='rgba(43,107,43,.5)';
+    ctx.lineWidth=1.2;
+    ctx.stroke();
+
+    // label: centroid
+    let cx=0,cy=0,n=pts.length;
+    pts.forEach(p=>{
+      cx+=Array.isArray(p)?p[0]:p.lng||p[0];
+      cy+=Array.isArray(p)?p[1]:p.lat||p[1];
+    });
+    const{x:lx,y:ly}=toXY(cx/n,cy/n);
+    ctx.font=`500 ${Math.max(8,Math.min(11,scale*0.4))}px DM Sans,system-ui,sans-serif`;
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillStyle='rgba(27,35,24,.75)';
+    ctx.fillText(l.name,lx,ly);
+    ctx.font=`300 ${Math.max(7,Math.min(9,scale*0.3))}px DM Sans,system-ui,sans-serif`;
+    ctx.fillStyle='rgba(27,35,24,.5)';
+    ctx.fillText((parseFloat(l.area)||0).toFixed(1)+' ha',lx,ly+12);
+
+    // side length labels
+    for(let i=0;i<pts.length-1;i++){
+      const a=pts[i],b=pts[i+1];
+      const alat=Array.isArray(a)?a[1]:a.lat||a[1];
+      const alon=Array.isArray(a)?a[0]:a.lng||a[0];
+      const blat=Array.isArray(b)?b[1]:b.lat||b[1];
+      const blon=Array.isArray(b)?b[0]:b.lng||b[0];
+      const dist=haversineM(alat,alon,blat,blon);
+      if(dist<5)continue;
+      const{x:ax,y:ay}=toXY(alon,alat);
+      const{x:bx,y:by}=toXY(blon,blat);
+      const mx=(ax+bx)/2,my=(ay+by)/2;
+      ctx.save();
+      ctx.font=`300 ${Math.max(6,Math.min(8,scale*0.25))}px DM Sans,system-ui,sans-serif`;
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillStyle='rgba(100,120,90,.85)';
+      ctx.fillText(fmtM(dist),mx,my);
+      ctx.restore();
+    }
+  });
+}
+
+async function planosPDF(){
+  const campo=PL_CAMPOS.find(c=>c.key===PL_CAMPO);
+  if(!campo){toast('Sin campo seleccionado');return;}
+  if(typeof jspdf==='undefined'&&typeof window.jspdf==='undefined'){toast('jsPDF no disponible');return;}
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=190,M=10;
+
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(18);
+  doc.setTextColor(43,107,43);
+  doc.text('TWIN FIELD SUITE — PLANO',M,18);
+  doc.setFontSize(13);
+  doc.setTextColor(30,35,28);
+  doc.text(campo.label,M,27);
+  const totalHa=campo.lotes.reduce((s,l)=>s+(parseFloat(l.area)||0),0);
+  doc.setFontSize(9);
+  doc.setTextColor(100,120,90);
+  doc.text(`Total: ${totalHa.toFixed(2)} ha · ${campo.lotes.length} lotes`,M,33);
+  doc.setDrawColor(220,225,215);
+  doc.line(M,36,M+W,36);
+
+  // canvas snapshot
+  const cv=document.getElementById('pl-canvas');
+  if(cv){
+    const imgData=cv.toDataURL('image/png');
+    const iW=W,iH=Math.round(W*0.65);
+    doc.addImage(imgData,'PNG',M,39,iW,iH);
+    let y=39+iH+8;
+
+    // table
+    const rows=campo.lotes.map(l=>{
+      const sides=planosGetSides(l.rings).map((s,i)=>`L${i+1}:${fmtM(s)}`).join('  ');
+      return[l.name,(parseFloat(l.area)||0).toFixed(2)+' ha',sides];
+    });
+    doc.autoTable({
+      startY:y,
+      head:[['Lote','Superficie','Dimensiones de lados']],
+      body:rows,
+      margin:{left:M,right:M},
+      styles:{font:'helvetica',fontSize:8,cellPadding:2},
+      headStyles:{fillColor:[43,107,43],textColor:255,fontStyle:'normal'},
+      columnStyles:{0:{cellWidth:35},1:{cellWidth:25},2:{cellWidth:130}},
+    });
+  }
+
+  const today=new Date().toLocaleDateString('es-AR');
+  doc.setFontSize(7);
+  doc.setTextColor(160,170,150);
+  doc.text(`Generado ${today}`,M,285);
+
+  doc.save(`plano_${campo.label.replace(/\s/g,'_')}.pdf`);
 }
 
 // SUELOS
