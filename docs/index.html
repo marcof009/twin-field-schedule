@@ -2458,6 +2458,14 @@ async function retGenPDF(){
   doc.setTextColor(100,100,100);
   doc.text('Generado: '+hoy,W-M,29,{align:'right'});
 
+  // helper: get ha for a recipe from D.lotes or fallback to caudal field
+  function getHa(r){
+    const fromLotes=parseFloat(D?.lotes?.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area);
+    if(!isNaN(fromLotes)&&fromLotes>0)return fromLotes;
+    const fromCaudal=parseFloat(r.caudal);
+    return(!isNaN(fromCaudal)&&fromCaudal>0)?fromCaudal:0;
+  }
+
   // Recolectar todos los productos únicos
   const allProds=new Set();
   recetas.forEach(r=>(r.productos||[]).forEach(p=>allProds.add(p.nombre||p.n||'')));
@@ -2465,23 +2473,31 @@ async function retGenPDF(){
 
   // Tabla
   const head=[['Rec.','Campo','Lote','Cultivo','Ha','Dest.',...prods,'Urgencia','Obs.']];
-  const body=recetas.map(r=>[
-    r.numero_receta||'—',
-    r.campo_id||'',
-    r.lote_id||'',
-    r.cultivo||'',
-    r.caudal?String(r.caudal):'',
-    r.destino||'',
-    ...prods.map(p=>{const prod=(r.productos||[]).find(x=>(x.nombre||x.n||'')==p);return prod?(prod.dosis||prod.d||'')+' '+(prod.unidad||prod.u||''):''}),
-    r.urgencia||'',
-    r.observaciones||''
-  ]);
+  const body=recetas.map(r=>{
+    const ha=getHa(r);
+    return[
+      r.numero_receta||'—',
+      CFG[r.cliente_id]?.campos[r.campo_id]?.lbl||r.campo_id||'',
+      r.lote_id||'',
+      r.cultivo||'',
+      ha>0?ha.toFixed(2):'—',
+      r.destino||'',
+      ...prods.map(p=>{const prod=(r.productos||[]).find(x=>(x.nombre||x.n||'')==p);return prod?(prod.dosis||prod.d||'')+' '+(prod.unidad||prod.u||''):''}),
+      r.urgencia||'',
+      r.observaciones||''
+    ];
+  });
 
-  // Totales por producto
-  const totRow=['','','','','TOTAL','',...prods.map(p=>{
+  // Totales por producto: dosis × ha
+  const totalHaRec=recetas.reduce((s,r)=>s+getHa(r),0);
+  const totRow=['','','','',totalHaRec>0?totalHaRec.toFixed(2)+' ha':'—','TOTAL',...prods.map(p=>{
     let tot=0;
-    recetas.forEach(r=>{const prod=(r.productos||[]).find(x=>(x.nombre||x.n||'')==p);if(prod){const d=parseFloat(prod.dosis||prod.d);if(!isNaN(d))tot+=d;}});
-    return tot>0?tot.toFixed(1):'';
+    recetas.forEach(r=>{
+      const prod=(r.productos||[]).find(x=>(x.nombre||x.n||'')==p);
+      if(prod){const d=parseFloat(prod.dosis||prod.d);const ha=getHa(r);if(!isNaN(d)&&ha>0)tot+=d*ha;}
+    });
+    const u=recetas.flatMap(r=>(r.productos||[])).find(p2=>(p2.nombre||p2.n||'')==p);
+    return tot>0?tot.toFixed(1)+' '+(u?.unidad||u?.u||''):'';
   }),'',''];
 
   doc.autoTable({
