@@ -1664,7 +1664,7 @@ function planosRender(campoKey){
     <div style="font-size:12px;color:var(--txt2);margin-top:2px">Total: <b>${totalHa.toFixed(2)} ha</b> · ${campo.lotes.length} lotes</div>
   </div>`;
 
-  html+=`<canvas id="pl-canvas" style="width:100%;border-radius:var(--r);border:1px solid var(--bord2);display:block;margin-bottom:20px;box-shadow:var(--sh)"></canvas>`;
+  html+=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:20px;border-radius:var(--r);border:1px solid var(--bord2);box-shadow:var(--sh)"><canvas id="pl-canvas" style="display:block;min-width:600px;max-width:100%"></canvas></div>`;
 
   html+=`<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:4px">
     <thead><tr style="border-bottom:2px solid var(--bord2)">
@@ -1706,7 +1706,7 @@ function planosGetSides(rings){
 function planosDrawCanvas(campo,cv,W,H,pad){
   if(!cv)cv=document.getElementById('pl-canvas');
   if(!cv)return;
-  if(!W){W=cv.parentElement.clientWidth-2;}
+  if(!W){W=Math.max(600,cv.parentElement.clientWidth-2);}
   if(!H){H=Math.round(W*0.75);}
   if(pad===undefined)pad=36;
   const DPR=window.devicePixelRatio||1;
