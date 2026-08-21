@@ -1847,10 +1847,13 @@ async function planosPDF(){
   doc.setDrawColor(180,200,170);doc.setLineWidth(0.3);
   doc.line(M+2,M+30,PW-M-2,M+30);
 
-  // map area: left 68% of width
-  const mapW=Math.round((PW-M*2)*0.68);
+  // right panel fixed width — compact table
+  const colLote=28,colHa=18,tGap=5;
+  const tW=colLote+colHa+2;
   const mapH=PH-M*2-32;
+  const mapW=PW-M*2-tW-tGap*2;
   const mapX=M+1,mapY=M+32;
+  const tX=mapX+mapW+tGap;
 
   // render canvas offscreen at higher res
   const cvOff=document.createElement('canvas');
@@ -1861,26 +1864,25 @@ async function planosPDF(){
   doc.setDrawColor(150,170,140);doc.setLineWidth(0.3);
   doc.rect(mapX,mapY,mapW,mapH);
 
-  // right panel: table
-  const tX=mapX+mapW+4,tW=PW-M*2-mapW-6;
-  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(43,90,43);
-  doc.text('SUPERFICIES',tX,mapY+5);
+  // table header label
+  doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(43,90,43);
+  doc.text('LOTES',tX,mapY+5);
   doc.setDrawColor(43,90,43);doc.setLineWidth(0.4);
-  doc.line(tX,mapY+7,tX+tW,mapY+7);
+  doc.line(tX,mapY+6.5,tX+tW,mapY+6.5);
 
   const rows=campo.lotes.map(l=>[l.name,(parseFloat(l.area)||0).toFixed(2)]);
   doc.autoTable({
-    startY:mapY+9,
+    startY:mapY+8,
     body:rows,
     head:[['Lote','ha']],
-    margin:{left:tX},
+    margin:{left:tX,right:PW-tX-tW},
     tableWidth:tW,
-    styles:{font:'helvetica',fontSize:7.5,cellPadding:1.8,textColor:[30,35,28]},
-    headStyles:{fillColor:[43,90,43],textColor:255,fontStyle:'bold',fontSize:7},
-    alternateRowStyles:{fillColor:[240,246,238]},
-    columnStyles:{0:{cellWidth:tW*0.6},1:{cellWidth:tW*0.4,halign:'right'}},
-    foot:[[{content:'TOTAL',styles:{fontStyle:'bold',fillColor:[220,235,215]}},(totalHa.toFixed(2))]],
-    footStyles:{fillColor:[220,235,215],textColor:[30,60,30],fontStyle:'bold',fontSize:8},
+    styles:{font:'helvetica',fontSize:7,cellPadding:1.2,textColor:[30,35,28]},
+    headStyles:{fillColor:[43,90,43],textColor:255,fontStyle:'bold',fontSize:6.5,cellPadding:1.5},
+    alternateRowStyles:{fillColor:[242,248,240]},
+    columnStyles:{0:{cellWidth:colLote,overflow:'ellipsize'},1:{cellWidth:colHa,halign:'right'}},
+    foot:[[{content:'TOTAL',styles:{fontStyle:'bold'}},(totalHa.toFixed(2))]],
+    footStyles:{fillColor:[215,232,210],textColor:[30,60,30],fontStyle:'bold',fontSize:7.5},
   });
 
   // footer
