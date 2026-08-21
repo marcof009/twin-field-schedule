@@ -1274,7 +1274,8 @@ function retRL(body){
     return;
   }
   if(retOrdenMode){
-    body.innerHTML=dash+`<div style="padding:10px 14px 0;display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-size:11px;color:var(--txt2)">Seleccioná las recetas para incluir</span><button onclick="retGenPDF()" style="background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:7px 12px;font-size:11px;font-weight:400;font-family:var(--f);white-space:nowrap">PDF (${retSel.size})</button></div>`+
+    const nSel=retSel.size;
+    body.innerHTML=dash+`<div style="padding:10px 14px 0;display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-size:11px;color:var(--txt2)">Seleccioná las recetas para incluir</span><span style="font-size:11px;font-weight:500;color:var(--acc)">${nSel} seleccionada${nSel!==1?'s':''}</span></div>`+
     retR.map(r=>{
       const sel=retSel.has(r.id);
       return `<div class="rli" data-id="${r.id}" onclick="retToggleSel(this)" style="display:flex;align-items:center;gap:10px;${sel?'border-color:var(--acc);background:rgba(43,107,43,.04)':''}">
@@ -1283,7 +1284,11 @@ function retRL(body){
         <div class="rli-m"><span>📅 ${r.fecha}</span><span>${r.cultivo||'—'}</span></div></div>
       </div>`;
     }).join('')+
-    `<div style="padding:10px 14px"><button onclick="retGenPDF()" style="width:100%;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:12px;font-size:13px;font-weight:400;font-family:var(--f)">Generar PDF (${retSel.size} receta${retSel.size!==1?'s':''})</button></div>`;
+    `<div style="padding:10px 14px;display:flex;flex-direction:column;gap:8px">
+      <button onclick="retGenPDF()" style="width:100%;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:12px;font-size:13px;font-weight:400;font-family:var(--f)">📄 Exportar PDF (${nSel} receta${nSel!==1?'s':''})</button>
+      <button onclick="retGenXLS()" style="width:100%;background:#1d6f42;color:#fff;border:none;border-radius:var(--r2);padding:12px;font-size:13px;font-weight:400;font-family:var(--f)">📊 Exportar Excel (${nSel} receta${nSel!==1?'s':''})</button>
+      <button onclick="retGenPlano()" style="width:100%;background:var(--blu);color:#fff;border:none;border-radius:var(--r2);padding:12px;font-size:13px;font-weight:400;font-family:var(--f)">🗺️ Exportar Plano con lotes (${nSel} receta${nSel!==1?'s':''})</button>
+    </div>`;
     return;
   }
   if(retFiltroPend){
@@ -2535,6 +2540,180 @@ async function retGenPDF(){
   // Guardar
   const fecha=recetas[0]?.fecha||hoy.replace(/\//g,'-');
   doc.save('orden_'+cliLabel.toLowerCase().replace(/ /g,'_')+'_'+fecha+'.pdf');
+  retToggleOrden();
+}
+
+async function retGenXLS(){
+  if(!retSel.size){alert('Seleccioná al menos una receta');return;}
+  const recetas=retR.filter(r=>retSel.has(r.id));
+  const cliente=recetas[0]?.cliente_id||'';
+  if(!D||D.ck!==cliente){toast('Cargando datos...');try{await schLoad(cliente);}catch(e){console.warn(e);}}
+  const cliLabel=CFG[cliente]?.lbl||cliente||'';
+  const hoy=new Date().toLocaleDateString('es-AR');
+
+  function getHa(r){const a=parseFloat(D?.lotes?.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area);return(!isNaN(a)&&a>0)?a:0;}
+  const allProds=[...new Set(recetas.flatMap(r=>(r.productos||[]).map(p=>p.nombre||p.n||'')))].filter(Boolean);
+
+  // header rows
+  const wb=XLSX.utils.book_new();
+  const rows=[];
+  rows.push(['ORDEN DE APLICACIÓN — '+cliLabel.toUpperCase()]);
+  rows.push(['Generado:',hoy]);
+  rows.push([]);
+  const head=['Rec.','Campo','Lote','Cultivo','Ha','Destino',...allProds.map(p=>p+' (dosis)'),...allProds.map(p=>p+' (total)'),'Urgencia','Observaciones'];
+  rows.push(head);
+
+  recetas.forEach(r=>{
+    const ha=getHa(r);
+    rows.push([
+      r.numero_receta||'',
+      CFG[r.cliente_id]?.campos[r.campo_id]?.lbl||r.campo_id||'',
+      r.lote_id||'',
+      r.cultivo||'',
+      ha||'',
+      r.destino||'',
+      ...allProds.map(p=>{const prod=(r.productos||[]).find(x=>(x.nombre||x.n||'')==p);return prod?(prod.dosis||prod.d||'')+(prod.unidad||prod.u?(' '+(prod.unidad||prod.u)):''):''}),
+      ...allProds.map(p=>{const prod=(r.productos||[]).find(x=>(x.nombre||x.n||'')==p);if(!prod)return '';const d=parseFloat(prod.dosis||prod.d);return(!isNaN(d)&&ha>0)?(d*ha).toFixed(1)+' '+(prod.unidad||prod.u||''):''}),
+      r.urgencia||'',
+      r.observaciones||''
+    ]);
+  });
+
+  // totals row
+  const totHa=recetas.reduce((s,r)=>s+getHa(r),0);
+  rows.push([
+    '','','','TOTAL',totHa>0?totHa.toFixed(2):'','',
+    ...allProds.map(()=>''),
+    ...allProds.map(p=>{let t=0;recetas.forEach(r=>{const prod=(r.productos||[]).find(x=>(x.nombre||x.n||'')==p);if(prod){const d=parseFloat(prod.dosis||prod.d);const h=getHa(r);if(!isNaN(d)&&h>0)t+=d*h;}});const u=recetas.flatMap(r=>r.productos||[]).find(p2=>(p2.nombre||p2.n||'')==p);return t>0?t.toFixed(1)+' '+(u?.unidad||u?.u||''):''}),
+    '',''
+  ]);
+
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=head.map((_,i)=>({wch:i<6?18:22}));
+  XLSX.utils.book_append_sheet(wb,ws,'Orden');
+  const fecha=recetas[0]?.fecha||hoy.replace(/\//g,'-');
+  XLSX.writeFile(wb,'orden_'+cliLabel.toLowerCase().replace(/ /g,'_')+'_'+fecha+'.xlsx');
+  retToggleOrden();
+}
+
+async function retGenPlano(){
+  if(!retSel.size){alert('Seleccioná al menos una receta');return;}
+  const recetas=retR.filter(r=>retSel.has(r.id));
+  const cliente=recetas[0]?.cliente_id||'';
+  if(!D||D.ck!==cliente){toast('Cargando datos...');try{await schLoad(cliente);}catch(e){toast('Error cargando lotes');return;}}
+  const cliLabel=CFG[cliente]?.lbl||cliente||'';
+  const hoy=new Date().toLocaleDateString('es-AR');
+
+  // group selected lotes per campo
+  const selLotes=new Set(recetas.map(r=>r.campo_id+'|'+r.lote_id));
+  const byC={};
+  recetas.forEach(r=>{
+    if(!byC[r.campo_id])byC[r.campo_id]={key:r.campo_id,label:CFG[cliente]?.campos[r.campo_id]?.lbl||r.campo_id,lotes:[]};
+  });
+  // include all lotes of the campo but mark selected ones
+  Object.keys(byC).forEach(ck2=>{
+    const allLotes=D.lotes.filter(l=>l.layer===ck2);
+    byC[ck2].lotes=allLotes;
+  });
+  const campos=Object.values(byC);
+  if(!campos.length){toast('Sin lotes disponibles');return;}
+
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const PW=287,PH=200,M=8;
+
+  // header
+  doc.setFillColor(38,115,168);
+  doc.rect(M,M,PW-M*2,13,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(255,255,255);
+  doc.text('PLANO DE APLICACIÓN — '+cliLabel.toUpperCase(),M+4,M+8.5);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text(hoy,PW-M-4,M+8.5,{align:'right'});
+
+  // per campo — one per page
+  campos.forEach((campo,ci)=>{
+    if(ci>0)doc.addPage('a4','landscape');
+    const mapH=PH-M*2-26;
+    const mapW=PW-M*2;
+    const mapX=M,mapY=M+22;
+
+    doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(30,30,30);
+    doc.text(campo.label,M+2,M+19);
+
+    // draw map on offscreen canvas
+    const cvOff=document.createElement('canvas');
+    const PX=3;
+
+    // custom draw: highlight selected lotes
+    const W2=mapW*PX,H2=mapH*PX,pad=40*PX;
+    cvOff.width=W2;cvOff.height=H2;
+    const ctx=cvOff.getContext('2d');
+
+    const allPts=[];
+    campo.lotes.forEach(l=>{(l.rings&&(l.rings[0]||l.rings)||[]).forEach(p=>allPts.push({lon:Array.isArray(p)?p[0]:p[0],lat:Array.isArray(p)?p[1]:p[1]}));});
+    if(!allPts.length)return;
+    const minLon=Math.min(...allPts.map(p=>p.lon)),maxLon=Math.max(...allPts.map(p=>p.lon));
+    const minLat=Math.min(...allPts.map(p=>p.lat)),maxLat=Math.max(...allPts.map(p=>p.lat));
+    const scX=(W2-pad*2)/(maxLon-minLon||1),scY=(H2-pad*2)/(maxLat-minLat||1),sc=Math.min(scX,scY);
+    const oX=(W2-(maxLon-minLon)*sc)/2,oY=(H2-(maxLat-minLat)*sc)/2;
+    function toXY2(lon,lat){return{x:oX+(lon-minLon)*sc,y:H2-oY-(lat-minLat)*sc};}
+
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W2,H2);
+    ctx.strokeStyle='#aaa';ctx.lineWidth=0.5;ctx.strokeRect(1,1,W2-2,H2-2);
+
+    campo.lotes.forEach(l=>{
+      const pts=l.rings&&(l.rings[0]||l.rings)||[];
+      if(!pts.length)return;
+      const isSelected=selLotes.has(l.layer+'|'+l.name);
+      ctx.beginPath();
+      pts.forEach((p,i)=>{const{x,y}=toXY2(Array.isArray(p)?p[0]:p[0],Array.isArray(p)?p[1]:p[1]);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+      ctx.closePath();
+      ctx.fillStyle=isSelected?'rgba(38,115,168,.45)':'rgba(200,215,190,.4)';
+      ctx.fill();
+      ctx.strokeStyle=isSelected?'#1a5a9a':'#6a8a60';
+      ctx.lineWidth=isSelected?2.5*PX:1.2*PX;
+      ctx.stroke();
+      // label
+      let cx=0,cy=0,n=pts.length;
+      pts.forEach(p=>{cx+=Array.isArray(p)?p[0]:p[0];cy+=Array.isArray(p)?p[1]:p[1];});
+      const{x:lx,y:ly}=toXY2(cx/n,cy/n);
+      const fs=Math.max(10,Math.min(18,sc*500))*PX;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.font=`bold ${fs}px Arial,sans-serif`;
+      ctx.fillStyle=isSelected?'#0d3d6e':'#3a5a30';
+      ctx.fillText(l.name,lx,ly-fs*0.55);
+      ctx.font=`${fs*0.78}px Arial,sans-serif`;
+      ctx.fillStyle=isSelected?'#1a5a9a':'#5a7a50';
+      ctx.fillText((parseFloat(l.area)||0).toFixed(2)+' ha',lx,ly+fs*0.45);
+    });
+
+    // north arrow
+    ctx.save();ctx.translate(pad*0.6,H2-pad*0.6);
+    ctx.font=`bold ${14*PX}px Arial,sans-serif`;ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillStyle='#222';ctx.fillText('N',0,-24*PX);
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-22*PX);ctx.strokeStyle='#222';ctx.lineWidth=2*PX;ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,-22*PX);ctx.lineTo(-5*PX,-14*PX);ctx.lineTo(5*PX,-14*PX);ctx.closePath();ctx.fillStyle='#222';ctx.fill();
+    ctx.beginPath();ctx.arc(0,0,5*PX,0,Math.PI*2);ctx.fillStyle='#222';ctx.fill();
+    ctx.restore();
+
+    doc.addImage(cvOff.toDataURL('image/png'),'PNG',mapX,mapY,mapW,mapH);
+    doc.setDrawColor(100,130,160);doc.setLineWidth(0.3);doc.rect(mapX,mapY,mapW,mapH);
+
+    // legend bottom-right inside map
+    const recsCampo=recetas.filter(r=>r.campo_id===campo.key);
+    const lgX=mapX+mapW-60,lgY=mapY+mapH-recsCampo.length*6-14;
+    doc.setFillColor(255,255,255);doc.setDrawColor(150,170,190);
+    doc.roundedRect(lgX-2,lgY-2,58,recsCampo.length*6+14,2,2,'FD');
+    doc.setFontSize(6.5);doc.setFont('helvetica','bold');doc.setTextColor(38,115,168);
+    doc.text('LOTES A APLICAR',lgX,lgY+4);
+    recsCampo.forEach((r,i)=>{
+      const ha=parseFloat(D?.lotes?.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area)||0;
+      doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);
+      doc.text(`${r.lote_id}  ${ha>0?ha.toFixed(2)+' ha':''}`,lgX,lgY+10+i*6);
+    });
+  });
+
+  const fecha=recetas[0]?.fecha||hoy.replace(/\//g,'-');
+  doc.save('plano_aplicacion_'+cliLabel.toLowerCase().replace(/ /g,'_')+'_'+fecha+'.pdf');
   retToggleOrden();
 }
 
