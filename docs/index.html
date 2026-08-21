@@ -1666,14 +1666,21 @@ function planosRender(campoKey){
 
   html+=`<canvas id="pl-canvas" style="width:100%;border-radius:var(--r);border:1px solid var(--bord);display:block;margin-bottom:20px"></canvas>`;
 
-  html+=`<div style="display:flex;flex-direction:column;gap:8px" id="pl-lot-list">`;
-  campo.lotes.forEach(l=>{
-    html+=`<div style="background:var(--surf);border:1px solid var(--bord);border-radius:var(--r2);padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:13px;font-weight:400">${l.name}</span>
-      <span style="font-size:12px;color:var(--txt2)">${(parseFloat(l.area)||0).toFixed(2)} ha</span>
-    </div>`;
+  html+=`<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:4px">
+    <thead><tr style="border-bottom:2px solid var(--bord2)">
+      <th style="text-align:left;padding:7px 10px;font-size:9px;font-weight:500;letter-spacing:.8px;text-transform:uppercase;color:var(--txt3)">Lote</th>
+      <th style="text-align:right;padding:7px 10px;font-size:9px;font-weight:500;letter-spacing:.8px;text-transform:uppercase;color:var(--txt3)">Superficie</th>
+    </tr></thead><tbody>`;
+  campo.lotes.forEach((l,i)=>{
+    html+=`<tr style="border-bottom:1px solid var(--bord);background:${i%2===0?'var(--surf)':'var(--surf2)'}">
+      <td style="padding:9px 10px;font-weight:400">${l.name}</td>
+      <td style="padding:9px 10px;text-align:right;color:var(--txt2)">${(parseFloat(l.area)||0).toFixed(2)} ha</td>
+    </tr>`;
   });
-  html+=`</div>`;
+  html+=`<tr style="border-top:2px solid var(--bord2)">
+    <td style="padding:9px 10px;font-weight:500">Total</td>
+    <td style="padding:9px 10px;text-align:right;font-weight:500">${totalHa.toFixed(2)} ha</td>
+  </tr></tbody></table>`;
   body.innerHTML=html;
 
   requestAnimationFrame(()=>planosDrawCanvas(campo));
@@ -1808,18 +1815,17 @@ async function planosPDF(){
     let y=39+iH+8;
 
     // table
-    const rows=campo.lotes.map(l=>{
-      const sides=planosGetSides(l.rings).map((s,i)=>`L${i+1}:${fmtM(s)}`).join('  ');
-      return[l.name,(parseFloat(l.area)||0).toFixed(2)+' ha',sides];
-    });
+    const rows=campo.lotes.map(l=>[l.name,(parseFloat(l.area)||0).toFixed(2)+' ha']);
     doc.autoTable({
       startY:y,
-      head:[['Lote','Superficie','Dimensiones de lados']],
+      head:[['Lote','Superficie']],
       body:rows,
       margin:{left:M,right:M},
-      styles:{font:'helvetica',fontSize:8,cellPadding:2},
+      styles:{font:'helvetica',fontSize:9,cellPadding:3},
       headStyles:{fillColor:[43,107,43],textColor:255,fontStyle:'normal'},
-      columnStyles:{0:{cellWidth:35},1:{cellWidth:25},2:{cellWidth:130}},
+      columnStyles:{0:{cellWidth:120},1:{cellWidth:70}},
+      foot:[[{content:'Total',styles:{fontStyle:'bold'}},(campo.lotes.reduce((s,l)=>s+(parseFloat(l.area)||0),0)).toFixed(2)+' ha']],
+      footStyles:{fillColor:[240,244,237],textColor:[30,35,28]},
     });
   }
 
