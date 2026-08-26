@@ -1446,10 +1446,20 @@ function retUL(){
     +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:5px;margin-bottom:6px">'
     +lotes.map(l=>{
       const id='rlc-'+l.name.replace(/\s+/g,'_');
-      return `<label id="lbl-${id}" for="${id}" style="display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--bord);border-radius:var(--r2);cursor:pointer;background:var(--surf2);font-size:12px;transition:all .15s" onclick="retULToggle('${id}')">
-        <input type="checkbox" id="${id}" value="${l.name}" data-ha="${l.area||''}" style="width:15px;height:15px;accent-color:var(--grn);cursor:pointer">
-        <span>${l.name.toUpperCase()}</span>${l.area?'<span style="color:var(--txt3);font-size:10px;margin-left:auto">'+l.area+' ha</span>':''}
-      </label>`;
+      const haId='rha-'+l.name.replace(/\s+/g,'_');
+      return `<div id="wrap-${id}" style="display:flex;flex-direction:column;gap:3px">
+        <label id="lbl-${id}" for="${id}" style="display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--bord);border-radius:var(--r2);cursor:pointer;background:var(--surf2);font-size:12px;transition:all .15s" onclick="retULToggle('${id}')">
+          <input type="checkbox" id="${id}" value="${l.name}" data-ha="${l.area||''}" style="width:15px;height:15px;accent-color:var(--grn);cursor:pointer">
+          <span>${l.name.toUpperCase()}</span>${l.area?'<span style="color:var(--txt3);font-size:10px;margin-left:auto">'+l.area+' ha</span>':''}
+        </label>
+        <div id="${haId}" style="display:none;padding:0 2px">
+          <div style="display:flex;align-items:center;gap:5px;background:var(--surf);border:1px solid var(--grn);border-radius:var(--r2);padding:4px 8px">
+            <span style="font-size:10px;color:var(--txt2);white-space:nowrap">Ha a aplicar:</span>
+            <input type="number" step="0.01" min="0.01" value="${l.area||''}" data-lote="${l.name}" onclick="event.stopPropagation()" style="width:70px;border:none;outline:none;font-family:var(--f);font-size:12px;font-weight:400;color:var(--acc);background:transparent;text-align:right">
+            <span style="font-size:10px;color:var(--txt2)">ha</span>
+          </div>
+        </div>
+      </div>`;
     }).join('')
     +'</div>'
     +'<div style="display:flex;gap:6px;margin-bottom:4px">'
@@ -1461,8 +1471,14 @@ function retUL(){
 function retULToggle(id){
   setTimeout(()=>{
     const cb=document.getElementById(id);const lbl=document.getElementById('lbl-'+id);if(!cb||!lbl)return;
-    if(cb.checked){lbl.style.background='rgba(43,107,43,.12)';lbl.style.borderColor='var(--grn)';lbl.style.color='var(--grn)';}
-    else{lbl.style.background='var(--surf2)';lbl.style.borderColor='var(--bord)';lbl.style.color='';}
+    const haDiv=document.getElementById('rha-'+id.replace(/^rlc-/,''));
+    if(cb.checked){
+      lbl.style.background='rgba(43,107,43,.12)';lbl.style.borderColor='var(--grn)';lbl.style.color='var(--grn)';
+      if(haDiv)haDiv.style.display='block';
+    }else{
+      lbl.style.background='var(--surf2)';lbl.style.borderColor='var(--bord)';lbl.style.color='';
+      if(haDiv)haDiv.style.display='none';
+    }
     retULCount();
   },0);
 }
@@ -1480,7 +1496,12 @@ function retULAll(check){
   retULCount();
 }
 function retLotesSeleccionados(){
-  return [...document.querySelectorAll('#rl-wrap input[type=checkbox]:checked')].map(cb=>({name:cb.value,ha:cb.dataset.ha}));
+  return [...document.querySelectorAll('#rl-wrap input[type=checkbox]:checked')].map(cb=>{
+    const haId='rha-'+cb.value.replace(/\s+/g,'_');
+    const haInput=document.querySelector('#'+haId+' input[type=number]');
+    const ha=haInput&&haInput.value?haInput.value:cb.dataset.ha;
+    return{name:cb.value,ha};
+  });
 }
 function retUA(){}
 function retFiltrarProd(q){
