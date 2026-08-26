@@ -1590,8 +1590,10 @@ async function retG(){
   if(!lotes.length){toast('Seleccioná al menos un lote');return;}
   try{
     for(const l of lotes){
-      const caudal=base.caudal||parseFloat(l.ha)||null;
-      await sbI('recetas',{...base,caudal,lote_id:l.name,anotacion:null});
+      const loteArea=parseFloat(D?.lotes?.find(x=>x.name===l.name)?.area)||null;
+      const haAplicar=parseFloat(l.ha)||null;
+      const ha_aplicar=(haAplicar&&loteArea&&Math.abs(haAplicar-loteArea)>0.01)?haAplicar:null;
+      await sbI('recetas',{...base,lote_id:l.name,anotacion:null,ha_aplicar});
     }
     toast(lotes.length>1?lotes.length+' recetas guardadas ✓':'Receta guardada ✓');
     retStk=[];retInit();
@@ -2588,12 +2590,12 @@ async function retGenPDF(_obsTexto=''){
   doc.setTextColor(100,100,100);
   doc.text('Generado: '+hoy,W-M,29,{align:'right'});
 
-  // helper: get ha for a recipe from D.lotes or fallback to caudal field
+  // helper: get ha for a recipe — ha_aplicar (partial app) > D.lotes area > 0
   function getHa(r){
+    const fromEdit=parseFloat(r.ha_aplicar);
+    if(!isNaN(fromEdit)&&fromEdit>0)return fromEdit;
     const fromLotes=parseFloat(D?.lotes?.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area);
-    if(!isNaN(fromLotes)&&fromLotes>0)return fromLotes;
-    const fromCaudal=parseFloat(r.caudal);
-    return(!isNaN(fromCaudal)&&fromCaudal>0)?fromCaudal:0;
+    return(!isNaN(fromLotes)&&fromLotes>0)?fromLotes:0;
   }
 
   // Recolectar todos los productos únicos
@@ -2673,7 +2675,7 @@ async function retGenXLS(){
   const cliLabel=CFG[cliente]?.lbl||cliente||'';
   const hoy=new Date().toLocaleDateString('es-AR');
 
-  function getHa(r){const a=parseFloat(D?.lotes?.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area);return(!isNaN(a)&&a>0)?a:0;}
+  function getHa(r){const e=parseFloat(r.ha_aplicar);if(!isNaN(e)&&e>0)return e;const a=parseFloat(D?.lotes?.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area);return(!isNaN(a)&&a>0)?a:0;}
   const allProds=[...new Set(recetas.flatMap(r=>(r.productos||[]).map(p=>p.nombre||p.n||'')))].filter(Boolean);
   // units per product
   const prodUnit={};
