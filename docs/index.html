@@ -1296,14 +1296,15 @@ function retRL(body){
     body.innerHTML=dash+`<div style="padding:10px 14px 0;font-size:11px;color:var(--blu)">Mostrando solo pendientes — tocá el chip para ver todas</div>`+retRenderPendDetalle();
     return;
   }
-  const searchBar=`<div style="padding:8px 14px 4px">
-    <div style="display:flex;align-items:center;gap:8px;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:8px 11px">
-      <span style="color:var(--txt3);font-size:13px">🔍</span>
-      <input id="ret-search" type="text" placeholder="Buscar por lote, campo, cultivo..." autocapitalize="none" spellcheck="false"
-        oninput="retFiltrarLista(this.value)"
-        style="flex:1;border:none;outline:none;font-family:var(--f);font-size:13px;font-weight:300;background:transparent;color:var(--txt)">
-      <button onclick="document.getElementById('ret-search').value='';retFiltrarLista('')" style="background:none;border:none;color:var(--txt3);font-size:14px;padding:0;cursor:pointer;line-height:1">✕</button>
-    </div>
+  const searchBar=`<div style="padding:8px 14px 4px;display:flex;flex-direction:column;gap:5px">
+    ${[['ret-f-lote','Lote','ej: 5, norte...'],['ret-f-campo','Campo','ej: El Socorro...'],['ret-f-trat','Tratamiento','ej: fungicida, barbecho...']].map(([id,lbl,ph])=>`
+    <div style="display:flex;align-items:center;gap:6px;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:6px 10px">
+      <span style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);width:70px;flex-shrink:0">${lbl}</span>
+      <input id="${id}" type="text" placeholder="${ph}" autocapitalize="none" spellcheck="false"
+        oninput="retFiltrarLista()"
+        style="flex:1;border:none;outline:none;font-family:var(--f);font-size:12px;font-weight:300;background:transparent;color:var(--txt)">
+      <button onclick="document.getElementById('${id}').value='';retFiltrarLista()" style="background:none;border:none;color:var(--txt3);font-size:12px;padding:0;cursor:pointer;opacity:.6">✕</button>
+    </div>`).join('')}
   </div>`;
   body.innerHTML=dash+searchBar+`<div id="ret-list">`+retRenderLista(retR)+`</div>`;
 }
@@ -1321,11 +1322,17 @@ function retRenderLista(lista){
     </div>`;
   }).join('')||'<div class="empty" style="padding:24px 0">Sin resultados</div>';
 }
-function retFiltrarLista(q){
+function retFiltrarLista(){
   const list=document.getElementById('ret-list');if(!list)return;
-  if(!q.trim()){list.innerHTML=retRenderLista(retR);return;}
-  const s=q.toLowerCase();
-  const fil=retR.filter(r=>(r.lote_id||'').toLowerCase().includes(s)||(r.campo_id||'').toLowerCase().includes(s)||(CFG[r.cliente_id]?.campos[r.campo_id]?.lbl||'').toLowerCase().includes(s)||(r.cultivo||'').toLowerCase().includes(s)||String(r.numero_receta||'').includes(s));
+  const qL=(document.getElementById('ret-f-lote')?.value||'').toLowerCase().trim();
+  const qC=(document.getElementById('ret-f-campo')?.value||'').toLowerCase().trim();
+  const qT=(document.getElementById('ret-f-trat')?.value||'').toLowerCase().trim();
+  const fil=retR.filter(r=>{
+    if(qL&&!(r.lote_id||'').toLowerCase().includes(qL))return false;
+    if(qC&&!(CFG[r.cliente_id]?.campos[r.campo_id]?.lbl||r.campo_id||'').toLowerCase().includes(qC))return false;
+    if(qT&&!(r.objetivo||'').toLowerCase().includes(qT)&&!(r.cultivo||'').toLowerCase().includes(qT))return false;
+    return true;
+  });
   list.innerHTML=retRenderLista(fil);
 }
 function retRF(body){
