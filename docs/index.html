@@ -2482,6 +2482,39 @@ function retOrdenToggleDetalle(detId){
   const open=el.style.display!=='none';
   el.style.display=open?'none':'block';
 }
+let obsSort='campo';
+function obsSetSort(v){
+  obsSort=v;
+  ['campo','trat','lote'].forEach(k=>{
+    const btn=document.getElementById('obs-sort-'+k);
+    if(!btn)return;
+    const on=k===v;
+    btn.style.background=on?'var(--acc)':'var(--surf2)';
+    btn.style.color=on?'#fff':'var(--txt2)';
+    btn.style.borderColor=on?'var(--acc)':'var(--bord2)';
+  });
+}
+function obsApplySort(recetas){
+  return [...recetas].sort((a,b)=>{
+    if(obsSort==='campo'){
+      const ca=(CFG[a.cliente_id]?.campos[a.campo_id]?.lbl||a.campo_id||'').toLowerCase();
+      const cb=(CFG[b.cliente_id]?.campos[b.campo_id]?.lbl||b.campo_id||'').toLowerCase();
+      return ca<cb?-1:ca>cb?1:0;
+    }
+    if(obsSort==='trat'){
+      const oa=(a.objetivo||'').toLowerCase();
+      const ob=(b.objetivo||'').toLowerCase();
+      return oa<ob?-1:oa>ob?1:0;
+    }
+    if(obsSort==='lote'){
+      const la=a.lote_id||'';const lb=b.lote_id||'';
+      const na=parseFloat(la);const nb=parseFloat(lb);
+      if(!isNaN(na)&&!isNaN(nb))return na-nb;
+      return la<lb?-1:la>lb?1:0;
+    }
+    return 0;
+  });
+}
 function obsModalCancel(){document.getElementById('obs-modal').style.display='none';}
 function obsModalConfirm(){
   const txt=document.getElementById('obs-modal-txt').value.trim();
@@ -2496,7 +2529,7 @@ function retAbrirModalObs(){
 }
 async function retGenPDF(_obsTexto=''){
   if(!retSel.size){alert('Seleccioná al menos una receta');return;}
-  const recetas=retR.filter(r=>retSel.has(r.id));
+  const recetas=obsApplySort(retR.filter(r=>retSel.has(r.id)));
   const cliente=recetas[0]?.cliente_id||'';
   // ensure D is loaded for the right client so we have ha per lot
   if(!D||D.ck!==cliente){
@@ -2969,9 +3002,15 @@ if(!chkS()){SS('login');}else{goHome();setTimeout(()=>{if(document.getElementByI
 <!-- MODAL OBSERVACIONES ORDEN -->
 <div id="obs-modal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--surf);border-radius:var(--r3);padding:24px 20px;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.18)">
-    <div style="font-size:15px;font-weight:400;margin-bottom:6px">Observaciones generales</div>
-    <div style="font-size:12px;color:var(--txt2);margin-bottom:14px">Opcional — se incluirán al pie de la orden</div>
-    <textarea id="obs-modal-txt" rows="4" style="width:100%;border:1px solid var(--bord2);border-radius:var(--r2);padding:10px 12px;font-family:var(--f);font-size:13px;font-weight:300;resize:vertical;outline:none;color:var(--txt)" placeholder="Ej: Aplicar con viento menor a 15 km/h..."></textarea>
+    <div style="font-size:15px;font-weight:400;margin-bottom:6px">Exportar orden PDF</div>
+    <div style="font-size:11px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Ordenar por</div>
+    <div style="display:flex;gap:6px;margin-bottom:14px">
+      <button id="obs-sort-campo" onclick="obsSetSort('campo')" style="flex:1;border:1.5px solid var(--acc);background:var(--acc);color:#fff;border-radius:var(--r2);padding:7px 4px;font-family:var(--f);font-size:11px;cursor:pointer">Campo</button>
+      <button id="obs-sort-trat" onclick="obsSetSort('trat')" style="flex:1;border:1.5px solid var(--bord2);background:var(--surf2);color:var(--txt2);border-radius:var(--r2);padding:7px 4px;font-family:var(--f);font-size:11px;cursor:pointer">Tratamiento</button>
+      <button id="obs-sort-lote" onclick="obsSetSort('lote')" style="flex:1;border:1.5px solid var(--bord2);background:var(--surf2);color:var(--txt2);border-radius:var(--r2);padding:7px 4px;font-family:var(--f);font-size:11px;cursor:pointer">N° Lote</button>
+    </div>
+    <div style="font-size:11px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Observaciones generales</div>
+    <textarea id="obs-modal-txt" rows="3" style="width:100%;border:1px solid var(--bord2);border-radius:var(--r2);padding:10px 12px;font-family:var(--f);font-size:13px;font-weight:300;resize:vertical;outline:none;color:var(--txt)" placeholder="Opcional — se incluirán al pie de la orden"></textarea>
     <div style="display:flex;gap:8px;margin-top:14px">
       <button onclick="obsModalCancel()" style="flex:1;border:1px solid var(--bord2);background:var(--surf2);border-radius:var(--r2);padding:11px;font-family:var(--f);font-size:13px;color:var(--txt2);cursor:pointer">Cancelar</button>
       <button onclick="obsModalConfirm()" style="flex:2;background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:11px;font-family:var(--f);font-size:13px;font-weight:400;cursor:pointer">Generar PDF</button>
