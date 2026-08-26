@@ -1296,7 +1296,19 @@ function retRL(body){
     body.innerHTML=dash+`<div style="padding:10px 14px 0;font-size:11px;color:var(--blu)">Mostrando solo pendientes — tocá el chip para ver todas</div>`+retRenderPendDetalle();
     return;
   }
-  body.innerHTML=dash+retR.map(r=>{
+  const searchBar=`<div style="padding:8px 14px 4px">
+    <div style="display:flex;align-items:center;gap:8px;background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:8px 11px">
+      <span style="color:var(--txt3);font-size:13px">🔍</span>
+      <input id="ret-search" type="text" placeholder="Buscar por lote, campo, cultivo..." autocapitalize="none" spellcheck="false"
+        oninput="retFiltrarLista(this.value)"
+        style="flex:1;border:none;outline:none;font-family:var(--f);font-size:13px;font-weight:300;background:transparent;color:var(--txt)">
+      <button onclick="document.getElementById('ret-search').value='';retFiltrarLista('')" style="background:none;border:none;color:var(--txt3);font-size:14px;padding:0;cursor:pointer;line-height:1">✕</button>
+    </div>
+  </div>`;
+  body.innerHTML=dash+searchBar+`<div id="ret-list">`+retRenderLista(retR)+`</div>`;
+}
+function retRenderLista(lista){
+  return lista.map(r=>{
     const campoLbl=CFG[r.cliente_id]?.campos[r.campo_id]?.lbl||r.campo_id||'—';
     const urgColor=r.urgencia==='YA'?'var(--red)':r.urgencia?.toLowerCase().includes('2-3')?'var(--ora)':'var(--txt2)';
     return `<div class="rli" data-id="${r.id}" onclick="retStk.push({type:'ver',id:this.dataset.id});retRend()">
@@ -1307,7 +1319,14 @@ function retRL(body){
       <div class="rli-m" style="margin-bottom:3px"><span>📅 ${r.fecha}</span><span>${cl(r.cultivo)||r.cultivo||'—'}</span>${r.numero_receta?`<span>Rec. ${r.numero_receta}</span>`:''}</div>
       ${r.objetivo||r.urgencia?`<div class="rli-m" style="gap:6px">${r.objetivo?`<span style="background:var(--surf2);border-radius:3px;padding:1px 6px;font-size:10px">${r.objetivo}</span>`:''}${r.urgencia?`<span style="color:${urgColor};font-weight:400">⏱ ${r.urgencia}</span>`:''}</div>`:''}
     </div>`;
-  }).join('');
+  }).join('')||'<div class="empty" style="padding:24px 0">Sin resultados</div>';
+}
+function retFiltrarLista(q){
+  const list=document.getElementById('ret-list');if(!list)return;
+  if(!q.trim()){list.innerHTML=retRenderLista(retR);return;}
+  const s=q.toLowerCase();
+  const fil=retR.filter(r=>(r.lote_id||'').toLowerCase().includes(s)||(r.campo_id||'').toLowerCase().includes(s)||(CFG[r.cliente_id]?.campos[r.campo_id]?.lbl||'').toLowerCase().includes(s)||(r.cultivo||'').toLowerCase().includes(s)||String(r.numero_receta||'').includes(s));
+  list.innerHTML=retRenderLista(fil);
 }
 function retRF(body){
   const copts=Object.entries(CFG).map(([k,v])=>'<option value="'+k+'"'+(SESSION.c[0]==='all'&&k===ACTIVE_CLI?' selected':'')+'>'+v.lbl+'</option>').join('');
