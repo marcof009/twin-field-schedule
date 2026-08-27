@@ -1590,10 +1590,7 @@ async function retG(){
   if(!lotes.length){toast('Seleccioná al menos un lote');return;}
   try{
     for(const l of lotes){
-      const loteArea=parseFloat(D?.lotes?.find(x=>x.name===l.name)?.area)||null;
-      const haAplicar=parseFloat(l.ha)||null;
-      const ha_aplicar=(haAplicar&&loteArea&&Math.abs(haAplicar-loteArea)>0.01)?haAplicar:null;
-      await sbI('recetas',{...base,lote_id:l.name,anotacion:null,ha_aplicar});
+      await sbI('recetas',{...base,lote_id:l.name,anotacion:null});
     }
     toast(lotes.length>1?lotes.length+' recetas guardadas ✓':'Receta guardada ✓');
     retStk=[];retInit();
