@@ -2862,14 +2862,20 @@ async function retGenPlano(){
   retToggleOrden();
 }
 
+async function retRecargar(){
+  const q=SESSION.r==='aplicador'?'cliente_id=eq.'+SESSION.c[0]+'&order=fecha.desc&limit=200':
+    SESSION.c[0]==='all'?'cliente_id=eq.'+ACTIVE_CLI+'&order=created_at.desc&limit=200':
+    'cliente_id=eq.'+SESSION.c[0]+'&order=created_at.desc&limit=200';
+  retR=await sbG('recetas',q);
+  retR.sort((a,b)=>{if(a.estado==='pendiente'&&b.estado!=='pendiente')return -1;if(b.estado==='pendiente'&&a.estado!=='pendiente')return 1;return new Date(b.fecha)-new Date(a.fecha);});
+}
 async function retRevertir(id){
   if(!confirm('¿Revertir esta receta a pendiente?'))return;
   try{
     const r=await fetch(SB_URL+'/rest/v1/recetas?id=eq.'+id,{method:'PATCH',headers:{...SBH,'Prefer':'return=minimal'},body:JSON.stringify({estado:'pendiente',fecha_aplicacion:null,operador:null,obs_aplicacion:null})});
     if(!r.ok)throw new Error(await r.text());
     toast('Revertida a pendiente ✓');
-    retR=await (async()=>{const q=SESSION.c[0]==='all'?'cliente_id=eq.'+ACTIVE_CLI+'&order=created_at.desc&limit=200':'cliente_id=eq.'+SESSION.c[0]+'&order=created_at.desc&limit=200';return sbG('recetas',q);})();
-    retR.sort((a,b)=>{if(a.estado==='pendiente'&&b.estado!=='pendiente')return -1;if(b.estado==='pendiente'&&a.estado!=='pendiente')return 1;return new Date(b.fecha)-new Date(a.fecha);});
+    await retRecargar();
     retStk.pop();retRend();
   }catch(e){toast('Error: '+e.message);}
 }
@@ -2880,7 +2886,7 @@ async function retCancelar(id){
     const r=await fetch(SB_URL+'/rest/v1/recetas?id=eq.'+id,{method:'PATCH',headers:{...SBH,'Prefer':'return=representation'},body:JSON.stringify({estado:'cancelado'})});
     if(!r.ok)throw new Error(await r.text());
     toast('Receta cancelada');
-    retR=await sbG('recetas',SESSION.r==='aplicador'?'cliente_id=eq.'+SESSION.c[0]+'&order=fecha.desc&limit=200':'order=created_at.desc&limit=200');
+    await retRecargar();
     retStk.pop();retRend();
   }catch(e){toast('Error: '+e.message);}
 }
@@ -2896,7 +2902,7 @@ async function retMarcarAplicado(id){
     });
     if(!r.ok)throw new Error(await r.text());
     toast('Marcado como aplicado ✓');
-    retR=await sbG('recetas','order=created_at.desc&limit=100');
+    await retRecargar();
     retStk.pop();retRend();
   }catch(e){toast('Error: '+e.message);}
 }
