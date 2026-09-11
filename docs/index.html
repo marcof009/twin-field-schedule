@@ -2439,7 +2439,7 @@ function retRenderReporte(){
     // Sumar productos
     const totales={};
     recs.forEach(r=>{
-      const ha=parseFloat(r.caudal)||parseFloat(D?.lotes.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area)||0;
+      const ha=parseFloat(r.ha_aplicar)||parseFloat(D?.lotes.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area)||0;
       (r.productos||[]).forEach(p=>{
         const nombre=p.nombre||p.n||'—';
         const dosis=parseFloat(p.dosis||p.d)||0;
@@ -2452,7 +2452,7 @@ function retRenderReporte(){
     });
     const totalHa=[...new Set(recs.map(r=>r.lote_id+r.campo_id))].reduce((s,k)=>{
       const r=recs.find(x=>(x.lote_id+x.campo_id)===k);
-      return s+(parseFloat(r.caudal)||parseFloat(D?.lotes.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area)||0);
+      return s+(parseFloat(r.ha_aplicar)||parseFloat(D?.lotes.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area)||0);
     },0);
     html+=`<div style="margin:14px 14px 0">
       <div class="rsect">${cliLbl} — ${recs.length} receta${recs.length!==1?'s':''} pendiente${recs.length!==1?'s':''}</div>
