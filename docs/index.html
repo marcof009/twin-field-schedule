@@ -1231,14 +1231,19 @@ function retDashboard(){
   const ok=retR.filter(r=>r.estado==='ok').length;
   const canc=retR.filter(r=>r.estado==='cancelado').length;
   const anul=retR.filter(r=>r.estado==='anulada').length;
+  const getHaR=r=>{const e=parseFloat(r.ha_aplicar);if(!isNaN(e)&&e>0)return e;const a=parseFloat(D?.lotes?.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area);return(!isNaN(a)&&a>0)?a:0;};
+  const pendHa=retR.filter(r=>r.estado==='pendiente').reduce((s,r)=>s+getHaR(r),0);
+  const okHa=retR.filter(r=>r.estado==='ok').reduce((s,r)=>s+getHaR(r),0);
   const pOn=retFiltroPend;
   return `<div style="display:flex;gap:8px;padding:10px 14px 0;flex-wrap:wrap">
     <div onclick="retTogglePend()" style="cursor:pointer;background:${pOn?'var(--blu)':'rgba(38,115,168,.08)'};border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center;transition:all .15s">
       <div style="font-size:22px;font-weight:200;color:${pOn?'#fff':'var(--blu)'}">${pend}</div>
+      <div style="font-size:10px;font-weight:300;color:${pOn?'rgba(255,255,255,.8)':'var(--blu)'};margin-top:1px">${pendHa>0?pendHa.toFixed(0)+' ha':''}</div>
       <div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:${pOn?'#fff':'var(--blu)'}">Pendientes</div>
     </div>
     <div style="background:rgba(74,158,74,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center">
       <div style="font-size:22px;font-weight:200;color:var(--grn)">${ok}</div>
+      <div style="font-size:10px;font-weight:300;color:var(--grn);margin-top:1px">${okHa>0?okHa.toFixed(0)+' ha':''}</div>
       <div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--grn)">Aplicadas</div>
     </div>
     ${canc?`<div style="background:rgba(184,50,50,.08);border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center"><div style="font-size:22px;font-weight:200;color:var(--red)">${canc}</div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--red)">Canceladas</div></div>`:''}
@@ -1255,7 +1260,7 @@ function retRenderPendDetalle(){
     const urgColor=r.urgencia==='YA'?'var(--red)':r.urgencia?.toLowerCase().includes('2-3')?'var(--ora)':'var(--txt2)';
     return `<div class="rli" data-id="${r.id}" onclick="retStk.push({type:'ver',id:this.dataset.id});retRend()" style="cursor:pointer">
       <div class="rli-top">
-        <div class="rli-n">${campoLbl} · Lote ${(r.lote_id||'?').toUpperCase()}</div>
+        <div class="rli-n">${(campoLbl||'').toUpperCase()} · lote ${r.lote_id||'?'}</div>
         ${r.numero_receta?`<span style="font-size:10px;color:var(--txt3)">Rec. ${r.numero_receta}</span>`:''}
       </div>
       <div class="rli-m" style="margin-bottom:4px"><span>📅 ${r.fecha}</span><span>${cl(r.cultivo)||r.cultivo||'—'}</span>${r.objetivo?`<span style="background:var(--surf2);border-radius:3px;padding:1px 6px;font-size:10px">${r.objetivo}</span>`:''}${r.urgencia?`<span style="color:${urgColor}">⏱ ${r.urgencia}</span>`:''}</div>
@@ -1290,7 +1295,7 @@ function retRL(body){
         <div style="display:flex;align-items:flex-start;gap:10px" onclick="retToggleSel(this.closest('.rli'))">
           <div style="width:20px;height:20px;border-radius:4px;border:1.5px solid ${sel?'var(--acc)':'var(--bord2)'};background:${sel?'var(--acc)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">${sel?'<span style="color:#fff;font-size:12px">✓</span>':''}</div>
           <div style="flex:1">
-            <div class="rli-top"><div class="rli-n">Rec. ${r.numero_receta||'—'} · ${campoLbl?campoLbl+' · ':''}Lote ${(r.lote_id||'?').toUpperCase()}</div><span class="ep ep-${r.estado||'pendiente'}">${r.estado||'pendiente'}</span></div>
+            <div class="rli-top"><div class="rli-n">Rec. ${r.numero_receta||'—'} · ${campoLbl?(campoLbl).toUpperCase()+' · ':''}lote ${r.lote_id||'?'}</div><span class="ep ep-${r.estado||'pendiente'}">${r.estado||'pendiente'}</span></div>
             <div class="rli-m"><span>📅 ${r.fecha}</span><span>${r.cultivo||'—'}</span>${r.objetivo?`<span style="color:var(--txt3)">${r.objetivo}</span>`:''}</div>
           </div>
           <button onclick="event.stopPropagation();retOrdenToggleDetalle('det-${r.id}')" style="background:none;border:1px solid var(--bord2);border-radius:var(--r2);padding:3px 8px;font-size:10px;color:var(--txt2);cursor:pointer;flex-shrink:0;font-family:var(--f)">Ver</button>
@@ -1326,7 +1331,7 @@ function retRenderLista(lista){
     const urgColor=r.urgencia==='YA'?'var(--red)':r.urgencia?.toLowerCase().includes('2-3')?'var(--ora)':'var(--txt2)';
     return `<div class="rli" data-id="${r.id}" onclick="retStk.push({type:'ver',id:this.dataset.id});retRend()">
       <div class="rli-top">
-        <div class="rli-n">${campoLbl} · Lote ${(r.lote_id||'?').toUpperCase()}</div>
+        <div class="rli-n">${(campoLbl||'').toUpperCase()} · lote ${r.lote_id||'?'}</div>
         <span class="ep ep-${r.estado||'pendiente'}">${r.estado||'pendiente'}</span>
       </div>
       <div class="rli-m" style="margin-bottom:3px"><span>📅 ${r.fecha}</span><span>${cl(r.cultivo)||r.cultivo||'—'}</span>${r.numero_receta?`<span>Rec. ${r.numero_receta}</span>`:''}</div>
