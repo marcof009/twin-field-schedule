@@ -1543,7 +1543,7 @@ function retLotesSeleccionados(){
     const haId='rha-'+cb.value.replace(/[^a-zA-Z0-9]/g,'_');
     const haInput=document.querySelector('#'+haId+' input[type=number]');
     const ha=haInput&&haInput.value?haInput.value:cb.dataset.ha;
-    return{name:cb.value,ha};
+    return{name:cb.value,ha,haOriginal:cb.dataset.ha};
   });
 }
 function retUA(){}
@@ -1596,8 +1596,9 @@ async function retG(){
   try{
     for(const l of lotes){
       const haAplicar=parseFloat(l.ha)||null;
+      const haOrig=parseFloat(l.haOriginal)||null;
       const recData={...base,lote_id:l.name,anotacion:null};
-      if(haAplicar)recData.ha_aplicar=haAplicar;
+      if(haAplicar&&haAplicar!==haOrig)recData.ha_aplicar=haAplicar;
       await sbI('recetas',recData);
     }
     toast(lotes.length>1?lotes.length+' recetas guardadas ✓':'Receta guardada ✓');
