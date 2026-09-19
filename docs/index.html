@@ -316,7 +316,7 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
     <div class="mg">
       <div class="mc c-s" onclick="openMod('schedule')"><div class="mac"></div><div class="mi">📅</div><div class="mn">Proyección</div><div class="md">Mapa de lotes y cultivos</div></div>
       <div class="mc c-rec" onclick="openMod('recorridas')"><div class="mac"></div><div class="mi">📝</div><div class="mn">Recorridas</div><div class="md">Observaciones en campo</div></div>
-      <div class="mc c-r" onclick="openMod('recetas')"><div class="mac"></div><div class="mi">💧</div><div class="mn">Recetas</div><div class="md">Gestión de pulverizaciones</div></div>
+      <div class="mc c-r" id="mc-recetas" onclick="openMod('recetas')" style="position:relative"><div class="mac"></div><div class="mi">💧</div><div class="mn">Recetas</div><div class="md">Gestión de pulverizaciones</div><div id="ret-notif-bell" style="display:none;position:absolute;top:8px;right:8px;font-size:16px;line-height:1">🔔</div></div>
       <div class="mc c-su" onclick="openMod('suelos')"><div class="mac"></div><div class="mi">🧪</div><div class="mn">Análisis de Suelos</div><div class="md">Análisis de laboratorio</div></div>
       <div class="mc c-sb" onclick="openMod('siembra')"><div class="mac"></div><div class="mi">🚜</div><div class="mn">Siembra</div><div class="md">Avance del plan de siembra</div></div>
       <div class="mc c-pl" onclick="openMod('planos')"><div class="mac"></div><div class="mi">🗺️</div><div class="mn">Planos</div><div class="md">Dimensiones y superficies</div></div>
@@ -487,7 +487,7 @@ function goHome(){
     ACTIVE_CLI=saved&&CFG[saved]?saved:'la_alicia';
     sel.value=ACTIVE_CLI;
   }
-  SS('home');
+  SS('home');retNotifCheck();
 }
 function homeCambioCli(ck2){
   ACTIVE_CLI=ck2;
@@ -496,8 +496,10 @@ function homeCambioCli(ck2){
 }
 
 // NAV
-function openMod(m){SS(m);if(m==='schedule')schInit();else if(m==='recorridas')recInit();else if(m==='recetas')retInit();else if(m==='suelos')suelInit();else if(m==='siembra')siembraInit();else if(m==='planos')planosInit();}
-function closeMod(m){SS('home');if(m==='schedule'){schCP();schCR();}}
+function retNotifSet(v){try{if(v)localStorage.setItem('ret_notif','1');else localStorage.removeItem('ret_notif');}catch(e){}const b=document.getElementById('ret-notif-bell');if(b)b.style.display=v?'block':'none';}
+function retNotifCheck(){try{const b=document.getElementById('ret-notif-bell');if(b)b.style.display=localStorage.getItem('ret_notif')?'block':'none';}catch(e){}}
+function openMod(m){SS(m);if(m==='schedule')schInit();else if(m==='recorridas')recInit();else if(m==='recetas'){retNotifSet(false);retInit();}else if(m==='suelos')suelInit();else if(m==='siembra')siembraInit();else if(m==='planos')planosInit();}
+function closeMod(m){SS('home');if(m==='schedule'){schCP();schCR();}retNotifCheck();}
 
 // CROP COLORS
 const CC={
@@ -1587,7 +1589,7 @@ async function retG(){
     try{
       const res=await fetch(SB_URL+'/rest/v1/recetas?id=eq.'+retEditId,{method:'PATCH',headers:SBH,body:JSON.stringify(rec)});
       if(!res.ok)throw new Error(await res.text());
-      toast('Receta actualizada ✓');retEditId=null;retStk=[];retInit();
+      toast('Receta actualizada ✓');retEditId=null;retStk=[];retNotifSet(true);retInit();
     }catch(e){toast('Error: '+e.message);}
     return;
   }
@@ -1602,7 +1604,7 @@ async function retG(){
       await sbI('recetas',recData);
     }
     toast(lotes.length>1?lotes.length+' recetas guardadas ✓':'Receta guardada ✓');
-    retStk=[];retInit();
+    retStk=[];retNotifSet(true);retInit();
   }catch(e){toast('Error: '+e.message);}
 }
 async function retEliminar(id){
