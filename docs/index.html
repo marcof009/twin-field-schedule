@@ -1192,11 +1192,18 @@ async function sbSetField(campoKey,loteId,field,val){
 // RECETAS
 let retStk=[],retP=[],retR=[];
 let retOrdenMode=false,retSel=new Set(),retRepMode=false;
+let retTipo=null;
+const RET_TIPOS=[
+  {key:'pulverizacion',lbl:'Pulverización',icon:'💧',desc:'Herbicidas, fungicidas, insecticidas'},
+  {key:'fertilizacion',lbl:'Fertilización',icon:'🌱',desc:'Aplicaciones de fertilizantes'},
+  {key:'otras',lbl:'Otras aplicaciones',icon:'⚙️',desc:'Cebo, aéreo, drone, etc.'},
+];
+function retTipoLbl(k){return RET_TIPOS.find(t=>t.key===k)?.lbl||k;}
 async function retInit(){
-  retStk=[];retOrdenMode=false;retRepMode=false;retFiltroPend=false;retSel=new Set();
+  retStk=[];retOrdenMode=false;retRepMode=false;retFiltroPend=false;retSel=new Set();retTipo=null;
   document.getElementById('ret-title').textContent=SESSION.c[0]==='all'?'Recetas — '+(CFG[ACTIVE_CLI]?.lbl||''):'Recetas';
-  document.getElementById('ret-add').style.display=SESSION.r==='admin'?'block':'none';
-  document.getElementById('ret-orden-btn').style.display='block';document.getElementById('ret-rep-btn').style.display='block';
+  document.getElementById('ret-add').style.display='none';
+  document.getElementById('ret-orden-btn').style.display='none';document.getElementById('ret-rep-btn').style.display='none';
   // Cargar productos desde Dropbox si no están cargados
   if(!PRODUCTOS.length){
     try{
@@ -1222,22 +1229,49 @@ async function retInit(){
   if((!D?.lotes?.length)&&ck2){try{await schLoad(ck2);}catch(e){}}
   retRend();
 }
-function retBack(){if(!retStk.length){closeMod('recetas');return;}retStk.pop();retRend();}
+function retBack(){
+  if(retStk.length){retStk.pop();retRend();return;}
+  if(retTipo){retTipo=null;retOrdenMode=false;retRepMode=false;retFiltroPend=false;retSel=new Set();retRend();return;}
+  closeMod('recetas');
+}
 function retNueva(){retEditId=null;retStk.push({type:'nueva'});retP=[];drawState.annotation=null;retRend();}
+function retSelTipo(k){retTipo=k;retOrdenMode=false;retRepMode=false;retFiltroPend=false;retSel=new Set();retRend();}
+function retRenderTipos(body){
+  const all=retR;
+  body.innerHTML='<div style="padding:14px 14px 0">'+RET_TIPOS.map(t=>{
+    const pend=all.filter(r=>r.tipo===t.key&&r.estado==='pendiente').length;
+    const ok=all.filter(r=>r.tipo===t.key&&r.estado==='ok').length;
+    return `<div onclick="retSelTipo('${t.key}')" style="display:flex;align-items:center;gap:14px;background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;cursor:pointer">
+      <div style="font-size:28px;line-height:1">${t.icon}</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:400">${t.lbl}</div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:2px">${t.desc}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        ${pend?`<div style="font-size:12px;color:var(--blu);font-weight:500">${pend} pend.</div>`:''}
+        ${ok?`<div style="font-size:11px;color:var(--grn)">${ok} aplic.</div>`:''}
+      </div>
+    </div>`;
+  }).join('')+'</div>';
+}
 function retRend(){
   const body=document.getElementById('ret-body');const t=retStk[retStk.length-1];
-  document.getElementById('ret-add').style.display=(!t&&SESSION.r==='admin')?'block':'none';
-  document.getElementById('ret-title').textContent=t?(t.type==='nueva'?'Nueva receta':'Detalle'):'Recetas';
-  if(!t){retRL(body);}else if(t.type==='nueva'){retRF(body);}else{retRD(body,t.id);}
+  document.getElementById('ret-add').style.display=(!t&&retTipo&&SESSION.r==='admin')?'block':'none';
+  document.getElementById('ret-orden-btn').style.display=(!t&&retTipo)?'block':'none';
+  document.getElementById('ret-rep-btn').style.display=(!t&&retTipo)?'block':'none';
+  document.getElementById('ret-title').textContent=t?(t.type==='nueva'?'Nueva receta':'Detalle'):retTipo?retTipoLbl(retTipo):'Recetas';
+  if(!t&&!retTipo){retRenderTipos(body);}
+  else if(!t){retRL(body);}else if(t.type==='nueva'){retRF(body);}else{retRD(body,t.id);}
 }
 function retDashboard(){
-  const pend=retR.filter(r=>r.estado==='pendiente').length;
-  const ok=retR.filter(r=>r.estado==='ok').length;
-  const canc=retR.filter(r=>r.estado==='cancelado').length;
-  const anul=retR.filter(r=>r.estado==='anulada').length;
+  const rT=retR.filter(r=>r.tipo===retTipo);
+  const pend=rT.filter(r=>r.estado==='pendiente').length;
+  const ok=rT.filter(r=>r.estado==='ok').length;
+  const canc=rT.filter(r=>r.estado==='cancelado').length;
+  const anul=rT.filter(r=>r.estado==='anulada').length;
   const getHaR=r=>{const e=parseFloat(r.ha_aplicar);if(!isNaN(e)&&e>0)return e;const a=parseFloat(D?.lotes?.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area);return(!isNaN(a)&&a>0)?a:0;};
-  const pendHa=retR.filter(r=>r.estado==='pendiente').reduce((s,r)=>s+getHaR(r),0);
-  const okHa=retR.filter(r=>r.estado==='ok').reduce((s,r)=>s+getHaR(r),0);
+  const pendHa=rT.filter(r=>r.estado==='pendiente').reduce((s,r)=>s+getHaR(r),0);
+  const okHa=rT.filter(r=>r.estado==='ok').reduce((s,r)=>s+getHaR(r),0);
   const pOn=retFiltroPend;
   return `<div style="display:flex;gap:8px;padding:10px 14px 0;flex-wrap:wrap">
     <div onclick="retTogglePend()" style="cursor:pointer;background:${pOn?'var(--blu)':'rgba(38,115,168,.08)'};border-radius:8px;padding:8px 12px;flex:1;min-width:80px;text-align:center;transition:all .15s">
@@ -1257,7 +1291,7 @@ function retDashboard(){
 let retFiltroPend=false;
 function retTogglePend(){retFiltroPend=!retFiltroPend;retRend();}
 function retRenderPendDetalle(){
-  const pend=retR.filter(r=>r.estado==='pendiente');
+  const pend=retR.filter(r=>r.tipo===retTipo&&r.estado==='pendiente');
   if(!pend.length)return `<div class="empty">No hay recetas pendientes</div>`;
   return pend.map(r=>{
     const campoLbl=CFG[r.cliente_id]?.campos[r.campo_id]?.lbl||r.campo_id||'—';
@@ -1277,7 +1311,8 @@ function retRenderPendDetalle(){
 }
 function retRL(body){
   const dash=retDashboard();
-  if(!retR.length){body.innerHTML=dash+'<div class="empty">Sin recetas</div>';return;}
+  const retRT=retR.filter(r=>r.tipo===retTipo);
+  if(!retRT.length){body.innerHTML=dash+'<div class="empty">Sin recetas</div>';return;}
   if(retRepMode){
     body.innerHTML=dash+retRenderReporte();
     return;
@@ -1291,7 +1326,7 @@ function retRL(body){
       <button onclick="retGenPlano()" style="width:100%;background:var(--blu);color:#fff;border:none;border-radius:var(--r2);padding:10px;font-size:12px;font-weight:400;font-family:var(--f);text-align:left;padding-left:14px">🗺️ Exportar Plano</button>
     </div>`;
     body.innerHTML=dash+btnBar+`<div style="padding:6px 14px 4px;font-size:10px;color:var(--txt3)">Seleccioná las recetas a incluir</div>`+
-    retR.map(r=>{
+    retRT.map(r=>{
       const sel=retSel.has(r.id);
       const prods=(r.productos||[]).map(p=>`<span style="background:var(--surf3);border-radius:3px;padding:1px 6px;font-size:10px;white-space:nowrap">${p.nombre||p.n||'?'} ${p.dosis||p.d||''} ${p.unidad||p.u||''}</span>`).join('');
       const campoLbl=CFG[r.cliente_id]?.campos[r.campo_id]?.lbl||r.campo_id||'';
@@ -1327,7 +1362,7 @@ function retRL(body){
       <button onclick="document.getElementById('${id}').value='';retFiltrarLista()" style="background:none;border:none;color:var(--txt3);font-size:12px;padding:0;cursor:pointer;opacity:.6">✕</button>
     </div>`).join('')}
   </div>`;
-  body.innerHTML=dash+searchBar+`<div id="ret-list">`+retRenderLista(retR)+`</div>`;
+  body.innerHTML=dash+searchBar+`<div id="ret-list">`+retRenderLista(retRT)+`</div>`;
 }
 function retRenderLista(lista){
   return lista.map(r=>{
@@ -1349,6 +1384,7 @@ function retFiltrarLista(){
   const qC=(document.getElementById('ret-f-campo')?.value||'').toLowerCase().trim();
   const qT=(document.getElementById('ret-f-trat')?.value||'').toLowerCase().trim();
   const fil=retR.filter(r=>{
+    if(r.tipo!==retTipo)return false;
     if(qL&&!(r.lote_id||'').toLowerCase().includes(qL))return false;
     if(qC&&!(CFG[r.cliente_id]?.campos[r.campo_id]?.lbl||r.campo_id||'').toLowerCase().includes(qC))return false;
     if(qT&&!(r.objetivo||'').toLowerCase().includes(qT)&&!(r.cultivo||'').toLowerCase().includes(qT))return false;
@@ -1584,7 +1620,7 @@ function retAP(){const n=document.getElementById('rpn').value.trim();if(!n){toas
 function retRP(){const el=document.getElementById('rpl');if(!el)return;el.innerHTML=retP.map((p,i)=>'<div class="pr"><div><div class="pr-n">'+p.nombre+'</div>'+(p.pa?'<div style="font-size:10px;color:var(--txt3)">'+p.pa+'</div>':'')+'</div><div class="pr-d">'+p.dosis+' '+p.unidad+'</div><button class="pr-del" onclick="retP.splice('+i+',1);retRP()">✕</button></div>').join('');}
 async function retG(){
   if(!retP.length){toast('Agregá al menos un producto');return;}
-  const base={campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,fecha:new Date().toISOString().split('T')[0],cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('robj').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rcau')?.value)||null,observaciones:document.getElementById('rob').value,usuario:SESSION.u,estado:'pendiente',productos:retP};
+  const base={campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,fecha:new Date().toISOString().split('T')[0],cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('robj').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rcau')?.value)||null,observaciones:document.getElementById('rob').value,usuario:SESSION.u,estado:'pendiente',productos:retP,tipo:retTipo||'pulverizacion'};
   if(retEditId){
     const lo=retLotesSeleccionados()[0]?.name||'';if(!lo){toast('Seleccioná un lote');return;}
     const rec={...base,lote_id:lo,anotacion:drawState.annotation||null,editada:true};
@@ -2439,7 +2475,7 @@ function retToggleReporte(){
   retRend();
 }
 function retRenderReporte(){
-  const pendientes=retR.filter(r=>r.estado==='pendiente');
+  const pendientes=retR.filter(r=>r.tipo===retTipo&&r.estado==='pendiente');
   if(!pendientes.length)return `<div class="empty">No hay recetas pendientes</div>`;
   // Agrupar por cliente
   const porCliente={};
