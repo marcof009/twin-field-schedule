@@ -2150,7 +2150,8 @@ function repFiltroBar(campos,filtro,onChange){
 let repSiembraFiltro={campo:''};
 function repRenderSiembra(body){
   const ck2=repGetCli();
-  if((!D?.lotes?.length||!D?.siembra?.length)&&ck2){
+  const hasSiembra=D?.siembra&&Object.keys(D.siembra).length>0;
+  if((!D?.lotes?.length||!hasSiembra)&&ck2){
     body.innerHTML='<div class="empty" style="padding:40px">Cargando datos...</div>';
     schLoad(ck2).then(()=>repRenderSiembra(body)).catch(()=>{body.innerHTML='<div class="empty" style="padding:40px">Sin datos de siembra</div>';});
     return;
@@ -2158,8 +2159,11 @@ function repRenderSiembra(body){
   const campos=repGetCampos();
   const lotes=(D?.lotes||[]).filter(l=>!repSiembraFiltro.campo||l.layer===repSiembraFiltro.campo);
   const rows=lotes.map(l=>{
-    const s=(D?.siembra||[]).find(x=>x.campo===l.layer&&(x.lote===l.name||x.lote===l.name.toUpperCase()));
-    return {campo:l.campo||l.layer,lote:l.name,ha:parseFloat(l.area)||0,cultivo:s?.cultivo||'—',variedad:s?.variedad||'—',antecesor:s?.antecesor||'—',tipo:s?.tipo_cultivo||''};
+    // D.siembra = {campoKey: {loteKey: {cultivo, variedad, antecesor, ...}}}
+    const campoData=D?.siembra?.[l.layer]||{};
+    const loteKey=Object.keys(campoData).find(k=>k===l.name||k===l.name.toUpperCase()||k.toUpperCase()===l.name.toUpperCase());
+    const s=loteKey?campoData[loteKey]:null;
+    return {campo:l.campo||l.layer,lote:l.name,ha:parseFloat(l.area)||0,cultivo:s?.cultivo||'—',variedad:s?.variedad||'—',antecesor:s?.antecesor||'—'};
   }).filter(r=>r.ha>0);
   rows.sort((a,b)=>a.campo.localeCompare(b.campo)||a.lote.localeCompare(b.lote));
 
@@ -2305,14 +2309,17 @@ let repVarFiltro={campo:'',variedad:''};
 function repRenderVar(body){
   const ck2=repGetCli();
   const campos=repGetCampos();
-  if((!D?.lotes?.length||!D?.siembra?.length)&&ck2){
+  const hasSiembra2=D?.siembra&&Object.keys(D.siembra).length>0;
+  if((!D?.lotes?.length||!hasSiembra2)&&ck2){
     body.innerHTML='<div class="empty" style="padding:40px">Cargando datos...</div>';
     schLoad(ck2).then(()=>repRenderVar(body)).catch(()=>{body.innerHTML='<div class="empty" style="padding:40px">Sin datos</div>';});
     return;
   }
   const lotes=(D?.lotes||[]).filter(l=>!repVarFiltro.campo||l.layer===repVarFiltro.campo);
   const rows=lotes.map(l=>{
-    const s=(D?.siembra||[]).find(x=>x.campo===l.layer&&(x.lote===l.name||x.lote===l.name.toUpperCase()));
+    const campoData2=D?.siembra?.[l.layer]||{};
+    const loteKey2=Object.keys(campoData2).find(k=>k===l.name||k.toUpperCase()===l.name.toUpperCase());
+    const s=loteKey2?campoData2[loteKey2]:null;
     return {campo:l.campo||l.layer,lote:l.name,ha:parseFloat(l.area)||0,cultivo:s?.cultivo||'—',variedad:s?.variedad||'—'};
   }).filter(r=>r.ha>0&&r.variedad!=='—');
   const variedades=[...new Set(rows.map(r=>r.variedad))].sort();
