@@ -1745,7 +1745,8 @@ function retRD(body,id){
   const haStr=haVal>0?' <span style="font-size:11px;font-weight:400;color:var(--txt3)">('+haVal.toFixed(0)+' ha)</span>':'';
   const prodsHtml=(r.productos||[]).map(p=>{
     const dosis=parseFloat(p.dosis||p.d)||0;
-    const total=haVal>0&&dosis>0?'<div style="font-size:10px;color:var(--acc);font-weight:500;margin-top:1px">Total: '+(dosis*haVal).toFixed(1)+' '+(p.unidad||p.u||'')+'</div>':'';
+    const uBase=(p.unidad||p.u||'').replace(/\/ha$/i,'').trim();
+    const total=haVal>0&&dosis>0?'<div style="font-size:10px;color:var(--acc);font-weight:500;margin-top:1px">Total: '+(dosis*haVal).toFixed(1)+' '+uBase+'</div>':'';
     return '<div class="pr"><div class="pr-n">'+(p.nombre||p.n||'—')+'</div><div style="text-align:right"><div class="pr-d">'+(p.dosis||p.d||'—')+' '+(p.unidad||p.u||'')+'</div>'+total+'</div></div>';
   }).join('');
   const adjHtml=(()=>{if(!r.adjunto)return '';try{const a=JSON.parse(r.adjunto);if(a.tipo?.startsWith('image/')){return '<div class="rfs">Adjunto</div><img src="'+a.data+'" style="width:100%;border-radius:var(--r2);border:1px solid var(--bord);margin-top:4px">';}return '<div class="rfs">Adjunto</div><div style="background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r2);padding:8px 12px;font-size:11px;color:var(--txt2)">📄 '+(a.nombre||'archivo')+'</div>';}catch(e){return '';}})();
