@@ -2147,7 +2147,73 @@ function repFiltroBar(campos,filtro,onChange){
 }
 
 // ---- SIEMBRA ----
-let repSiembraFiltro={campo:''};
+let repSiembraFiltro={campo:'',cultivo:'',antecesor:'',variedad:''};
+let repSiembraAllRows=[];
+
+function repSiembraGetAllRows(){
+  const lotes=D?.lotes||[];
+  return lotes.map(l=>{
+    const campoData=D?.siembra?.[l.layer]||{};
+    const loteKey=Object.keys(campoData).find(k=>k.toUpperCase()===l.name.toUpperCase());
+    const s=loteKey?campoData[loteKey]:null;
+    return {campoKey:l.layer,campo:l.campo||l.layer,lote:l.name,ha:parseFloat(l.area)||0,cultivo:s?.cultivo||'',variedad:s?.variedad||'',antecesor:s?.antecesor||''};
+  }).filter(r=>r.ha>0);
+}
+
+function repSiembraApplyFiltros(rows,excl){
+  const f=repSiembraFiltro;
+  return rows.filter(r=>
+    (excl==='campo'||!f.campo||r.campoKey===f.campo)&&
+    (excl==='cultivo'||!f.cultivo||r.cultivo===f.cultivo)&&
+    (excl==='antecesor'||!f.antecesor||r.antecesor===f.antecesor)&&
+    (excl==='variedad'||!f.variedad||r.variedad===f.variedad)
+  );
+}
+
+function repSiembraOpts(rows,field,excl){
+  const vals=[...new Set(repSiembraApplyFiltros(rows,excl).map(r=>r[field]).filter(Boolean))].sort();
+  return vals;
+}
+
+function repSiembraDrawPie(rows,totalHa){
+  setTimeout(()=>{
+    const cvs=document.getElementById('rep-pie');const leg=document.getElementById('rep-pie-legend');
+    if(!cvs)return;
+    const COLORS=['#4f8ef7','#f7974f','#4fcf8e','#f74f6a','#b04ff7','#f7d44f','#4fecf7','#f74fb5'];
+    const porCultivo={};
+    rows.forEach(r=>{if(r.cultivo){porCultivo[r.cultivo]=(porCultivo[r.cultivo]||0)+r.ha;}});
+    // add "Resto" slice if filtered < total
+    const filtHa=rows.reduce((s,r)=>s+r.ha,0);
+    const restoHa=totalHa-filtHa;
+    const pieData={...porCultivo};
+    if(restoHa>0.5)pieData['Resto']=(pieData['Resto']||0)+restoHa;
+    const entries=Object.entries(pieData).sort((a,b)=>b[1]-a[1]);
+    const total=entries.reduce((s,[,v])=>s+v,0);
+    if(!total)return;
+    const ctx=cvs.getContext('2d');
+    ctx.clearRect(0,0,300,300);
+    const cx=150,cy=150,rad=110;
+    let angle=-Math.PI/2;
+    entries.forEach(([k,v],i)=>{
+      const col=k==='Resto'?'#e0e0e0':COLORS[i%COLORS.length];
+      const slice=(v/total)*2*Math.PI;
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,rad,angle,angle+slice);ctx.closePath();
+      ctx.fillStyle=col;ctx.fill();
+      if(slice>0.12){
+        const mid=angle+slice/2;
+        const lx=cx+Math.cos(mid)*72,ly=cy+Math.sin(mid)*72;
+        ctx.fillStyle=k==='Resto'?'#888':'#fff';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(((v/total)*100).toFixed(0)+'%',lx,ly);
+      }
+      angle+=slice;
+    });
+    leg.innerHTML=entries.map(([k,v],i)=>{
+      const col=k==='Resto'?'#e0e0e0':COLORS[i%COLORS.length];
+      return `<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${k==='Resto'?'var(--txt3)':'var(--txt)'}"><span style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;border:1px solid rgba(0,0,0,.1)"></span>${k} — ${v.toFixed(0)} ha (${((v/total)*100).toFixed(0)}%)</span>`;
+    }).join('');
+  },30);
+}
+
 function repRenderSiembra(body){
   const ck2=repGetCli();
   const hasSiembra=D?.siembra&&Object.keys(D.siembra).length>0;
@@ -2156,79 +2222,77 @@ function repRenderSiembra(body){
     schLoad(ck2).then(()=>repRenderSiembra(body)).catch(()=>{body.innerHTML='<div class="empty" style="padding:40px">Sin datos de siembra</div>';});
     return;
   }
-  const campos=repGetCampos();
-  const lotes=(D?.lotes||[]).filter(l=>!repSiembraFiltro.campo||l.layer===repSiembraFiltro.campo);
-  const rows=lotes.map(l=>{
-    // D.siembra = {campoKey: {loteKey: {cultivo, variedad, antecesor, ...}}}
-    const campoData=D?.siembra?.[l.layer]||{};
-    const loteKey=Object.keys(campoData).find(k=>k===l.name||k===l.name.toUpperCase()||k.toUpperCase()===l.name.toUpperCase());
-    const s=loteKey?campoData[loteKey]:null;
-    return {campo:l.campo||l.layer,lote:l.name,ha:parseFloat(l.area)||0,cultivo:s?.cultivo||'—',variedad:s?.variedad||'—',antecesor:s?.antecesor||'—'};
-  }).filter(r=>r.ha>0);
+  repSiembraAllRows=repSiembraGetAllRows();
+  const all=repSiembraAllRows;
+  const totalHa=all.reduce((s,r)=>s+r.ha,0);
+  const rows=repSiembraApplyFiltros(all,'');
   rows.sort((a,b)=>a.campo.localeCompare(b.campo)||a.lote.localeCompare(b.lote));
+  const filtHa=rows.reduce((s,r)=>s+r.ha,0);
+  const hasFilter=repSiembraFiltro.campo||repSiembraFiltro.cultivo||repSiembraFiltro.antecesor||repSiembraFiltro.variedad;
 
-  // pie chart data
-  const porCultivo={};
-  rows.forEach(r=>{if(r.cultivo!=='—'){porCultivo[r.cultivo]=(porCultivo[r.cultivo]||0)+r.ha;}});
-  const totalHa=rows.reduce((s,r)=>s+r.ha,0);
-  const COLORS=['#4f8ef7','#f7974f','#4fcf8e','#f74f6a','#b04ff7','#f7d44f','#4fecf7','#f74fb5'];
+  // cascading options
+  const campos=repGetCampos();
+  const cultOpts=repSiembraOpts(all,'cultivo','cultivo');
+  const antOpts=repSiembraOpts(all,'antecesor','antecesor');
+  const varOpts=repSiembraOpts(all,'variedad','variedad');
 
-  const filtroHtml=repFiltroBar(campos,repSiembraFiltro,'repSiembraFiltrar');
+  const selStyle='flex:1;min-width:130px;padding:7px 10px;border:1px solid var(--bord);border-radius:7px;background:var(--surf2);color:var(--txt);font-size:12px';
+  const selActStyle='flex:1;min-width:130px;padding:7px 10px;border:1.5px solid var(--blu);border-radius:7px;background:var(--surf2);color:var(--blu);font-size:12px;font-weight:500';
+
+  const mkSel=(id,opts,field,val,label)=>`<select id="${id}" onchange="repSiembraFiltrar('${field}',this.value)" style="${val?selActStyle:selStyle}">
+    <option value="">${label}</option>
+    ${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o||'(vacío)'}</option>`).join('')}
+  </select>`;
+  const campoSelHtml=`<select id="rsf-campo" onchange="repSiembraFiltrar('campo',this.value)" style="${repSiembraFiltro.campo?selActStyle:selStyle}"><option value="">Campo</option>${campos.map(c=>`<option value="${c.key}" ${repSiembraFiltro.campo===c.key?'selected':''}>${c.label}</option>`).join('')}</select>`;
+
+  const filtroFinal=`<div style="padding:12px 14px;background:var(--surf);border-bottom:1px solid var(--bord)">
+    <div style="font-size:10px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:8px">Filtros</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      ${campoSelHtml}
+      ${mkSel('rsf-cult',cultOpts,'cultivo',repSiembraFiltro.cultivo,'Cultivo')}
+      ${mkSel('rsf-ant',antOpts,'antecesor',repSiembraFiltro.antecesor,'Antecesor')}
+      ${mkSel('rsf-var',varOpts,'variedad',repSiembraFiltro.variedad,'Variedad')}
+    </div>
+    ${hasFilter?`<div style="margin-top:8px;display:flex;align-items:center;gap:8px">
+      <span style="font-size:11px;color:var(--txt3)">${rows.length} lote${rows.length!==1?'s':''} · <b style="color:var(--txt)">${filtHa.toFixed(1)} ha</b> de ${totalHa.toFixed(1)} ha totales</span>
+      <button onclick="repSiembraLimpiar()" style="font-size:11px;padding:3px 10px;border:1px solid var(--bord);border-radius:5px;background:var(--surf2);color:var(--txt3);cursor:pointer">✕ Limpiar</button>
+    </div>`:`<div style="margin-top:6px;font-size:11px;color:var(--txt3)">${rows.length} lotes · ${totalHa.toFixed(1)} ha</div>`}
+  </div>`;
+
   const tablaRows=rows.map(r=>`<tr style="border-bottom:1px solid var(--bord)">
     <td style="padding:7px 8px;font-size:11px;font-weight:500">${r.campo}</td>
     <td style="padding:7px 8px;font-size:11px">${r.lote}</td>
     <td style="padding:7px 8px;font-size:11px;text-align:right">${r.ha.toFixed(1)}</td>
-    <td style="padding:7px 8px;font-size:11px">${r.cultivo}</td>
-    <td style="padding:7px 8px;font-size:11px">${r.variedad}</td>
-    <td style="padding:7px 8px;font-size:11px">${r.antecesor}</td>
+    <td style="padding:7px 8px;font-size:11px">${r.cultivo||'—'}</td>
+    <td style="padding:7px 8px;font-size:11px">${r.variedad||'—'}</td>
+    <td style="padding:7px 8px;font-size:11px">${r.antecesor||'—'}</td>
   </tr>`).join('');
 
-  body.innerHTML=filtroHtml+`
-    <div style="padding:14px">
-      <canvas id="rep-pie" width="300" height="300" style="display:block;margin:0 auto 16px"></canvas>
-      <div id="rep-pie-legend" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;justify-content:center"></div>
-      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
-        <thead><tr style="background:var(--surf2)">
-          <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Campo</th>
-          <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Lote</th>
-          <th style="padding:7px 8px;text-align:right;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">ha</th>
-          <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Cultivo</th>
-          <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Variedad</th>
-          <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Antecesor</th>
-        </tr></thead>
-        <tbody>${tablaRows}</tbody>
-        <tfoot><tr style="background:var(--surf2)">
-          <td colspan="2" style="padding:7px 8px;font-size:11px;font-weight:600">Total</td>
-          <td style="padding:7px 8px;font-size:11px;font-weight:600;text-align:right">${totalHa.toFixed(1)}</td>
-          <td colspan="3"></td>
-        </tr></tfoot>
-      </table></div>
-    </div>`;
+  body.innerHTML=filtroFinal+`<div style="padding:14px">
+    <canvas id="rep-pie" width="300" height="300" style="display:block;margin:0 auto 10px"></canvas>
+    <div id="rep-pie-legend" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;justify-content:center"></div>
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:var(--surf2)">
+        <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Campo</th>
+        <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Lote</th>
+        <th style="padding:7px 8px;text-align:right;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">ha</th>
+        <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Cultivo</th>
+        <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Variedad</th>
+        <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Antecesor</th>
+      </tr></thead>
+      <tbody>${tablaRows}</tbody>
+      <tfoot><tr style="background:var(--surf2)">
+        <td colspan="2" style="padding:7px 8px;font-size:11px;font-weight:600">Total selección</td>
+        <td style="padding:7px 8px;font-size:11px;font-weight:600;text-align:right">${filtHa.toFixed(1)}</td>
+        <td colspan="3" style="padding:7px 8px;font-size:11px;color:var(--txt3)">${hasFilter?'de '+totalHa.toFixed(1)+' ha totales':''}</td>
+      </tr></tfoot>
+    </table></div>
+  </div>`;
 
-  // draw pie
-  setTimeout(()=>{
-    const cvs=document.getElementById('rep-pie');const leg=document.getElementById('rep-pie-legend');
-    if(!cvs)return;
-    const entries=Object.entries(porCultivo).sort((a,b)=>b[1]-a[1]);
-    const total=entries.reduce((s,[,v])=>s+v,0);
-    const ctx=cvs.getContext('2d');
-    const cx=150,cy=150,r=110;
-    let angle=-Math.PI/2;
-    entries.forEach(([k,v],i)=>{
-      const slice=(v/total)*2*Math.PI;
-      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,angle,angle+slice);ctx.closePath();
-      ctx.fillStyle=COLORS[i%COLORS.length];ctx.fill();
-      // label %
-      const mid=angle+slice/2;
-      const lx=cx+Math.cos(mid)*72,ly=cy+Math.sin(mid)*72;
-      ctx.fillStyle='#fff';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
-      if(slice>0.15)ctx.fillText(((v/total)*100).toFixed(0)+'%',lx,ly);
-      angle+=slice;
-    });
-    leg.innerHTML=entries.map(([k,v],i)=>`<span style="display:flex;align-items:center;gap:4px;font-size:11px"><span style="width:10px;height:10px;border-radius:50%;background:${COLORS[i%COLORS.length]};flex-shrink:0"></span>${k} (${v.toFixed(0)} ha)</span>`).join('');
-  },50);
+  repSiembraDrawPie(rows,totalHa);
 }
-function repSiembraFiltrar(campo,val){repSiembraFiltro[campo]=val;repRenderSiembra(document.getElementById('rep-body'));}
+function repSiembraFiltrar(field,val){repSiembraFiltro[field]=val;repRenderSiembra(document.getElementById('rep-body'));}
+function repSiembraLimpiar(){repSiembraFiltro={campo:'',cultivo:'',antecesor:'',variedad:''};repRenderSiembra(document.getElementById('rep-body'));}
 
 // ---- PULVERIZACIONES ----
 let repPulvFiltro={campo:'',fecha:''};
