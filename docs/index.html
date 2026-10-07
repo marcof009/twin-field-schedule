@@ -541,7 +541,7 @@ function ck(v){if(!v||!String(v).trim()||v==='null')return'default';const s=v.to
 const cc=v=>CC[ck(v)]||CC.default, cl=v=>CL[ck(v)]||v||'—';
 
 // SCHEDULE
-let sYr='r26',sCmp='',sSel=null,sTab='pulv',sRO=false;
+let sYr='r26',sCmp='',sSel=null,sTab='pulv',sRO=false,sSiembraTab='1ra';
 let sVp={cx:0,cy:0,scale:1},sDrg={on:false},sPnch={on:false};
 const sCV=document.getElementById('scv'),sCX=sCV.getContext('2d');
 
@@ -636,7 +636,23 @@ function pSiembra(buf,ck2){
   const wb=XLSX.read(buf,{type:'array'});
   const ws=wb.Sheets[wb.SheetNames[0]];
   const rows=XLSX.utils.sheet_to_json(ws,{header:1});
-  const hdrs=rows[0]||{};const ci={};hdrs.forEach((h,i)=>{ci[String(h).trim()]=i;});
+  const hdrs=rows[0]||[];
+  const ci={};const ci2={};const seen={};
+  hdrs.forEach((h,i)=>{const k=String(h).trim();if(!k)return;if(!seen[k]){seen[k]=true;ci[k]=i;}else if(ci2[k]===undefined){ci2[k]=i;}});
+  const parseSiembra=(r,c)=>({
+    cultivo:String(r[c['Cultivo 1ra']??c['Cultivo 2da']??c['Cultivo']]||'').trim(),
+    variedad:String(r[c['Variedad']]||'').trim(),
+    area:parseFloat(r[c['Area_ha']])||0,
+    kg_ha:parseFloat(r[c['Kg_ha']])||0,p_fuente:String(r[c['P_fuente']]||'').trim(),p_dosis:parseFloat(r[c['P_dosis']])||0,
+    ant:String(r[c['Antecesor']]||'').trim(),siembra_fecha:fmtFecha(r[c['siembra_fecha']]),pg:parseFloat(r[c['PG']])||0,p1000:parseFloat(r[c['P1000']])||0,
+    analisis:String(r[c['Analisis']]||'').trim(),curasemilla:String(r[c['Curasemilla']]||'').trim(),
+    siembra_modo:String(r[c['Siembra_modo']]||'').trim(),ferti_modo:String(r[c['ferti_modo']]||'').trim(),
+    semilla_modo:String(r[c['semilla_modo']]||'').trim(),
+    n1_fuente:String(r[c['N1_fuente']]||'').trim(),n1_dosis:parseFloat(r[c['N1_dosis']])||0,
+    n1_fecha:String(r[c['N1_fecha']]||'').trim(),n1_modo:String(r[c['N1_modo']]||'').trim(),
+    n2_fuente:String(r[c['N2_fuente']]||'').trim(),n2_dosis:parseFloat(r[c['N2_dosis']])||0,
+    n2_fecha:String(r[c['N2_fecha']]||'').trim(),n2_modo:String(r[c['N2_modo']]||'').trim(),
+  });
   const res={};
   for(let ri=1;ri<rows.length;ri++){
     const r=rows[ri];
@@ -645,19 +661,9 @@ function pSiembra(buf,ck2){
     const lraw=String(r[ci['Lote']]||'').trim();if(!cmk||!lraw)continue;
     const lk=lraw.toUpperCase().startsWith('LOTE')?lraw.toUpperCase():'LOTE '+lraw.toUpperCase();
     res[cmk]=res[cmk]||{};
-    res[cmk][lk]={
-      cultivo:String(r[ci['Cultivo 1ra']]||'').trim(),variedad:String(r[ci['Variedad']]||'').trim(),
-      area:parseFloat(r[ci['Area_ha']])||0,
-      kg_ha:parseFloat(r[ci['Kg_ha']])||0,p_fuente:String(r[ci['P_fuente']]||'').trim(),p_dosis:parseFloat(r[ci['P_dosis']])||0,
-      ant:String(r[ci['Antecesor']]||'').trim(),siembra_fecha:fmtFecha(r[ci['siembra_fecha']]),pg:parseFloat(r[ci['PG']])||0,p1000:parseFloat(r[ci['P1000']])||0,
-      analisis:String(r[ci['Analisis']]||'').trim(),curasemilla:String(r[ci['Curasemilla']]||'').trim(),
-      siembra_modo:String(r[ci['Siembra_modo']]||'').trim(),ferti_modo:String(r[ci['ferti_modo']]||'').trim(),
-      semilla_modo:String(r[ci['semilla_modo']]||'').trim(),
-      n1_fuente:String(r[ci['N1_fuente']]||'').trim(),n1_dosis:parseFloat(r[ci['N1_dosis']])||0,
-      n1_fecha:String(r[ci['N1_fecha']]||'').trim(),n1_modo:String(r[ci['N1_modo']]||'').trim(),
-      n2_fuente:String(r[ci['N2_fuente']]||'').trim(),n2_dosis:parseFloat(r[ci['N2_dosis']])||0,
-      n2_fecha:String(r[ci['N2_fecha']]||'').trim(),n2_modo:String(r[ci['N2_modo']]||'').trim(),
-    };
+    const s1=parseSiembra(r,ci);
+    const s2=Object.keys(ci2).length?parseSiembra(r,ci2):null;
+    res[cmk][lk]={...s1,s2:s2?.cultivo?s2:null};
   }
   return res;
 }
@@ -722,7 +728,7 @@ function schBLeg(){const seen=new Set();schVL().forEach(l=>{const k=ck(schGC(l))
 document.querySelectorAll('#syp .ybtn').forEach(b=>b.addEventListener('click',()=>{sYr=b.dataset.yr;document.querySelectorAll('#syp .ybtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');schDraw();}));
 document.getElementById('sptabs').addEventListener('click',e=>{const b=e.target.closest('.ptab');if(!b)return;sTab=b.dataset.tab;document.querySelectorAll('#sptabs .ptab').forEach(x=>x.classList.remove('on'));b.classList.add('on');schRT();});
 function schSC(el){sCmp=el.dataset.campo;document.querySelectorAll('#sct .ctab').forEach(x=>x.classList.remove('on'));el.classList.add('on');sSel=null;schCP();if(sRO)schRR();schIV();schDraw();}
-function schOP(l){sSel=l;document.getElementById('spt').textContent=l.name.toUpperCase()+' — '+l.campo;const yl={r26:'2026',r25:'2025',r24:'2024',r23:'2023'}[sYr];const val=schGC(l);document.getElementById('spm').innerHTML='<div class="chip"><div class="cd" style="background:'+cc(val)+'"></div>'+cl(val)+' '+yl+'</div><div class="chip">📐 '+l.area+' ha</div>'+(l.r25?'<div class="chip">↩ '+cl(l.r25)+' 25</div>':'');document.getElementById('spnl').classList.add('open');schDraw();schRT();}
+function schOP(l){sSel=l;sSiembraTab='1ra';document.getElementById('spt').textContent=l.name.toUpperCase()+' — '+l.campo;const yl={r26:'2026',r25:'2025',r24:'2024',r23:'2023'}[sYr];const val=schGC(l);document.getElementById('spm').innerHTML='<div class="chip"><div class="cd" style="background:'+cc(val)+'"></div>'+cl(val)+' '+yl+'</div><div class="chip">📐 '+l.area+' ha</div>'+(l.r25?'<div class="chip">↩ '+cl(l.r25)+' 25</div>':'');document.getElementById('spnl').classList.add('open');schDraw();schRT();}
 function schCP(){document.getElementById('spnl').classList.remove('open');sSel=null;schDraw();}
 function schRT(){if(sTab==='pulv')schRPulv();else if(sTab==='siembra')schRSiembra();else schRSuelos();}
 
@@ -814,16 +820,22 @@ function mpill(v,isVar){if(!v)return'';return'<span class="mp '+(isVar?'mp-v':'m
 function schRSiembra(){
   const body=document.getElementById('spb');
   const key=schSK(sSel);if(!key){body.innerHTML='<div class="empty">Sin datos de siembra para este lote</div>';return;}
-  const s={...(D.siembra[sSel.layer]?.[key]||{})};if(!Object.keys(s).length){body.innerHTML='<div class="empty">Sin datos</div>';return;}
-  const avK=sSel.layer+'|'+sSel.name.toUpperCase();const av=SB_AVANCE[avK];
-  if(av?.sembrado&&av.fecha){s.siembra_fecha=fmtFecha(av.fecha);}
+  const entry=D.siembra[sSel.layer]?.[key];if(!entry||!Object.keys(entry).length){body.innerHTML='<div class="empty">Sin datos</div>';return;}
+  const has2da=!!entry.s2;
+  const subTabs=has2da?`<div style="display:flex;gap:6px;padding:10px 14px 6px;border-bottom:1px solid var(--bord)">
+    <button onclick="sSiembraTab='1ra';schRSiembra()" style="flex:1;padding:6px;font-size:11px;font-weight:500;border-radius:var(--r2);border:1px solid ${sSiembraTab==='1ra'?'var(--acc)':'var(--bord2)'};background:${sSiembraTab==='1ra'?'var(--acc)':'var(--surf2)'};color:${sSiembraTab==='1ra'?'#fff':'var(--txt2)'};font-family:var(--f);cursor:pointer">Cultivo 1ra</button>
+    <button onclick="sSiembraTab='2da';schRSiembra()" style="flex:1;padding:6px;font-size:11px;font-weight:500;border-radius:var(--r2);border:1px solid ${sSiembraTab==='2da'?'var(--acc)':'var(--bord2)'};background:${sSiembraTab==='2da'?'var(--acc)':'var(--surf2)'};color:${sSiembraTab==='2da'?'#fff':'var(--txt2)'};font-family:var(--f);cursor:pointer">Cultivo 2da</button>
+  </div>`:'';
+  const s={...(sSiembraTab==='2da'&&has2da?entry.s2:entry)};
+  if(sSiembraTab==='1ra'){const avK=sSel.layer+'|'+sSel.name.toUpperCase();const av=SB_AVANCE[avK];if(av?.sembrado&&av.fecha)s.siembra_fecha=fmtFecha(av.fecha);}
   const antL={'GR':'Girasol','TR':'Trigo','CB':'Cebada','MZ':'Maíz','SJ':'Soja'}[s.ant]||s.ant||'—';
   const mp=(v)=>{if(!v)return'';const lv=v.toLowerCase();return'<span class="mp '+(lv==='variable'?'mp-v':lv==='directa'?'mp-d':lv==='conv'||lv==='convencional'?'mp-c':'mp-f')+'">'+v+'</span>';};
   let fert='';
   if(s.p_dosis>0)fert+='<div class="srow"><span class="sr-l">Fósforo ('+s.p_fuente+')</span><span class="sr-v">'+s.p_dosis+' kg/ha '+mp(s.ferti_modo)+'</span></div>';
   if(s.n1_dosis>0)fert+='<div class="srow"><span class="sr-l">N1 — '+s.n1_fuente+(s.n1_fecha?' · '+s.n1_fecha:'')+'</span><span class="sr-v">'+s.n1_dosis+' kg/ha '+mp(s.n1_modo)+'</span></div>';
   if(s.n2_dosis>0)fert+='<div class="srow"><span class="sr-l">N2 — '+s.n2_fuente+(s.n2_fecha?' · '+s.n2_fecha:'')+'</span><span class="sr-v">'+s.n2_dosis+' kg/ha '+mp(s.n2_modo)+'</span></div>';
-  body.innerHTML='<div class="scard"><div class="scult">'+cl(s.cultivo)+'</div><div class="svar">'+(s.variedad||'—')+'</div><div class="sgrid"><div class="si"><div class="si-l">Semilla</div><div class="si-v">'+(s.kg_ha||'—')+' <span class="si-u">kg/ha</span> '+mp(s.semilla_modo)+'</div></div><div class="si"><div class="si-l">Siembra</div><div class="si-v">'+mp(s.siembra_modo||'—')+(s.siembra_fecha?' · '+s.siembra_fecha:'')+'</div></div><div class="si"><div class="si-l">Antecesor</div><div class="si-v">'+antL+'</div></div>'+(s.curasemilla?'<div class="si"><div class="si-l">Curasemilla</div><div class="si-v" style="font-size:11px">'+s.curasemilla+'</div></div>':'')+'</div>'+(fert?'<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Fertilización</div>'+fert:'')+'<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Calidad semilla</div><div class="srow"><span class="sr-l">Poder germinativo</span><span class="sr-v">'+(s.pg?(s.pg*100).toFixed(0)+'%':'—')+'</span></div><div class="srow"><span class="sr-l">Peso mil semillas</span><span class="sr-v">'+(s.p1000||'—')+' g</span></div><div class="srow"><span class="sr-l">N° análisis</span><span class="sr-v">'+(s.analisis||'—')+'</span></div></div>';
+  const card='<div class="scard"><div class="scult">'+cl(s.cultivo)+'</div><div class="svar">'+(s.variedad||'—')+'</div><div class="sgrid"><div class="si"><div class="si-l">Semilla</div><div class="si-v">'+(s.kg_ha||'—')+' <span class="si-u">kg/ha</span> '+mp(s.semilla_modo)+'</div></div><div class="si"><div class="si-l">Siembra</div><div class="si-v">'+mp(s.siembra_modo||'—')+(s.siembra_fecha?' · '+s.siembra_fecha:'')+'</div></div><div class="si"><div class="si-l">Antecesor</div><div class="si-v">'+antL+'</div></div>'+(s.curasemilla?'<div class="si"><div class="si-l">Curasemilla</div><div class="si-v" style="font-size:11px">'+s.curasemilla+'</div></div>':'')+'</div>'+(fert?'<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Fertilización</div>'+fert:'')+'<div class="sdiv"></div><div style="font-size:9px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:6px">Calidad semilla</div><div class="srow"><span class="sr-l">Poder germinativo</span><span class="sr-v">'+(s.pg?(s.pg*100).toFixed(0)+'%':'—')+'</span></div><div class="srow"><span class="sr-l">Peso mil semillas</span><span class="sr-v">'+(s.p1000||'—')+' g</span></div><div class="srow"><span class="sr-l">N° análisis</span><span class="sr-v">'+(s.analisis||'—')+'</span></div></div>';
+  body.innerHTML=subTabs+card;
 }
 
 function schTogR(){sRO=!sRO;if(sRO){schCP();schRR();document.getElementById('srpnl').classList.add('open');}else schCR();}
