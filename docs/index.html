@@ -1234,7 +1234,7 @@ function retBack(){
   if(retTipo){retTipo=null;retOrdenMode=false;retRepMode=false;retFiltroPend=false;retSel=new Set();retRend();return;}
   closeMod('recetas');
 }
-function retNueva(){retEditId=null;retStk.push({type:'nueva'});retP=[];drawState.annotation=null;retRend();}
+function retNueva(){retEditId=null;retStk.push({type:'nueva'});retP=[];drawState.annotation=null;retAdjuntoData=null;retRend();}
 function retSelTipo(k){retTipo=k;retOrdenMode=false;retRepMode=false;retFiltroPend=false;retSel=new Set();retRend();}
 function retRenderTipos(body){
   const all=retR;
@@ -1467,8 +1467,17 @@ function retRF(body){
 <option>Rastrojo Avena/Vicia</option>
 <option>Rastrojo Sorgo</option>
 <option>Otro</option></select></div><div class="rff"><label>Caudal (L/ha)</label><input type="number" id="rcau" placeholder="—"></div></div>
-<div class="rfr"><div class="rff"><label>Objetivo</label><select id="robj"><option value="">—</option><option>Barbecho</option><option>Barbecho DOBLE GOLPE</option><option>Pre emergente</option><option>Post emergente</option><option>Fertilizante</option><option>Fungicida</option><option>Insecticida</option><option>Cebo BB</option><option>Aplicación aérea</option><option>Drone</option><option>Otro</option></select></div><div class="rff"></div></div>
+<div class="rfr"><div class="rff"><label>Objetivo</label><select id="robj"><option value="">—</option><option>Barbecho</option><option>Barbecho DOBLE GOLPE</option><option>Pre emergente</option><option>Post emergente</option><option>Fertilizante</option><option>Fungicida</option><option>Insecticida</option><option>Cebo BB</option><option>Aplicación aérea</option><option>Drone</option><option>Otro</option></select></div><div class="rff"><label>Modalidad</label><select id="rmod"><option value="fija">Fija</option><option value="variable">Variable con prescripción</option></select></div></div>
 <div class="rfr full"><div class="rff"><label>Observaciones</label><textarea id="rob" rows="2" placeholder="Notas adicionales..."></textarea></div></div>
+<div class="rfr full"><div class="rff"><label>Adjunto (imagen o PDF)</label>
+  <input type="file" id="radj-input" accept="image/*,.pdf" style="display:none" onchange="retAdjuntoSeleccionado(this)">
+  <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+    <button type="button" onclick="document.getElementById('radj-input').click()" style="background:var(--surf2);border:1px solid var(--bord2);border-radius:var(--r2);padding:7px 14px;font-size:12px;color:var(--txt2);font-family:var(--f);cursor:pointer">📎 Adjuntar archivo</button>
+    <span id="radj-name" style="font-size:11px;color:var(--txt3)"></span>
+    <button id="radj-clear" type="button" onclick="retAdjuntoClear()" style="display:none;background:none;border:none;color:var(--txt3);font-size:13px;cursor:pointer;padding:0">✕</button>
+  </div>
+  <div id="radj-preview" style="margin-top:6px"></div>
+</div></div>
 <div class="rfs">Productos</div>
 <div style="margin-bottom:8px">
   <div style="display:grid;grid-template-columns:1fr auto;gap:5px;align-items:end;margin-bottom:5px">
@@ -1616,11 +1625,36 @@ function retSelProd(nombre,unidad,pa){
   paEl.textContent=pa||'';
   document.getElementById('rpd')?.focus();
 }
+let retAdjuntoData=null;
+function retAdjuntoSeleccionado(input){
+  const file=input.files[0];if(!file)return;
+  if(file.size>3*1024*1024){toast('Archivo muy grande (máx 3 MB)');input.value='';return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    retAdjuntoData={data:e.target.result,nombre:file.name,tipo:file.type};
+    document.getElementById('radj-name').textContent=file.name;
+    document.getElementById('radj-clear').style.display='inline';
+    const prev=document.getElementById('radj-preview');
+    if(file.type.startsWith('image/')){
+      prev.innerHTML=`<img src="${e.target.result}" style="max-width:100%;max-height:180px;border-radius:var(--r2);border:1px solid var(--bord)">`;
+    } else {
+      prev.innerHTML=`<div style="background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r2);padding:8px 12px;font-size:11px;color:var(--txt2)">📄 ${file.name}</div>`;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+function retAdjuntoClear(){
+  retAdjuntoData=null;
+  const inp=document.getElementById('radj-input');if(inp)inp.value='';
+  const nm=document.getElementById('radj-name');if(nm)nm.textContent='';
+  const cl=document.getElementById('radj-clear');if(cl)cl.style.display='none';
+  const pv=document.getElementById('radj-preview');if(pv)pv.innerHTML='';
+}
 function retAP(){const n=document.getElementById('rpn').value.trim();if(!n){toast('Nombre requerido');return;}const su=document.getElementById('rpn-sugg');if(su)su.style.display='none';retP.push({nombre:n,dosis:document.getElementById('rpd').value,unidad:document.getElementById('rpu').value,pa:retSelPA});document.getElementById('rpn').value='';document.getElementById('rpd').value='';retSelPA='';const paEl=document.getElementById('rpn-pa');if(paEl)paEl.textContent='';retRP();}
 function retRP(){const el=document.getElementById('rpl');if(!el)return;el.innerHTML=retP.map((p,i)=>'<div class="pr"><div><div class="pr-n">'+p.nombre+'</div>'+(p.pa?'<div style="font-size:10px;color:var(--txt3)">'+p.pa+'</div>':'')+'</div><div class="pr-d">'+p.dosis+' '+p.unidad+'</div><button class="pr-del" onclick="retP.splice('+i+',1);retRP()">✕</button></div>').join('');}
 async function retG(){
   if(!retP.length){toast('Agregá al menos un producto');return;}
-  const base={campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,fecha:new Date().toISOString().split('T')[0],cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('robj').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rcau')?.value)||null,observaciones:document.getElementById('rob').value,usuario:SESSION.u,estado:'pendiente',productos:retP,tipo:retTipo||'pulverizacion'};
+  const base={campo_id:document.getElementById('rcm').value,cliente_id:document.getElementById('rc').value,fecha:new Date().toISOString().split('T')[0],cultivo:document.getElementById('rcu').value,objetivo:document.getElementById('robj').value,urgencia:document.getElementById('ru').value,destino:document.getElementById('rd').value,caudal:parseFloat(document.getElementById('rcau')?.value)||null,observaciones:document.getElementById('rob').value,usuario:SESSION.u,estado:'pendiente',productos:retP,tipo:retTipo||'pulverizacion',modalidad:document.getElementById('rmod')?.value||'fija',adjunto:retAdjuntoData?JSON.stringify(retAdjuntoData):null};
   if(retEditId){
     const lo=retLotesSeleccionados()[0]?.name||'';if(!lo){toast('Seleccioná un lote');return;}
     const rec={...base,lote_id:lo,anotacion:drawState.annotation||null,editada:true};
@@ -1676,9 +1710,11 @@ function retEditar(id){
         set('rd',r.destino);
         set('robj',r.objetivo);
         set('rob',r.observaciones);
+        set('rmod',r.modalidad||'fija');
         retP=JSON.parse(JSON.stringify(r.productos||[]));
         retRP();
         drawState.annotation=r.anotacion||null;
+        if(r.adjunto){try{retAdjuntoData=JSON.parse(r.adjunto);const nm=document.getElementById('radj-name');const cl=document.getElementById('radj-clear');const pv=document.getElementById('radj-preview');if(nm)nm.textContent=retAdjuntoData.nombre||'adjunto';if(cl)cl.style.display='inline';if(pv&&retAdjuntoData.tipo?.startsWith('image/')){pv.innerHTML=`<img src="${retAdjuntoData.data}" style="max-width:100%;max-height:180px;border-radius:var(--r2);border:1px solid var(--bord)">`;}else if(pv){pv.innerHTML=`<div style="background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r2);padding:8px 12px;font-size:11px;color:var(--txt2)">📄 ${retAdjuntoData.nombre||'adjunto'}</div>`;}}catch(e){retAdjuntoData=null;}}
         const btn=document.querySelector('.rfsave');
         if(btn)btn.textContent='Guardar cambios';
       },400);
@@ -1695,8 +1731,9 @@ function retRD(body,id){
     const total=haVal>0&&dosis>0?'<div style="font-size:10px;color:var(--acc);font-weight:500;margin-top:1px">Total: '+(dosis*haVal).toFixed(1)+' '+(p.unidad||p.u||'')+'</div>':'';
     return '<div class="pr"><div class="pr-n">'+(p.nombre||p.n||'—')+'</div><div style="text-align:right"><div class="pr-d">'+(p.dosis||p.d||'—')+' '+(p.unidad||p.u||'')+'</div>'+total+'</div></div>';
   }).join('');
-  body.innerHTML='<div class="rform"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><div style="font-size:22px;font-weight:200;letter-spacing:-.5px">Rec. '+(r.numero_receta||'—')+'</div><div style="font-size:11px;color:var(--txt2)">'+r.fecha+'</div></div><span class="ep ep-'+(r.estado||'pendiente')+'" style="font-size:10px;padding:4px 8px">'+(r.estado||'pendiente')+'</span></div><div class="sgrid"><div class="si"><div class="si-l">Lote</div><div class="si-v"><span style="font-size:15px;font-weight:600">'+(r.lote_id||'—')+'</span>'+haStr+'</div></div><div class="si"><div class="si-l">Cultivo</div><div class="si-v" style="font-size:12px">'+(r.cultivo||'—')+'</div></div><div class="si"><div class="si-l">Urgencia</div><div class="si-v" style="font-size:12px">'+(r.urgencia||'—')+'</div></div><div class="si"><div class="si-l">Caudal</div><div class="si-v" style="font-size:12px">'+(r.caudal||'—')+' L/ha</div></div></div>'+(r.objetivo?'<div style="background:var(--surf2);border-radius:6px;padding:9px 11px;margin:8px 0;font-size:12px"><span style="font-size:8px;font-weight:500;text-transform:uppercase;color:var(--txt3);display:block;margin-bottom:2px">Objetivo</span>'+r.objetivo+'</div>':'')+'<div class="rfs">Productos</div>'+prodsHtml+(r.observaciones?'<div class="rfs" style="color:var(--red)">Obs.</div><div style="font-size:12px;line-height:1.5;color:var(--red);font-weight:500">'+r.observaciones+'</div>':'')
-    +(r.anotacion?'<div class="rfs">Anotación</div><img src="'+r.anotacion+'" style="width:100%;border-radius:var(--r);border:1px solid var(--bord);margin-top:4px">':'')+
+  const adjHtml=(()=>{if(!r.adjunto)return '';try{const a=JSON.parse(r.adjunto);if(a.tipo?.startsWith('image/')){return '<div class="rfs">Adjunto</div><img src="'+a.data+'" style="width:100%;border-radius:var(--r2);border:1px solid var(--bord);margin-top:4px">';}return '<div class="rfs">Adjunto</div><div style="background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r2);padding:8px 12px;font-size:11px;color:var(--txt2)">📄 '+(a.nombre||'archivo')+'</div>';}catch(e){return '';}})();
+  body.innerHTML='<div class="rform"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><div style="font-size:22px;font-weight:200;letter-spacing:-.5px">Rec. '+(r.numero_receta||'—')+'</div><div style="font-size:11px;color:var(--txt2)">'+r.fecha+'</div></div><span class="ep ep-'+(r.estado||'pendiente')+'" style="font-size:10px;padding:4px 8px">'+(r.estado||'pendiente')+'</span></div><div class="sgrid"><div class="si"><div class="si-l">Lote</div><div class="si-v"><span style="font-size:15px;font-weight:600">'+(r.lote_id||'—')+'</span>'+haStr+'</div></div><div class="si"><div class="si-l">Cultivo</div><div class="si-v" style="font-size:12px">'+(r.cultivo||'—')+'</div></div><div class="si"><div class="si-l">Urgencia</div><div class="si-v" style="font-size:12px">'+(r.urgencia||'—')+'</div></div><div class="si"><div class="si-l">Modalidad</div><div class="si-v" style="font-size:12px">'+(r.modalidad==='variable'?'Variable con prescripción':'Fija')+'</div></div></div>'+(r.objetivo?'<div style="background:var(--surf2);border-radius:6px;padding:9px 11px;margin:8px 0;font-size:12px"><span style="font-size:8px;font-weight:500;text-transform:uppercase;color:var(--txt3);display:block;margin-bottom:2px">Objetivo</span>'+r.objetivo+'</div>':'')+'<div class="rfs">Productos</div>'+prodsHtml+(r.observaciones?'<div class="rfs" style="color:var(--red)">Obs.</div><div style="font-size:12px;line-height:1.5;color:var(--red);font-weight:500">'+r.observaciones+'</div>':'')
+    +adjHtml+(r.anotacion?'<div class="rfs">Anotación</div><img src="'+r.anotacion+'" style="width:100%;border-radius:var(--r);border:1px solid var(--bord);margin-top:4px">':'')+
     ((SESSION.r==='aplicador'||SESSION.r==='admin'||SESSION.r==='cliente')&&r.estado==='pendiente'?`
     <div class="rfs">Acción</div>
     <div style="background:var(--surf2);border-radius:var(--r);padding:12px 13px;margin-bottom:8px">
