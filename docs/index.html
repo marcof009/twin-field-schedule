@@ -637,21 +637,26 @@ function pSiembra(buf,ck2){
   const ws=wb.Sheets[wb.SheetNames[0]];
   const rows=XLSX.utils.sheet_to_json(ws,{header:1});
   const hdrs=rows[0]||[];
-  const ci={};const ci2={};const seen={};
-  hdrs.forEach((h,i)=>{const k=String(h).trim();if(!k)return;if(!seen[k]){seen[k]=true;ci[k]=i;}else if(ci2[k]===undefined){ci2[k]=i;}});
-  const parseSiembra=(r,c)=>({
-    cultivo:String(r[c['Cultivo 1ra']??c['Cultivo 2da']??c['Cultivo']]||'').trim(),
-    variedad:String(r[c['Variedad']]||'').trim(),
-    area:parseFloat(r[c['Area_ha']])||0,
-    kg_ha:parseFloat(r[c['Kg_ha']])||0,p_fuente:String(r[c['P_fuente']]||'').trim(),p_dosis:parseFloat(r[c['P_dosis']])||0,
-    ant:String(r[c['Antecesor']]||'').trim(),siembra_fecha:fmtFecha(r[c['siembra_fecha']]),pg:parseFloat(r[c['PG']])||0,p1000:parseFloat(r[c['P1000']])||0,
-    analisis:String(r[c['Analisis']]||'').trim(),curasemilla:String(r[c['Curasemilla']]||'').trim(),
-    siembra_modo:String(r[c['Siembra_modo']]||'').trim(),ferti_modo:String(r[c['ferti_modo']]||'').trim(),
-    semilla_modo:String(r[c['semilla_modo']]||'').trim(),
-    n1_fuente:String(r[c['N1_fuente']]||'').trim(),n1_dosis:parseFloat(r[c['N1_dosis']])||0,
-    n1_fecha:String(r[c['N1_fecha']]||'').trim(),n1_modo:String(r[c['N1_modo']]||'').trim(),
-    n2_fuente:String(r[c['N2_fuente']]||'').trim(),n2_dosis:parseFloat(r[c['N2_dosis']])||0,
-    n2_fecha:String(r[c['N2_fecha']]||'').trim(),n2_modo:String(r[c['N2_modo']]||'').trim(),
+  const ci={};
+  hdrs.forEach((h,i)=>{const k=String(h).trim();if(k&&ci[k]===undefined)ci[k]=i;});
+  // 2da block starts at column AX (index 49), offset = 49 - index_of_first_crop_col
+  const C1RA=ci['Cultivo 1ra']??ci['Cultivo']??6;
+  const C2DA_START=49;
+  const OFF=C2DA_START-C1RA; // offset from any 1ra field to its 2da equivalent
+  const g=(r,key,off=0)=>r[(ci[key]??-999)+off];
+  const parseSiembra=(r,off)=>({
+    cultivo:String(g(r,'Cultivo 1ra',off)||g(r,'Cultivo',off)||'').trim(),
+    variedad:String(g(r,'Variedad',off)||'').trim(),
+    area:parseFloat(g(r,'Area_ha',off))||0,
+    kg_ha:parseFloat(g(r,'Kg_ha',off))||0,p_fuente:String(g(r,'P_fuente',off)||'').trim(),p_dosis:parseFloat(g(r,'P_dosis',off))||0,
+    ant:String(g(r,'Antecesor',off)||'').trim(),siembra_fecha:fmtFecha(g(r,'siembra_fecha',off)),pg:parseFloat(g(r,'PG',off))||0,p1000:parseFloat(g(r,'P1000',off))||0,
+    analisis:String(g(r,'Analisis',off)||'').trim(),curasemilla:String(g(r,'Curasemilla',off)||'').trim(),
+    siembra_modo:String(g(r,'Siembra_modo',off)||'').trim(),ferti_modo:String(g(r,'ferti_modo',off)||'').trim(),
+    semilla_modo:String(g(r,'semilla_modo',off)||'').trim(),
+    n1_fuente:String(g(r,'N1_fuente',off)||'').trim(),n1_dosis:parseFloat(g(r,'N1_dosis',off))||0,
+    n1_fecha:String(g(r,'N1_fecha',off)||'').trim(),n1_modo:String(g(r,'N1_modo',off)||'').trim(),
+    n2_fuente:String(g(r,'N2_fuente',off)||'').trim(),n2_dosis:parseFloat(g(r,'N2_dosis',off))||0,
+    n2_fecha:String(g(r,'N2_fecha',off)||'').trim(),n2_modo:String(g(r,'N2_modo',off)||'').trim(),
   });
   const res={};
   for(let ri=1;ri<rows.length;ri++){
@@ -661,9 +666,9 @@ function pSiembra(buf,ck2){
     const lraw=String(r[ci['Lote']]||'').trim();if(!cmk||!lraw)continue;
     const lk=lraw.toUpperCase().startsWith('LOTE')?lraw.toUpperCase():'LOTE '+lraw.toUpperCase();
     res[cmk]=res[cmk]||{};
-    const s1=parseSiembra(r,ci);
-    const s2=Object.keys(ci2).length?parseSiembra(r,ci2):null;
-    res[cmk][lk]={...s1,s2:s2?.cultivo?s2:null};
+    const s1=parseSiembra(r,0);
+    const s2raw=parseSiembra(r,OFF);
+    res[cmk][lk]={...s1,s2:s2raw.cultivo?s2raw:null};
   }
   return res;
 }
