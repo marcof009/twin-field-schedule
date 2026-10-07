@@ -2129,7 +2129,11 @@ function repRenderMenu(body){
     </div>`).join('')+'</div>';
 }
 
-function repSelTipo(k){repStk.push(k);repRend();}
+function repSelTipo(k){
+  repStk.push(k);
+  if(k==='siembra'){repSF={campo:new Set(),cultivo:new Set(),antecesor:new Set(),variedad:new Set()};repSFOpen=null;}
+  repRend();
+}
 
 // ---- helpers ----
 function repGetCli(){return SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];}
@@ -2147,71 +2151,140 @@ function repFiltroBar(campos,filtro,onChange){
 }
 
 // ---- SIEMBRA ----
-let repSiembraFiltro={campo:'',cultivo:'',antecesor:'',variedad:''};
+// filtros: {campo:Set, cultivo:Set, antecesor:Set, variedad:Set}
+let repSF={campo:new Set(),cultivo:new Set(),antecesor:new Set(),variedad:new Set()};
 let repSiembraAllRows=[];
+let repSFOpen=null; // which dropdown is open
 
 function repSiembraGetAllRows(){
   const lotes=D?.lotes||[];
+  const campos=repGetCampos();
+  const campoLabel=k=>campos.find(c=>c.key===k)?.label||k;
   return lotes.map(l=>{
     const campoData=D?.siembra?.[l.layer]||{};
     const loteKey=Object.keys(campoData).find(k=>k.toUpperCase()===l.name.toUpperCase());
     const s=loteKey?campoData[loteKey]:null;
-    return {campoKey:l.layer,campo:l.campo||l.layer,lote:l.name,ha:parseFloat(l.area)||0,cultivo:s?.cultivo||'',variedad:s?.variedad||'',antecesor:s?.antecesor||''};
+    return {campoKey:l.layer,campo:campoLabel(l.layer),lote:l.name,ha:parseFloat(l.area)||0,
+      cultivo:s?.cultivo||'',variedad:s?.variedad||'',antecesor:s?.antecesor||''};
   }).filter(r=>r.ha>0);
 }
 
-function repSiembraApplyFiltros(rows,excl){
-  const f=repSiembraFiltro;
-  return rows.filter(r=>
-    (excl==='campo'||!f.campo||r.campoKey===f.campo)&&
-    (excl==='cultivo'||!f.cultivo||r.cultivo===f.cultivo)&&
-    (excl==='antecesor'||!f.antecesor||r.antecesor===f.antecesor)&&
-    (excl==='variedad'||!f.variedad||r.variedad===f.variedad)
-  );
+function repSFMatch(rows,excl){
+  return rows.filter(r=>{
+    if(excl!=='campo'&&repSF.campo.size&&!repSF.campo.has(r.campoKey))return false;
+    if(excl!=='cultivo'&&repSF.cultivo.size&&!repSF.cultivo.has(r.cultivo))return false;
+    if(excl!=='antecesor'&&repSF.antecesor.size&&!repSF.antecesor.has(r.antecesor))return false;
+    if(excl!=='variedad'&&repSF.variedad.size&&!repSF.variedad.has(r.variedad))return false;
+    return true;
+  });
 }
 
-function repSiembraOpts(rows,field,excl){
-  const vals=[...new Set(repSiembraApplyFiltros(rows,excl).map(r=>r[field]).filter(Boolean))].sort();
-  return vals;
+function repSFOpts(field){
+  const all=repSiembraAllRows;
+  const rows=repSFMatch(all,field);
+  if(field==='campo'){
+    const campos=repGetCampos();
+    return [...new Set(rows.map(r=>r.campoKey))].sort().map(k=>({val:k,lbl:campos.find(c=>c.key===k)?.label||k}));
+  }
+  return [...new Set(rows.map(r=>r[field]).filter(Boolean))].sort().map(v=>({val:v,lbl:v}));
 }
 
-function repSiembraDrawPie(rows,totalHa){
+function repSFDrawPie(rows,totalHa){
   setTimeout(()=>{
     const cvs=document.getElementById('rep-pie');const leg=document.getElementById('rep-pie-legend');
     if(!cvs)return;
     const COLORS=['#4f8ef7','#f7974f','#4fcf8e','#f74f6a','#b04ff7','#f7d44f','#4fecf7','#f74fb5'];
-    const porCultivo={};
-    rows.forEach(r=>{if(r.cultivo){porCultivo[r.cultivo]=(porCultivo[r.cultivo]||0)+r.ha;}});
-    // add "Resto" slice if filtered < total
+    const por={};
+    rows.forEach(r=>{if(r.cultivo){por[r.cultivo]=(por[r.cultivo]||0)+r.ha;}else{por['Sin cultivo']=(por['Sin cultivo']||0)+r.ha;}});
     const filtHa=rows.reduce((s,r)=>s+r.ha,0);
     const restoHa=totalHa-filtHa;
-    const pieData={...porCultivo};
-    if(restoHa>0.5)pieData['Resto']=(pieData['Resto']||0)+restoHa;
+    const pieData={...por};
+    if(restoHa>0.5)pieData['Resto']=restoHa;
     const entries=Object.entries(pieData).sort((a,b)=>b[1]-a[1]);
     const total=entries.reduce((s,[,v])=>s+v,0);
     if(!total)return;
-    const ctx=cvs.getContext('2d');
-    ctx.clearRect(0,0,300,300);
-    const cx=150,cy=150,rad=110;
-    let angle=-Math.PI/2;
+    const ctx=cvs.getContext('2d');ctx.clearRect(0,0,300,300);
+    const cx=150,cy=150,rad=110;let angle=-Math.PI/2;
     entries.forEach(([k,v],i)=>{
-      const col=k==='Resto'?'#e0e0e0':COLORS[i%COLORS.length];
+      const col=k==='Resto'?'#d0d0d0':COLORS[i%COLORS.length];
       const slice=(v/total)*2*Math.PI;
       ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,rad,angle,angle+slice);ctx.closePath();
       ctx.fillStyle=col;ctx.fill();
-      if(slice>0.12){
+      if(slice>0.1){
         const mid=angle+slice/2;
-        const lx=cx+Math.cos(mid)*72,ly=cy+Math.sin(mid)*72;
         ctx.fillStyle=k==='Resto'?'#888':'#fff';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.fillText(((v/total)*100).toFixed(0)+'%',lx,ly);
+        ctx.fillText(((v/total)*100).toFixed(0)+'%',cx+Math.cos(mid)*72,cy+Math.sin(mid)*72);
       }
       angle+=slice;
     });
     leg.innerHTML=entries.map(([k,v],i)=>{
-      const col=k==='Resto'?'#e0e0e0':COLORS[i%COLORS.length];
+      const col=k==='Resto'?'#d0d0d0':COLORS[i%COLORS.length];
       return `<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:${k==='Resto'?'var(--txt3)':'var(--txt)'}"><span style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;border:1px solid rgba(0,0,0,.1)"></span>${k} — ${v.toFixed(0)} ha (${((v/total)*100).toFixed(0)}%)</span>`;
     }).join('');
   },30);
+}
+
+function repSFBtn(field,label){
+  const sel=repSF[field];
+  const active=sel.size>0;
+  const lbl=active?(sel.size===1?[...sel][0]:sel.size+' selec.'):label;
+  const open=repSFOpen===field;
+  return `<button onclick="repSFToggle('${field}',event)" style="display:flex;align-items:center;gap:6px;padding:7px 12px;border:${active?'1.5px solid var(--blu)':'1px solid var(--bord)'};border-radius:7px;background:${active?'rgba(79,142,247,.08)':'var(--surf2)'};color:${active?'var(--blu)':'var(--txt)'};font-size:12px;font-weight:${active?'600':'400'};cursor:pointer;white-space:nowrap;position:relative">
+    ${lbl} <span style="font-size:10px;opacity:.7">${open?'▲':'▼'}</span>
+  </button>`;
+}
+
+function repSFDropdown(field){
+  const opts=repSFOpts(field);
+  const sel=repSF[field];
+  const allSel=opts.length>0&&opts.every(o=>sel.has(o.val));
+  const items=opts.map(o=>{
+    const chk=sel.has(o.val);
+    return `<label style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;border-radius:4px;background:${chk?'rgba(79,142,247,.07)':'transparent'};font-size:12px" onclick="event.stopPropagation()">
+      <input type="checkbox" ${chk?'checked':''} onchange="repSFToggleVal('${field}','${o.val.replace(/'/g,"\\'")}',this.checked)" style="width:14px;height:14px;accent-color:var(--blu)">
+      <span>${o.lbl||'(vacío)'}</span>
+    </label>`;
+  }).join('');
+  return `<div id="rsf-dd-${field}" onclick="event.stopPropagation()" style="position:absolute;top:calc(100% + 6px);left:0;min-width:200px;max-width:280px;background:var(--surf);border:1px solid var(--bord);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);z-index:1000;overflow:hidden">
+    <div style="padding:8px 10px;border-bottom:1px solid var(--bord)">
+      <input id="rsf-q-${field}" type="text" placeholder="Buscar..." oninput="repSFSearch('${field}',this.value)" style="width:100%;padding:5px 8px;border:1px solid var(--bord);border-radius:5px;background:var(--surf2);color:var(--txt);font-size:12px;box-sizing:border-box">
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;border-bottom:1px solid var(--bord);font-size:12px;font-weight:500" onclick="event.stopPropagation()">
+      <input type="checkbox" ${allSel?'checked':''} onchange="repSFToggleAll('${field}',this.checked)" style="width:14px;height:14px;accent-color:var(--blu)">
+      <span>(Seleccionar todo)</span>
+    </label>
+    <div id="rsf-list-${field}" style="max-height:220px;overflow-y:auto">${items}</div>
+    <div style="padding:8px 12px;border-top:1px solid var(--bord);display:flex;justify-content:flex-end">
+      <button onclick="repSFClear('${field}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--bord);border-radius:5px;background:var(--surf2);color:var(--txt3);cursor:pointer">Limpiar</button>
+    </div>
+  </div>`;
+}
+
+function repSFToggle(field,e){
+  e.stopPropagation();
+  if(repSFOpen===field){repSFOpen=null;repRenderSiembra(document.getElementById('rep-body'));return;}
+  repSFOpen=field;
+  repRenderSiembra(document.getElementById('rep-body'));
+  // focus search
+  setTimeout(()=>document.getElementById('rsf-q-'+field)?.focus(),50);
+}
+function repSFToggleVal(field,val,chk){
+  if(chk)repSF[field].add(val);else repSF[field].delete(val);
+  repRenderSiembra(document.getElementById('rep-body'));
+}
+function repSFToggleAll(field,chk){
+  const opts=repSFOpts(field);
+  if(chk)opts.forEach(o=>repSF[field].add(o.val));else repSF[field].clear();
+  repRenderSiembra(document.getElementById('rep-body'));
+}
+function repSFClear(field){repSF[field].clear();repSFOpen=null;repRenderSiembra(document.getElementById('rep-body'));}
+function repSFSearch(field,q){
+  const list=document.getElementById('rsf-list-'+field);if(!list)return;
+  const ql=q.toLowerCase();
+  list.querySelectorAll('label').forEach(el=>{
+    const txt=el.querySelector('span')?.textContent||'';
+    el.style.display=txt.toLowerCase().includes(ql)?'':'none';
+  });
 }
 
 function repRenderSiembra(body){
@@ -2225,38 +2298,20 @@ function repRenderSiembra(body){
   repSiembraAllRows=repSiembraGetAllRows();
   const all=repSiembraAllRows;
   const totalHa=all.reduce((s,r)=>s+r.ha,0);
-  const rows=repSiembraApplyFiltros(all,'');
+  const rows=repSFMatch(all,'');
   rows.sort((a,b)=>a.campo.localeCompare(b.campo)||a.lote.localeCompare(b.lote));
   const filtHa=rows.reduce((s,r)=>s+r.ha,0);
-  const hasFilter=repSiembraFiltro.campo||repSiembraFiltro.cultivo||repSiembraFiltro.antecesor||repSiembraFiltro.variedad;
+  const hasFilter=repSF.campo.size||repSF.cultivo.size||repSF.antecesor.size||repSF.variedad.size;
 
-  // cascading options
-  const campos=repGetCampos();
-  const cultOpts=repSiembraOpts(all,'cultivo','cultivo');
-  const antOpts=repSiembraOpts(all,'antecesor','antecesor');
-  const varOpts=repSiembraOpts(all,'variedad','variedad');
+  const FIELDS=[{key:'campo',lbl:'Campo'},{key:'cultivo',lbl:'Cultivo'},{key:'antecesor',lbl:'Antecesor'},{key:'variedad',lbl:'Variedad'}];
+  const btns=FIELDS.map(f=>`<div style="position:relative">${repSFBtn(f.key,f.lbl)}${repSFOpen===f.key?repSFDropdown(f.key):''}</div>`).join('');
 
-  const selStyle='flex:1;min-width:130px;padding:7px 10px;border:1px solid var(--bord);border-radius:7px;background:var(--surf2);color:var(--txt);font-size:12px';
-  const selActStyle='flex:1;min-width:130px;padding:7px 10px;border:1.5px solid var(--blu);border-radius:7px;background:var(--surf2);color:var(--blu);font-size:12px;font-weight:500';
-
-  const mkSel=(id,opts,field,val,label)=>`<select id="${id}" onchange="repSiembraFiltrar('${field}',this.value)" style="${val?selActStyle:selStyle}">
-    <option value="">${label}</option>
-    ${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o||'(vacío)'}</option>`).join('')}
-  </select>`;
-  const campoSelHtml=`<select id="rsf-campo" onchange="repSiembraFiltrar('campo',this.value)" style="${repSiembraFiltro.campo?selActStyle:selStyle}"><option value="">Campo</option>${campos.map(c=>`<option value="${c.key}" ${repSiembraFiltro.campo===c.key?'selected':''}>${c.label}</option>`).join('')}</select>`;
-
-  const filtroFinal=`<div style="padding:12px 14px;background:var(--surf);border-bottom:1px solid var(--bord)">
-    <div style="font-size:10px;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:8px">Filtros</div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px">
-      ${campoSelHtml}
-      ${mkSel('rsf-cult',cultOpts,'cultivo',repSiembraFiltro.cultivo,'Cultivo')}
-      ${mkSel('rsf-ant',antOpts,'antecesor',repSiembraFiltro.antecesor,'Antecesor')}
-      ${mkSel('rsf-var',varOpts,'variedad',repSiembraFiltro.variedad,'Variedad')}
+  const filtroHtml=`<div style="padding:12px 14px;background:var(--surf);border-bottom:1px solid var(--bord)">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      ${btns}
+      ${hasFilter?`<button onclick="repSFLimpiarTodo()" style="font-size:11px;padding:7px 12px;border:1px solid var(--bord);border-radius:7px;background:var(--surf2);color:var(--txt3);cursor:pointer">✕ Limpiar todo</button>`:''}
     </div>
-    ${hasFilter?`<div style="margin-top:8px;display:flex;align-items:center;gap:8px">
-      <span style="font-size:11px;color:var(--txt3)">${rows.length} lote${rows.length!==1?'s':''} · <b style="color:var(--txt)">${filtHa.toFixed(1)} ha</b> de ${totalHa.toFixed(1)} ha totales</span>
-      <button onclick="repSiembraLimpiar()" style="font-size:11px;padding:3px 10px;border:1px solid var(--bord);border-radius:5px;background:var(--surf2);color:var(--txt3);cursor:pointer">✕ Limpiar</button>
-    </div>`:`<div style="margin-top:6px;font-size:11px;color:var(--txt3)">${rows.length} lotes · ${totalHa.toFixed(1)} ha</div>`}
+    <div style="margin-top:8px;font-size:11px;color:var(--txt3)">${rows.length} lote${rows.length!==1?'s':''} · <b style="color:var(--txt)">${filtHa.toFixed(1)} ha</b>${hasFilter?' de '+totalHa.toFixed(1)+' ha totales':''}</div>
   </div>`;
 
   const tablaRows=rows.map(r=>`<tr style="border-bottom:1px solid var(--bord)">
@@ -2268,7 +2323,7 @@ function repRenderSiembra(body){
     <td style="padding:7px 8px;font-size:11px">${r.antecesor||'—'}</td>
   </tr>`).join('');
 
-  body.innerHTML=filtroFinal+`<div style="padding:14px">
+  body.innerHTML=filtroHtml+`<div style="padding:14px">
     <canvas id="rep-pie" width="300" height="300" style="display:block;margin:0 auto 10px"></canvas>
     <div id="rep-pie-legend" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;justify-content:center"></div>
     <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
@@ -2282,17 +2337,24 @@ function repRenderSiembra(body){
       </tr></thead>
       <tbody>${tablaRows}</tbody>
       <tfoot><tr style="background:var(--surf2)">
-        <td colspan="2" style="padding:7px 8px;font-size:11px;font-weight:600">Total selección</td>
+        <td colspan="2" style="padding:7px 8px;font-size:11px;font-weight:600">Total</td>
         <td style="padding:7px 8px;font-size:11px;font-weight:600;text-align:right">${filtHa.toFixed(1)}</td>
-        <td colspan="3" style="padding:7px 8px;font-size:11px;color:var(--txt3)">${hasFilter?'de '+totalHa.toFixed(1)+' ha totales':''}</td>
+        <td colspan="3" style="padding:7px 8px;font-size:11px;color:var(--txt3)">${hasFilter?'ha (de '+totalHa.toFixed(1)+' totales)':''}</td>
       </tr></tfoot>
     </table></div>
   </div>`;
 
-  repSiembraDrawPie(rows,totalHa);
+  repSFDrawPie(rows,totalHa);
+
+  // close dropdown on outside click
+  setTimeout(()=>{
+    if(repSFOpen){
+      const handler=()=>{repSFOpen=null;document.removeEventListener('click',handler);repRenderSiembra(document.getElementById('rep-body'));};
+      document.addEventListener('click',handler,{once:true});
+    }
+  },0);
 }
-function repSiembraFiltrar(field,val){repSiembraFiltro[field]=val;repRenderSiembra(document.getElementById('rep-body'));}
-function repSiembraLimpiar(){repSiembraFiltro={campo:'',cultivo:'',antecesor:'',variedad:''};repRenderSiembra(document.getElementById('rep-body'));}
+function repSFLimpiarTodo(){repSF={campo:new Set(),cultivo:new Set(),antecesor:new Set(),variedad:new Set()};repSFOpen=null;repRenderSiembra(document.getElementById('rep-body'));}
 
 // ---- PULVERIZACIONES ----
 let repPulvFiltro={campo:'',fecha:''};
