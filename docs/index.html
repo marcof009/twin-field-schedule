@@ -320,6 +320,7 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
       <div class="mc c-su" onclick="openMod('suelos')"><div class="mac"></div><div class="mi">🧪</div><div class="mn">Análisis de Suelos</div><div class="md">Análisis de laboratorio</div></div>
       <div class="mc c-sb" onclick="openMod('siembra')"><div class="mac"></div><div class="mi">🚜</div><div class="mn">Siembra</div><div class="md">Avance del plan de siembra</div></div>
       <div class="mc c-pl" onclick="openMod('planos')"><div class="mac"></div><div class="mi">🗺️</div><div class="mn">Planos</div><div class="md">Dimensiones y superficies</div></div>
+      <div class="mc" style="background:rgba(120,80,200,.07);border-color:rgba(120,80,200,.2)" onclick="openMod('reportes')"><div class="mac"></div><div class="mi">📊</div><div class="mn">Reportes</div><div class="md">Análisis y resúmenes</div></div>
     </div>
   </div>
 </div>
@@ -368,6 +369,15 @@ input,textarea,select{font-family:var(--f);-webkit-appearance:none;-webkit-text-
   </div>
   <div id="pl-tabs" style="flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bord);display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch"></div>
   <div id="pl-body" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px"></div>
+</div>
+
+<!-- REPORTES -->
+<div id="s-reportes" class="screen">
+  <div class="ah">
+    <button class="ab" onclick="repBack()">Inicio</button>
+    <div class="at" id="rep-title">Reportes</div>
+  </div>
+  <div id="rep-body" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
 </div>
 
 <!-- SUELOS -->
@@ -498,7 +508,7 @@ function homeCambioCli(ck2){
 // NAV
 function retNotifSet(v){try{if(v)localStorage.setItem('ret_notif','1');else localStorage.removeItem('ret_notif');}catch(e){}const b=document.getElementById('ret-notif-bell');if(b)b.style.display=v?'block':'none';}
 function retNotifCheck(){try{const b=document.getElementById('ret-notif-bell');if(b)b.style.display=localStorage.getItem('ret_notif')?'block':'none';}catch(e){}}
-function openMod(m){SS(m);if(m==='schedule')schInit();else if(m==='recorridas')recInit();else if(m==='recetas'){retNotifSet(false);retInit();}else if(m==='suelos')suelInit();else if(m==='siembra')siembraInit();else if(m==='planos')planosInit();}
+function openMod(m){SS(m);if(m==='schedule')schInit();else if(m==='recorridas')recInit();else if(m==='recetas'){retNotifSet(false);retInit();}else if(m==='suelos')suelInit();else if(m==='siembra')siembraInit();else if(m==='planos')planosInit();else if(m==='reportes')repInit();}
 function closeMod(m){SS('home');if(m==='schedule'){schCP();schCR();}retNotifCheck();}
 
 // CROP COLORS
@@ -2067,6 +2077,281 @@ async function planosPDF(){
 
   doc.save(`plano_${campo.label.replace(/\s+/g,'_')}.pdf`);
 }
+
+// REPORTES
+const REP_TIPOS=[
+  {key:'siembra',lbl:'Plan de Siembra',icon:'🌾',desc:'Tabla por campo/lote con cultivo, variedad, antecesor y gráfico por cultivo'},
+  {key:'pulverizaciones',lbl:'Pulverizaciones',icon:'💧',desc:'Aplicaciones realizadas de más reciente a más antigua'},
+  {key:'fertilizaciones',lbl:'Fertilizaciones',icon:'🌱',desc:'Aplicaciones de fertilizantes por lote y cultivo'},
+  {key:'variedades',lbl:'Lotes por Variedad',icon:'🔍',desc:'Filtrar lotes según variedad sembrada'},
+];
+let repStk=[];
+
+async function repInit(){
+  repStk=[];
+  document.getElementById('rep-title').textContent='Reportes';
+  // ensure recetas are loaded for pulv/fert reports
+  if(!retR.length){
+    try{
+      const ck2=repGetCli();
+      const q=ck2&&ck2!=='all'?`?cliente_id=eq.${ck2}&order=created_at.desc`:`?order=created_at.desc`;
+      retR=await sbG('recetas',q);
+    }catch(e){}
+  }
+  repRend();
+}
+
+function repBack(){
+  if(repStk.length){repStk.pop();repRend();return;}
+  closeMod('reportes');
+}
+
+function repRend(){
+  const body=document.getElementById('rep-body');
+  const t=repStk[repStk.length-1];
+  document.getElementById('rep-title').textContent=t?REP_TIPOS.find(x=>x.key===t)?.lbl||t:'Reportes';
+  if(!t){repRenderMenu(body);}
+  else if(t==='siembra'){repRenderSiembra(body);}
+  else if(t==='pulverizaciones'){repRenderPulv(body);}
+  else if(t==='fertilizaciones'){repRenderFert(body);}
+  else if(t==='variedades'){repRenderVar(body);}
+}
+
+function repRenderMenu(body){
+  body.innerHTML='<div style="padding:14px 14px 0">'+REP_TIPOS.map(t=>`
+    <div onclick="repSelTipo('${t.key}')" style="display:flex;align-items:center;gap:14px;background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;cursor:pointer">
+      <div style="font-size:28px;line-height:1">${t.icon}</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:400">${t.lbl}</div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:2px">${t.desc}</div>
+      </div>
+      <div style="font-size:18px;color:var(--txt3)">›</div>
+    </div>`).join('')+'</div>';
+}
+
+function repSelTipo(k){repStk.push(k);repRend();}
+
+// ---- helpers ----
+function repGetCli(){return SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];}
+function repGetCampos(){
+  const ck2=repGetCli();const cfg=CFG[ck2];if(!cfg)return [];
+  return Object.entries(cfg).filter(([k,v])=>typeof v==='object'&&v.label).map(([k,v])=>({key:k,label:v.label}));
+}
+function repFiltroBar(campos,filtro,onChange){
+  const cOpts=campos.map(c=>`<option value="${c.key}" ${filtro.campo===c.key?'selected':''}>${c.label}</option>`).join('');
+  return `<div style="display:flex;gap:8px;padding:12px 14px;background:var(--surf);border-bottom:1px solid var(--bord);flex-wrap:wrap">
+    <select onchange="${onChange}('campo',this.value)" style="flex:1;min-width:120px;padding:6px 8px;border:1px solid var(--bord);border-radius:6px;background:var(--surf2);color:var(--txt);font-size:12px">
+      <option value="">Todos los campos</option>${cOpts}
+    </select>
+  </div>`;
+}
+
+// ---- SIEMBRA ----
+let repSiembraFiltro={campo:''};
+function repRenderSiembra(body){
+  const ck2=repGetCli();
+  if((!D?.lotes?.length||!D?.siembra?.length)&&ck2){
+    body.innerHTML='<div class="empty" style="padding:40px">Cargando datos...</div>';
+    schLoad(ck2).then(()=>repRenderSiembra(body)).catch(()=>{body.innerHTML='<div class="empty" style="padding:40px">Sin datos de siembra</div>';});
+    return;
+  }
+  const campos=repGetCampos();
+  const lotes=(D?.lotes||[]).filter(l=>!repSiembraFiltro.campo||l.layer===repSiembraFiltro.campo);
+  const rows=lotes.map(l=>{
+    const s=(D?.siembra||[]).find(x=>x.campo===l.layer&&(x.lote===l.name||x.lote===l.name.toUpperCase()));
+    return {campo:l.campo||l.layer,lote:l.name,ha:parseFloat(l.area)||0,cultivo:s?.cultivo||'—',variedad:s?.variedad||'—',antecesor:s?.antecesor||'—',tipo:s?.tipo_cultivo||''};
+  }).filter(r=>r.ha>0);
+  rows.sort((a,b)=>a.campo.localeCompare(b.campo)||a.lote.localeCompare(b.lote));
+
+  // pie chart data
+  const porCultivo={};
+  rows.forEach(r=>{if(r.cultivo!=='—'){porCultivo[r.cultivo]=(porCultivo[r.cultivo]||0)+r.ha;}});
+  const totalHa=rows.reduce((s,r)=>s+r.ha,0);
+  const COLORS=['#4f8ef7','#f7974f','#4fcf8e','#f74f6a','#b04ff7','#f7d44f','#4fecf7','#f74fb5'];
+
+  const filtroHtml=repFiltroBar(campos,repSiembraFiltro,'repSiembraFiltrar');
+  const tablaRows=rows.map(r=>`<tr style="border-bottom:1px solid var(--bord)">
+    <td style="padding:7px 8px;font-size:11px;font-weight:500">${r.campo}</td>
+    <td style="padding:7px 8px;font-size:11px">${r.lote}</td>
+    <td style="padding:7px 8px;font-size:11px;text-align:right">${r.ha.toFixed(1)}</td>
+    <td style="padding:7px 8px;font-size:11px">${r.cultivo}</td>
+    <td style="padding:7px 8px;font-size:11px">${r.variedad}</td>
+    <td style="padding:7px 8px;font-size:11px">${r.antecesor}</td>
+  </tr>`).join('');
+
+  body.innerHTML=filtroHtml+`
+    <div style="padding:14px">
+      <canvas id="rep-pie" width="300" height="300" style="display:block;margin:0 auto 16px"></canvas>
+      <div id="rep-pie-legend" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;justify-content:center"></div>
+      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:var(--surf2)">
+          <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Campo</th>
+          <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Lote</th>
+          <th style="padding:7px 8px;text-align:right;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">ha</th>
+          <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Cultivo</th>
+          <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Variedad</th>
+          <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Antecesor</th>
+        </tr></thead>
+        <tbody>${tablaRows}</tbody>
+        <tfoot><tr style="background:var(--surf2)">
+          <td colspan="2" style="padding:7px 8px;font-size:11px;font-weight:600">Total</td>
+          <td style="padding:7px 8px;font-size:11px;font-weight:600;text-align:right">${totalHa.toFixed(1)}</td>
+          <td colspan="3"></td>
+        </tr></tfoot>
+      </table></div>
+    </div>`;
+
+  // draw pie
+  setTimeout(()=>{
+    const cvs=document.getElementById('rep-pie');const leg=document.getElementById('rep-pie-legend');
+    if(!cvs)return;
+    const entries=Object.entries(porCultivo).sort((a,b)=>b[1]-a[1]);
+    const total=entries.reduce((s,[,v])=>s+v,0);
+    const ctx=cvs.getContext('2d');
+    const cx=150,cy=150,r=110;
+    let angle=-Math.PI/2;
+    entries.forEach(([k,v],i)=>{
+      const slice=(v/total)*2*Math.PI;
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,angle,angle+slice);ctx.closePath();
+      ctx.fillStyle=COLORS[i%COLORS.length];ctx.fill();
+      // label %
+      const mid=angle+slice/2;
+      const lx=cx+Math.cos(mid)*72,ly=cy+Math.sin(mid)*72;
+      ctx.fillStyle='#fff';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+      if(slice>0.15)ctx.fillText(((v/total)*100).toFixed(0)+'%',lx,ly);
+      angle+=slice;
+    });
+    leg.innerHTML=entries.map(([k,v],i)=>`<span style="display:flex;align-items:center;gap:4px;font-size:11px"><span style="width:10px;height:10px;border-radius:50%;background:${COLORS[i%COLORS.length]};flex-shrink:0"></span>${k} (${v.toFixed(0)} ha)</span>`).join('');
+  },50);
+}
+function repSiembraFiltrar(campo,val){repSiembraFiltro[campo]=val;repRenderSiembra(document.getElementById('rep-body'));}
+
+// ---- PULVERIZACIONES ----
+let repPulvFiltro={campo:'',fecha:''};
+function repRenderPulv(body){
+  const ck2=repGetCli();
+  const campos=repGetCampos();
+  let rets=(retR||[]).filter(r=>r.tipo==='pulverizacion'&&r.estado==='ok');
+  if(SESSION.r!=='admin'){const cs=SESSION.c||[];rets=rets.filter(r=>cs.includes(r.cliente_id));}
+  else if(ck2&&ck2!=='all'){rets=rets.filter(r=>r.cliente_id===ck2);}
+  if(repPulvFiltro.campo)rets=rets.filter(r=>r.campo_id===repPulvFiltro.campo);
+  rets.sort((a,b)=>new Date(b.fecha_aplicacion||b.created_at)-new Date(a.fecha_aplicacion||a.created_at));
+  const filtroHtml=repFiltroBar(campos,repPulvFiltro,'repPulvFiltrar');
+  if(!rets.length){body.innerHTML=filtroHtml+'<div class="empty" style="padding:40px">Sin pulverizaciones aplicadas</div>';return;}
+  const rows=rets.map(r=>{
+    const fecha=r.fecha_aplicacion?r.fecha_aplicacion.slice(0,10):(r.created_at?r.created_at.slice(0,10):'—');
+    const prods=(r.productos||[]).map(p=>p.nombre||p.n||'').filter(Boolean).join(', ')||'—';
+    const haVal=parseFloat(r.ha_aplicar)||parseFloat(D?.lotes?.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area)||0;
+    return `<tr style="border-bottom:1px solid var(--bord)">
+      <td style="padding:7px 8px;font-size:11px">${fecha}</td>
+      <td style="padding:7px 8px;font-size:11px;font-weight:500">${(r.campo_id||'').toUpperCase()}</td>
+      <td style="padding:7px 8px;font-size:11px">${r.lote_id||'—'}</td>
+      <td style="padding:7px 8px;font-size:11px;text-align:right">${haVal>0?haVal.toFixed(1):'—'}</td>
+      <td style="padding:7px 8px;font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${prods}</td>
+    </tr>`;
+  }).join('');
+  body.innerHTML=filtroHtml+`<div style="padding:14px"><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+    <thead><tr style="background:var(--surf2)">
+      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Fecha</th>
+      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Campo</th>
+      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Lote</th>
+      <th style="padding:7px 8px;text-align:right;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">ha</th>
+      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Productos</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div></div>`;
+}
+function repPulvFiltrar(campo,val){repPulvFiltro[campo]=val;repRenderPulv(document.getElementById('rep-body'));}
+
+// ---- FERTILIZACIONES ----
+let repFertFiltro={campo:''};
+function repRenderFert(body){
+  const ck2=repGetCli();
+  const campos=repGetCampos();
+  let rets=(retR||[]).filter(r=>r.tipo==='fertilizacion'&&r.estado==='ok');
+  if(SESSION.r!=='admin'){const cs=SESSION.c||[];rets=rets.filter(r=>cs.includes(r.cliente_id));}
+  else if(ck2&&ck2!=='all'){rets=rets.filter(r=>r.cliente_id===ck2);}
+  if(repFertFiltro.campo)rets=rets.filter(r=>r.campo_id===repFertFiltro.campo);
+  rets.sort((a,b)=>new Date(b.fecha_aplicacion||b.created_at)-new Date(a.fecha_aplicacion||a.created_at));
+  const filtroHtml=repFiltroBar(campos,repFertFiltro,'repFertFiltrar');
+  if(!rets.length){body.innerHTML=filtroHtml+'<div class="empty" style="padding:40px">Sin fertilizaciones registradas</div>';return;}
+  const rows=rets.map(r=>{
+    const fecha=r.fecha_aplicacion?r.fecha_aplicacion.slice(0,10):(r.created_at?r.created_at.slice(0,10):'—');
+    const prods=(r.productos||[]).map(p=>p.nombre||p.n||'').filter(Boolean).join(', ')||'—';
+    const haVal=parseFloat(r.ha_aplicar)||parseFloat(D?.lotes?.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area)||0;
+    return `<tr style="border-bottom:1px solid var(--bord)">
+      <td style="padding:7px 8px;font-size:11px">${fecha}</td>
+      <td style="padding:7px 8px;font-size:11px;font-weight:500">${(r.campo_id||'').toUpperCase()}</td>
+      <td style="padding:7px 8px;font-size:11px">${r.lote_id||'—'}</td>
+      <td style="padding:7px 8px;font-size:11px;text-align:right">${haVal>0?haVal.toFixed(1):'—'}</td>
+      <td style="padding:7px 8px;font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${prods}</td>
+    </tr>`;
+  }).join('');
+  body.innerHTML=filtroHtml+`<div style="padding:14px"><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+    <thead><tr style="background:var(--surf2)">
+      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Fecha</th>
+      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Campo</th>
+      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Lote</th>
+      <th style="padding:7px 8px;text-align:right;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">ha</th>
+      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Productos</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div></div>`;
+}
+function repFertFiltrar(campo,val){repFertFiltro[campo]=val;repRenderFert(document.getElementById('rep-body'));}
+
+// ---- VARIEDADES ----
+let repVarFiltro={campo:'',variedad:''};
+function repRenderVar(body){
+  const ck2=repGetCli();
+  const campos=repGetCampos();
+  if((!D?.lotes?.length||!D?.siembra?.length)&&ck2){
+    body.innerHTML='<div class="empty" style="padding:40px">Cargando datos...</div>';
+    schLoad(ck2).then(()=>repRenderVar(body)).catch(()=>{body.innerHTML='<div class="empty" style="padding:40px">Sin datos</div>';});
+    return;
+  }
+  const lotes=(D?.lotes||[]).filter(l=>!repVarFiltro.campo||l.layer===repVarFiltro.campo);
+  const rows=lotes.map(l=>{
+    const s=(D?.siembra||[]).find(x=>x.campo===l.layer&&(x.lote===l.name||x.lote===l.name.toUpperCase()));
+    return {campo:l.campo||l.layer,lote:l.name,ha:parseFloat(l.area)||0,cultivo:s?.cultivo||'—',variedad:s?.variedad||'—'};
+  }).filter(r=>r.ha>0&&r.variedad!=='—');
+  const variedades=[...new Set(rows.map(r=>r.variedad))].sort();
+  const rowsFilt=repVarFiltro.variedad?rows.filter(r=>r.variedad===repVarFiltro.variedad):rows;
+  rowsFilt.sort((a,b)=>a.variedad.localeCompare(b.variedad)||a.campo.localeCompare(b.campo));
+  const vOpts=variedades.map(v=>`<option value="${v}" ${repVarFiltro.variedad===v?'selected':''}>${v}</option>`).join('');
+  const filtroHtml=`<div style="display:flex;gap:8px;padding:12px 14px;background:var(--surf);border-bottom:1px solid var(--bord);flex-wrap:wrap">
+    <select onchange="repVarFiltrar('campo',this.value)" style="flex:1;min-width:120px;padding:6px 8px;border:1px solid var(--bord);border-radius:6px;background:var(--surf2);color:var(--txt);font-size:12px">
+      <option value="">Todos los campos</option>${campos.map(c=>`<option value="${c.key}" ${repVarFiltro.campo===c.key?'selected':''}>${c.label}</option>`).join('')}
+    </select>
+    <select onchange="repVarFiltrar('variedad',this.value)" style="flex:1;min-width:120px;padding:6px 8px;border:1px solid var(--bord);border-radius:6px;background:var(--surf2);color:var(--txt);font-size:12px">
+      <option value="">Todas las variedades</option>${vOpts}
+    </select>
+  </div>`;
+  if(!rowsFilt.length){body.innerHTML=filtroHtml+'<div class="empty" style="padding:40px">Sin lotes con variedad registrada</div>';return;}
+  const totalHa=rowsFilt.reduce((s,r)=>s+r.ha,0);
+  const tablaRows=rowsFilt.map(r=>`<tr style="border-bottom:1px solid var(--bord)">
+    <td style="padding:7px 8px;font-size:11px;font-weight:500">${r.variedad}</td>
+    <td style="padding:7px 8px;font-size:11px;font-weight:500">${r.campo}</td>
+    <td style="padding:7px 8px;font-size:11px">${r.lote}</td>
+    <td style="padding:7px 8px;font-size:11px">${r.cultivo}</td>
+    <td style="padding:7px 8px;font-size:11px;text-align:right">${r.ha.toFixed(1)}</td>
+  </tr>`).join('');
+  body.innerHTML=filtroHtml+`<div style="padding:14px"><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+    <thead><tr style="background:var(--surf2)">
+      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Variedad</th>
+      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Campo</th>
+      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Lote</th>
+      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Cultivo</th>
+      <th style="padding:7px 8px;text-align:right;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">ha</th>
+    </tr></thead>
+    <tbody>${tablaRows}</tbody>
+    <tfoot><tr style="background:var(--surf2)">
+      <td colspan="4" style="padding:7px 8px;font-size:11px;font-weight:600">Total</td>
+      <td style="padding:7px 8px;font-size:11px;font-weight:600;text-align:right">${totalHa.toFixed(1)}</td>
+    </tr></tfoot>
+  </table></div></div>`;
+}
+function repVarFiltrar(campo,val){repVarFiltro[campo]=val;repRenderVar(document.getElementById('rep-body'));}
 
 // SUELOS
 let sHist=[];
