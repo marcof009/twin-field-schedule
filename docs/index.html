@@ -1218,6 +1218,8 @@ async function retInit(){
     retR=await sbG('recetas',q);
     retR.sort((a,b)=>{if(a.estado==='pendiente'&&b.estado!=='pendiente')return -1;if(b.estado==='pendiente'&&a.estado!=='pendiente')return 1;return new Date(b.fecha)-new Date(a.fecha);});
   }catch(e){retR=[];}
+  const ck2=SESSION.c[0]==='all'?ACTIVE_CLI:SESSION.c[0];
+  if((!D?.lotes?.length)&&ck2){try{await schLoad(ck2);}catch(e){}}
   retRend();
 }
 function retBack(){if(!retStk.length){closeMod('recetas');return;}retStk.pop();retRend();}
