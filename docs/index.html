@@ -2324,6 +2324,13 @@ function repRenderSiembra(body){
     return;
   }
   repSiembraAllRows=repSiembraGetAllRows();
+  // if D.siembra was cached before _cols was added, force re-fetch
+  if(repSiembraAllRows.length>0&&!('_cols' in repSiembraAllRows[0])&&ck2){
+    D=null; // force full re-parse on next schLoad
+    body.innerHTML='<div class="empty" style="padding:40px">Actualizando datos...</div>';
+    schLoad(ck2).then(()=>{repSiembraAllRows=[];repRenderSiembra(body);}).catch(()=>{body.innerHTML='<div class="empty" style="padding:40px">Sin datos de siembra</div>';});
+    return;
+  }
   const all=repSiembraAllRows;
   const totalHa=all.reduce((s,r)=>s+r.ha,0);
   const rows=repSFMatch(all,'');
