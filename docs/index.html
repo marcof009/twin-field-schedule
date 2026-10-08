@@ -654,20 +654,33 @@ function pSiembra(buf,ck2){
   const C2DA_START=49;
   const OFF=C2DA_START-C1RA; // offset from any 1ra field to its 2da equivalent
   const g=(r,key,off=0)=>r[(ci[key]??-999)+off];
-  const parseSiembra=(r,off)=>({
-    cultivo:String(g(r,'Cultivo 1ra',off)||g(r,'Cultivo',off)||'').trim(),
-    variedad:String(g(r,'Variedad',off)||'').trim(),
-    area:parseFloat(g(r,'Area_ha',off))||0,
-    kg_ha:parseFloat(g(r,'Kg_ha',off))||0,p_fuente:String(g(r,'P_fuente',off)||'').trim(),p_dosis:parseFloat(g(r,'P_dosis',off))||0,
-    ant:String(g(r,'Antecesor',off)||'').trim(),siembra_fecha:fmtFecha(g(r,'siembra_fecha',off)),pg:parseFloat(g(r,'PG',off))||0,p1000:parseFloat(g(r,'P1000',off))||0,
-    analisis:String(g(r,'Analisis',off)||'').trim(),curasemilla:String(g(r,'Curasemilla',off)||'').trim(),
-    siembra_modo:String(g(r,'Siembra_modo',off)||'').trim(),ferti_modo:String(g(r,'ferti_modo',off)||'').trim(),
-    semilla_modo:String(g(r,'semilla_modo',off)||'').trim(),
-    n1_fuente:String(g(r,'N1_fuente',off)||'').trim(),n1_dosis:parseFloat(g(r,'N1_dosis',off))||0,
-    n1_fecha:String(g(r,'N1_fecha',off)||'').trim(),n1_modo:String(g(r,'N1_modo',off)||'').trim(),
-    n2_fuente:String(g(r,'N2_fuente',off)||'').trim(),n2_dosis:parseFloat(g(r,'N2_dosis',off))||0,
-    n2_fecha:String(g(r,'N2_fecha',off)||'').trim(),n2_modo:String(g(r,'N2_modo',off)||'').trim(),
-  });
+  // column-letter indices (0-based): D=3,E=4,...,L=11,T=19,V=21,AE=30..AW=48
+  const COL_IDXS=[3,4,5,6,7,8,9,10,11,19,21,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48];
+  const parseSiembra=(r,off)=>{
+    const base={
+      cultivo:String(g(r,'Cultivo 1ra',off)||g(r,'Cultivo',off)||'').trim(),
+      variedad:String(g(r,'Variedad',off)||'').trim(),
+      area:parseFloat(g(r,'Area_ha',off))||0,
+      kg_ha:parseFloat(g(r,'Kg_ha',off))||0,p_fuente:String(g(r,'P_fuente',off)||'').trim(),p_dosis:parseFloat(g(r,'P_dosis',off))||0,
+      ant:String(g(r,'Antecesor',off)||'').trim(),antecesor:String(g(r,'Antecesor',off)||'').trim(),
+      siembra_fecha:fmtFecha(g(r,'siembra_fecha',off)),pg:parseFloat(g(r,'PG',off))||0,p1000:parseFloat(g(r,'P1000',off))||0,
+      analisis:String(g(r,'Analisis',off)||'').trim(),curasemilla:String(g(r,'Curasemilla',off)||'').trim(),
+      siembra_modo:String(g(r,'Siembra_modo',off)||'').trim(),ferti_modo:String(g(r,'ferti_modo',off)||'').trim(),
+      semilla_modo:String(g(r,'semilla_modo',off)||'').trim(),
+      n1_fuente:String(g(r,'N1_fuente',off)||'').trim(),n1_dosis:parseFloat(g(r,'N1_dosis',off))||0,
+      n1_fecha:String(g(r,'N1_fecha',off)||'').trim(),n1_modo:String(g(r,'N1_modo',off)||'').trim(),
+      n2_fuente:String(g(r,'N2_fuente',off)||'').trim(),n2_dosis:parseFloat(g(r,'N2_dosis',off))||0,
+      n2_fecha:String(g(r,'N2_fecha',off)||'').trim(),n2_modo:String(g(r,'N2_modo',off)||'').trim(),
+    };
+    // store raw value for every requested column (keyed by header name)
+    const rawCols={};
+    COL_IDXS.forEach(ci=>{
+      const hdr=String(hdrs[ci+off]||hdrs[ci]||'').trim();
+      if(hdr){const v=r[ci+off];rawCols[hdr]=v===undefined||v===null||v===''?'':String(v).trim();}
+    });
+    base._cols=rawCols;
+    return base;
+  };
   const res={};
   for(let ri=1;ri<rows.length;ri++){
     const r=rows[ri];
@@ -2131,7 +2144,7 @@ function repRenderMenu(body){
 
 function repSelTipo(k){
   repStk.push(k);
-  if(k==='siembra'){repSF={campo:new Set(),cultivo:new Set(),antecesor:new Set(),variedad:new Set()};repSFOpen=null;}
+  if(k==='siembra'){repSF={campo:new Set(),cultivo:new Set(),antecesor:new Set(),variedad:new Set()};repSFOpen=null;repSiembraAllRows=[];}
   repRend();
 }
 
@@ -2151,10 +2164,10 @@ function repFiltroBar(campos,filtro,onChange){
 }
 
 // ---- SIEMBRA ----
-// filtros: {campo:Set, cultivo:Set, antecesor:Set, variedad:Set}
+// filtros: {campo:Set, cultivo:Set, antecesor:Set, variedad:Set, ...<col headers>:Set}
 let repSF={campo:new Set(),cultivo:new Set(),antecesor:new Set(),variedad:new Set()};
 let repSiembraAllRows=[];
-let repSFOpen=null; // which dropdown is open
+let repSFOpen=null;
 
 function repSiembraGetAllRows(){
   const lotes=D?.lotes||[];
@@ -2165,16 +2178,28 @@ function repSiembraGetAllRows(){
     const loteKey=Object.keys(campoData).find(k=>k.toUpperCase()===l.name.toUpperCase());
     const s=loteKey?campoData[loteKey]:null;
     return {campoKey:l.layer,campo:campoLabel(l.layer),lote:l.name,ha:parseFloat(l.area)||0,
-      cultivo:s?.cultivo||'',variedad:s?.variedad||'',antecesor:s?.antecesor||''};
+      cultivo:s?.cultivo||'',variedad:s?.variedad||'',antecesor:s?.antecesor||s?.ant||'',
+      _cols:s?._cols||{}};
   }).filter(r=>r.ha>0);
+}
+
+function repSiembraColHeaders(){
+  // collect all header names present across all rows
+  const seen=new Set();
+  repSiembraAllRows.forEach(r=>Object.keys(r._cols||{}).forEach(k=>seen.add(k)));
+  return [...seen];
 }
 
 function repSFMatch(rows,excl){
   return rows.filter(r=>{
-    if(excl!=='campo'&&repSF.campo.size&&!repSF.campo.has(r.campoKey))return false;
-    if(excl!=='cultivo'&&repSF.cultivo.size&&!repSF.cultivo.has(r.cultivo))return false;
-    if(excl!=='antecesor'&&repSF.antecesor.size&&!repSF.antecesor.has(r.antecesor))return false;
-    if(excl!=='variedad'&&repSF.variedad.size&&!repSF.variedad.has(r.variedad))return false;
+    for(const [k,s] of Object.entries(repSF)){
+      if(!s.size||k===excl)continue;
+      if(k==='campo'){if(!s.has(r.campoKey))return false;}
+      else if(k==='cultivo'){if(!s.has(r.cultivo))return false;}
+      else if(k==='antecesor'){if(!s.has(r.antecesor))return false;}
+      else if(k==='variedad'){if(!s.has(r.variedad))return false;}
+      else{if(!s.has(r._cols?.[k]??''))return false;}
+    }
     return true;
   });
 }
@@ -2186,7 +2211,10 @@ function repSFOpts(field){
     const campos=repGetCampos();
     return [...new Set(rows.map(r=>r.campoKey))].sort().map(k=>({val:k,lbl:campos.find(c=>c.key===k)?.label||k}));
   }
-  return [...new Set(rows.map(r=>r[field]).filter(Boolean))].sort().map(v=>({val:v,lbl:v}));
+  if(field==='cultivo')return [...new Set(rows.map(r=>r.cultivo).filter(v=>v!==undefined))].sort().map(v=>({val:v,lbl:v||'(vacío)'}));
+  if(field==='antecesor')return [...new Set(rows.map(r=>r.antecesor).filter(v=>v!==undefined))].sort().map(v=>({val:v,lbl:v||'(vacío)'}));
+  if(field==='variedad')return [...new Set(rows.map(r=>r.variedad).filter(v=>v!==undefined))].sort().map(v=>({val:v,lbl:v||'(vacío)'}));
+  return [...new Set(rows.map(r=>r._cols?.[field]??''))].sort().map(v=>({val:v,lbl:v||'(vacío)'}));
 }
 
 function repSFDrawPie(rows,totalHa){
@@ -2301,52 +2329,60 @@ function repRenderSiembra(body){
   const rows=repSFMatch(all,'');
   rows.sort((a,b)=>a.campo.localeCompare(b.campo)||a.lote.localeCompare(b.lote));
   const filtHa=rows.reduce((s,r)=>s+r.ha,0);
-  const hasFilter=repSF.campo.size||repSF.cultivo.size||repSF.antecesor.size||repSF.variedad.size;
 
-  const FIELDS=[{key:'campo',lbl:'Campo'},{key:'cultivo',lbl:'Cultivo'},{key:'antecesor',lbl:'Antecesor'},{key:'variedad',lbl:'Variedad'}];
-  const btns=FIELDS.map(f=>`<div style="position:relative">${repSFBtn(f.key,f.lbl)}${repSFOpen===f.key?repSFDropdown(f.key):''}</div>`).join('');
+  // build filter fields: fixed base + all extra col headers
+  const extraHdrs=repSiembraColHeaders();
+  const FIXED_FIELDS=[{key:'campo',lbl:'Campo'},{key:'cultivo',lbl:'Cultivo'},{key:'antecesor',lbl:'Antecesor'},{key:'variedad',lbl:'Variedad'}];
+  const fixedKeys=new Set(['campo','cultivo','antecesor','variedad','Area_ha','area']);
+  // ensure repSF has Sets for all extra headers
+  extraHdrs.forEach(h=>{if(!repSF[h])repSF[h]=new Set();});
+  const EXTRA_FIELDS=extraHdrs.filter(h=>!fixedKeys.has(h)).map(h=>({key:h,lbl:h}));
+  const ALL_FIELDS=[...FIXED_FIELDS,...EXTRA_FIELDS];
 
-  const filtroHtml=`<div style="padding:12px 14px;background:var(--surf);border-bottom:1px solid var(--bord)">
-    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+  const hasFilter=Object.values(repSF).some(s=>s.size>0);
+  const btns=ALL_FIELDS.map(f=>`<div style="position:relative">${repSFBtn(f.key,f.lbl)}${repSFOpen===f.key?repSFDropdown(f.key):''}</div>`).join('');
+
+  const filtroHtml=`<div style="padding:10px 14px;background:var(--surf);border-bottom:1px solid var(--bord)">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
       ${btns}
-      ${hasFilter?`<button onclick="repSFLimpiarTodo()" style="font-size:11px;padding:7px 12px;border:1px solid var(--bord);border-radius:7px;background:var(--surf2);color:var(--txt3);cursor:pointer">✕ Limpiar todo</button>`:''}
+      ${hasFilter?`<button onclick="repSFLimpiarTodo()" style="font-size:11px;padding:6px 10px;border:1px solid var(--bord);border-radius:7px;background:var(--surf2);color:var(--txt3);cursor:pointer;white-space:nowrap">✕ Limpiar</button>`:''}
     </div>
-    <div style="margin-top:8px;font-size:11px;color:var(--txt3)">${rows.length} lote${rows.length!==1?'s':''} · <b style="color:var(--txt)">${filtHa.toFixed(1)} ha</b>${hasFilter?' de '+totalHa.toFixed(1)+' ha totales':''}</div>
+    <div style="margin-top:7px;font-size:11px;color:var(--txt3)">${rows.length} lote${rows.length!==1?'s':''} · <b style="color:var(--txt)">${filtHa.toFixed(1)} ha</b>${hasFilter?' de '+totalHa.toFixed(1)+' ha totales':''}</div>
   </div>`;
 
+  // table columns: Campo, Lote, ha + all extra col headers that have any non-empty value
+  const visHdrs=extraHdrs.filter(h=>h!=='Area_ha'&&rows.some(r=>(r._cols?.[h]||'')!==''));
+  const thStyle='padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord);white-space:nowrap';
+  const tdStyle='padding:6px 8px;font-size:11px;white-space:nowrap';
+
   const tablaRows=rows.map(r=>`<tr style="border-bottom:1px solid var(--bord)">
-    <td style="padding:7px 8px;font-size:11px;font-weight:500">${r.campo}</td>
-    <td style="padding:7px 8px;font-size:11px">${r.lote}</td>
-    <td style="padding:7px 8px;font-size:11px;text-align:right">${r.ha.toFixed(1)}</td>
-    <td style="padding:7px 8px;font-size:11px">${r.cultivo||'—'}</td>
-    <td style="padding:7px 8px;font-size:11px">${r.variedad||'—'}</td>
-    <td style="padding:7px 8px;font-size:11px">${r.antecesor||'—'}</td>
+    <td style="${tdStyle};font-weight:500">${r.campo}</td>
+    <td style="${tdStyle}">${r.lote}</td>
+    <td style="${tdStyle};text-align:right">${r.ha.toFixed(1)}</td>
+    ${visHdrs.map(h=>`<td style="${tdStyle}">${r._cols?.[h]||'—'}</td>`).join('')}
   </tr>`).join('');
 
   body.innerHTML=filtroHtml+`<div style="padding:14px">
     <canvas id="rep-pie" width="300" height="300" style="display:block;margin:0 auto 10px"></canvas>
     <div id="rep-pie-legend" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;justify-content:center"></div>
-    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table style="border-collapse:collapse;font-size:11px">
       <thead><tr style="background:var(--surf2)">
-        <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Campo</th>
-        <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Lote</th>
-        <th style="padding:7px 8px;text-align:right;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">ha</th>
-        <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Cultivo</th>
-        <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Variedad</th>
-        <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Antecesor</th>
+        <th style="${thStyle}">Campo</th>
+        <th style="${thStyle}">Lote</th>
+        <th style="${thStyle};text-align:right">ha</th>
+        ${visHdrs.map(h=>`<th style="${thStyle}">${h}</th>`).join('')}
       </tr></thead>
       <tbody>${tablaRows}</tbody>
       <tfoot><tr style="background:var(--surf2)">
         <td colspan="2" style="padding:7px 8px;font-size:11px;font-weight:600">Total</td>
         <td style="padding:7px 8px;font-size:11px;font-weight:600;text-align:right">${filtHa.toFixed(1)}</td>
-        <td colspan="3" style="padding:7px 8px;font-size:11px;color:var(--txt3)">${hasFilter?'ha (de '+totalHa.toFixed(1)+' totales)':''}</td>
+        <td colspan="${visHdrs.length}" style="padding:7px 8px;font-size:11px;color:var(--txt3)">${hasFilter?'ha (de '+totalHa.toFixed(1)+' totales)':''}</td>
       </tr></tfoot>
     </table></div>
   </div>`;
 
   repSFDrawPie(rows,totalHa);
 
-  // close dropdown on outside click
   setTimeout(()=>{
     if(repSFOpen){
       const handler=()=>{repSFOpen=null;document.removeEventListener('click',handler);repRenderSiembra(document.getElementById('rep-body'));};
@@ -2354,7 +2390,10 @@ function repRenderSiembra(body){
     }
   },0);
 }
-function repSFLimpiarTodo(){repSF={campo:new Set(),cultivo:new Set(),antecesor:new Set(),variedad:new Set()};repSFOpen=null;repRenderSiembra(document.getElementById('rep-body'));}
+function repSFLimpiarTodo(){
+  Object.keys(repSF).forEach(k=>repSF[k].clear());
+  repSFOpen=null;repRenderSiembra(document.getElementById('rep-body'));
+}
 
 // ---- PULVERIZACIONES ----
 let repPulvFiltro={campo:'',fecha:''};
