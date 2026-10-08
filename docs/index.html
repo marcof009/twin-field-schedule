@@ -2408,79 +2408,148 @@ function repSFLimpiarTodo(){
 }
 
 // ---- PULVERIZACIONES ----
-let repPulvFiltro={campo:''};
-function repRenderPulv(body){
+let repPulvF={campo:'',lote:'',tratamiento:'',producto:'',fechaDesde:'',fechaHasta:''};
+
+function repPulvBase(){
   const ck2=repGetCli();
-  const campos=repGetCampos();
   let rets=(retR||[]).filter(r=>r.tipo==='pulverizacion'&&r.estado==='ok');
   if(SESSION.r!=='admin'){const cs=SESSION.c||[];rets=rets.filter(r=>cs.includes(r.cliente_id));}
   else if(ck2&&ck2!=='all'){rets=rets.filter(r=>r.cliente_id===ck2);}
-  if(repPulvFiltro.campo)rets=rets.filter(r=>r.campo_id===repPulvFiltro.campo);
+  return rets;
+}
+
+function repPulvApply(rets){
+  const f=repPulvF;
+  return rets.filter(r=>{
+    if(f.campo&&r.campo_id!==f.campo)return false;
+    if(f.lote&&(r.lote_id||'').toLowerCase()!==f.lote.toLowerCase())return false;
+    if(f.tratamiento){const t=(r.objetivo||r.cultivo||'').toLowerCase();if(!t.includes(f.tratamiento.toLowerCase()))return false;}
+    if(f.producto){const pnames=(r.productos||[]).map(p=>(p.nombre||p.n||'').toLowerCase()).join(' ');if(!pnames.includes(f.producto.toLowerCase()))return false;}
+    const fa=r.fecha_aplicacion?r.fecha_aplicacion.slice(0,10):'';
+    if(f.fechaDesde&&fa&&fa<f.fechaDesde)return false;
+    if(f.fechaHasta&&fa&&fa>f.fechaHasta)return false;
+    return true;
+  });
+}
+
+function repPulvGetRows(rets){
+  return rets.map(r=>{
+    const haVal=parseFloat(r.ha_aplicar)||parseFloat(D?.lotes?.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area)||0;
+    const fechaRec=r.fecha?r.fecha.slice(0,10):'';
+    const fechaApl=r.fecha_aplicacion?r.fecha_aplicacion.slice(0,10):'';
+    let dias='—';
+    if(fechaRec&&fechaApl){const d=Math.round((new Date(fechaApl)-new Date(fechaRec))/(1000*60*60*24));dias=(d>=0?'+':'')+d+'d';}
+    const tratamiento=r.objetivo||r.cultivo||'—';
+    const prods=(r.productos||[]).map(p=>({
+      nombre:p.nombre||p.n||'',
+      dosis:parseFloat(p.dosis||p.d)||0,
+      unidad:(p.unidad||p.u||'').replace(/\/ha$/i,'').trim(),
+      haVal
+    }));
+    return {r,haVal,fechaRec,fechaApl,dias,tratamiento,prods};
+  });
+}
+
+function repRenderPulv(body){
+  const campos=repGetCampos();
+  const base=repPulvBase();
+  const rets=repPulvApply(base);
   rets.sort((a,b)=>new Date(b.fecha_aplicacion||b.created_at)-new Date(a.fecha_aplicacion||a.created_at));
 
-  const cOpts=campos.map(c=>`<option value="${c.key}" ${repPulvFiltro.campo===c.key?'selected':''}>${c.label}</option>`).join('');
-  const filtroHtml=`<div style="padding:10px 14px;background:var(--surf);border-bottom:1px solid var(--bord);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-    <select onchange="repPulvFiltrar('campo',this.value)" style="flex:1;min-width:140px;padding:7px 10px;border:${repPulvFiltro.campo?'1.5px solid var(--blu)':'1px solid var(--bord)'};border-radius:7px;background:var(--surf2);color:${repPulvFiltro.campo?'var(--blu)':'var(--txt)'};font-size:12px">
-      <option value="">Todos los campos</option>${cOpts}
-    </select>
-    <span style="font-size:11px;color:var(--txt3)">${rets.length} receta${rets.length!==1?'s':''} aplicada${rets.length!==1?'s':''}</span>
+  const f=repPulvF;
+  const hasF=f.campo||f.lote||f.tratamiento||f.producto||f.fechaDesde||f.fechaHasta;
+  const ss=(fld,v)=>`style="flex:1;min-width:110px;padding:6px 8px;border:${v?'1.5px solid var(--blu)':'1px solid var(--bord)'};border-radius:7px;background:var(--surf2);color:${v?'var(--blu)':'var(--txt)'};font-size:12px"`;
+  const cOpts=campos.map(c=>`<option value="${c.key}" ${f.campo===c.key?'selected':''}>${c.label}</option>`).join('');
+
+  const filtroHtml=`<div style="padding:10px 14px;background:var(--surf);border-bottom:1px solid var(--bord)">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">
+      <select onchange="repPulvSet('campo',this.value)" ${ss('campo',f.campo)}>
+        <option value="">Campo</option>${cOpts}
+      </select>
+      <input type="text" placeholder="Lote" value="${f.lote}" oninput="repPulvSet('lote',this.value)" ${ss('lote',f.lote)}>
+      <input type="text" placeholder="Tratamiento" value="${f.tratamiento}" oninput="repPulvSet('tratamiento',this.value)" ${ss('tratamiento',f.tratamiento)}>
+      <input type="text" placeholder="Producto" value="${f.producto}" oninput="repPulvSet('producto',this.value)" ${ss('producto',f.producto)}>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+      <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt3)">Desde
+        <input type="date" value="${f.fechaDesde}" onchange="repPulvSet('fechaDesde',this.value)" style="padding:5px 7px;border:${f.fechaDesde?'1.5px solid var(--blu)':'1px solid var(--bord)'};border-radius:7px;background:var(--surf2);color:var(--txt);font-size:11px">
+      </label>
+      <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt3)">Hasta
+        <input type="date" value="${f.fechaHasta}" onchange="repPulvSet('fechaHasta',this.value)" style="padding:5px 7px;border:${f.fechaHasta?'1.5px solid var(--blu)':'1px solid var(--bord)'};border-radius:7px;background:var(--surf2);color:var(--txt);font-size:11px">
+      </label>
+      ${hasF?`<button onclick="repPulvLimpiar()" style="padding:5px 10px;border:1px solid var(--bord);border-radius:7px;background:var(--surf2);color:var(--txt3);font-size:11px;cursor:pointer">✕ Limpiar</button>`:''}
+      <span style="font-size:11px;color:var(--txt3);margin-left:auto">${rets.length} receta${rets.length!==1?'s':''}</span>
+      <button onclick="repPulvExportXLSX()" style="padding:5px 11px;border:1px solid var(--grn);border-radius:7px;background:rgba(79,207,142,.1);color:var(--grn);font-size:11px;font-weight:500;cursor:pointer">Excel</button>
+      <button onclick="repPulvExportPDF()" style="padding:5px 11px;border:1px solid var(--acc);border-radius:7px;background:rgba(247,151,79,.1);color:var(--acc);font-size:11px;font-weight:500;cursor:pointer">PDF</button>
+    </div>
   </div>`;
 
-  if(!rets.length){body.innerHTML=filtroHtml+'<div class="empty" style="padding:40px">Sin pulverizaciones aplicadas</div>';return;}
+  if(!rets.length){body.innerHTML=filtroHtml+'<div class="empty" style="padding:40px">Sin pulverizaciones para los filtros seleccionados</div>';return;}
 
   const th='padding:7px 8px;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:2px solid var(--bord);white-space:nowrap;text-align:left';
   const td='padding:6px 8px;font-size:11px;vertical-align:top';
   const tdr='padding:6px 8px;font-size:11px;vertical-align:top;text-align:right';
 
-  const tablaRows=rets.map(r=>{
-    const haVal=parseFloat(r.ha_aplicar)||parseFloat(D?.lotes?.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area)||0;
-    const fechaRec=r.fecha?r.fecha.slice(0,10):'';
-    const fechaApl=r.fecha_aplicacion?r.fecha_aplicacion.slice(0,10):'';
-    let dias='—';
-    if(fechaRec&&fechaApl){
-      const d=Math.round((new Date(fechaApl)-new Date(fechaRec))/(1000*60*60*24));
-      dias=d>=0?'+'+d+'d':d+'d';
-    }
-    const tratamiento=r.objetivo||r.cultivo||'—';
-    const prods=(r.productos||[]).map(p=>{
-      const nombre=p.nombre||p.n||'';
-      const dosis=parseFloat(p.dosis||p.d)||0;
-      const uBase=(p.unidad||p.u||'').replace(/\/ha$/i,'').trim();
-      const total=haVal>0&&dosis>0?(dosis*haVal).toFixed(1)+' '+uBase:'—';
-      return `<div style="display:flex;justify-content:space-between;gap:16px;padding:2px 0;border-bottom:1px dashed var(--bord)">
-        <span style="color:var(--txt)">${nombre}</span>
-        <span style="white-space:nowrap;color:var(--txt2)">${dosis>0?dosis+' '+(p.unidad||p.u||''):''}</span>
-        <span style="white-space:nowrap;font-weight:500;color:var(--acc)">${total}</span>
-      </div>`;
-    }).join('')||'<span style="color:var(--txt3);font-size:11px">Sin productos</span>';
-
+  const tablaRows=repPulvGetRows(rets).map(({r,haVal,fechaApl,dias,tratamiento,prods})=>{
+    const prodsHtml=prods.map(p=>`<div style="display:flex;gap:8px;padding:1px 0;border-bottom:1px dashed var(--bord)">
+      <span style="flex:1;color:var(--txt)">${p.nombre}</span>
+      <span style="white-space:nowrap;color:var(--txt3)">${p.dosis>0?p.dosis+' '+p.unidad+'/ha':''}</span>
+      <span style="white-space:nowrap;font-weight:500;color:var(--acc)">${p.dosis>0&&haVal>0?(p.dosis*haVal).toFixed(1)+' '+p.unidad:''}</span>
+    </div>`).join('')||'<span style="color:var(--txt3)">—</span>';
     return `<tr style="border-bottom:2px solid var(--bord)">
       <td style="${td};font-weight:500">${fechaApl||'—'}</td>
       <td style="${td};font-weight:500">${(r.campo_id||'').toUpperCase()}</td>
       <td style="${td}">${r.lote_id||'—'}</td>
       <td style="${tdr}">${haVal>0?haVal.toFixed(1):'—'}</td>
       <td style="${td}">${tratamiento}</td>
-      <td style="${td};color:${dias.startsWith('+')||dias==='0d'?'var(--grn)':'var(--txt3)'}">${dias}</td>
-      <td style="${td};min-width:220px">${prods}</td>
+      <td style="${td};color:var(--txt3)">${dias}</td>
+      <td style="${td};min-width:240px">${prodsHtml}</td>
     </tr>`;
   }).join('');
 
   body.innerHTML=filtroHtml+`<div style="padding:14px 14px 0"><div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-    <table style="border-collapse:collapse;width:100%">
+    <table id="rep-pulv-tabla" style="border-collapse:collapse;width:100%">
       <thead><tr style="background:var(--surf2)">
-        <th style="${th}">Fecha aplic.</th>
-        <th style="${th}">Campo</th>
-        <th style="${th}">Lote</th>
-        <th style="${th};text-align:right">ha</th>
-        <th style="${th}">Tratamiento</th>
-        <th style="${th}">Δ días</th>
-        <th style="${th}">Productos · dosis/ha · total</th>
+        <th style="${th}">Fecha aplic.</th><th style="${th}">Campo</th><th style="${th}">Lote</th>
+        <th style="${th};text-align:right">ha</th><th style="${th}">Tratamiento</th>
+        <th style="${th}">Δ días</th><th style="${th}">Productos (dosis/ha → total)</th>
       </tr></thead>
       <tbody>${tablaRows}</tbody>
     </table>
   </div></div>`;
 }
-function repPulvFiltrar(campo,val){repPulvFiltro[campo]=val;repRenderPulv(document.getElementById('rep-body'));}
+
+function repPulvSet(field,val){repPulvF[field]=val;repRenderPulv(document.getElementById('rep-body'));}
+function repPulvLimpiar(){repPulvF={campo:'',lote:'',tratamiento:'',producto:'',fechaDesde:'',fechaHasta:''};repRenderPulv(document.getElementById('rep-body'));}
+
+function repPulvExportXLSX(){
+  const base=repPulvBase();const rets=repPulvApply(base);
+  rets.sort((a,b)=>new Date(b.fecha_aplicacion||b.created_at)-new Date(a.fecha_aplicacion||a.created_at));
+  const ws_data=[['Fecha Aplic.','Campo','Lote','ha','Tratamiento','Δ días','Producto','Dosis/ha','Unidad','Total']];
+  repPulvGetRows(rets).forEach(({r,haVal,fechaApl,dias,tratamiento,prods})=>{
+    if(!prods.length){ws_data.push([fechaApl,(r.campo_id||'').toUpperCase(),r.lote_id||'',haVal||'',tratamiento,dias,'','','','']);}
+    else prods.forEach((p,i)=>{
+      ws_data.push(i===0?[fechaApl,(r.campo_id||'').toUpperCase(),r.lote_id||'',haVal||'',tratamiento,dias,p.nombre,p.dosis||'',p.unidad,p.dosis&&haVal?(p.dosis*haVal).toFixed(1):'']
+        :['','','','','','',p.nombre,p.dosis||'',p.unidad,p.dosis&&haVal?(p.dosis*haVal).toFixed(1):'']);
+    });
+  });
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(ws_data),'Pulverizaciones');
+  XLSX.writeFile(wb,'pulverizaciones.xlsx');
+}
+
+function repPulvExportPDF(){
+  const base=repPulvBase();const rets=repPulvApply(base);
+  rets.sort((a,b)=>new Date(b.fecha_aplicacion||b.created_at)-new Date(a.fecha_aplicacion||a.created_at));
+  const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape'});
+  doc.setFontSize(14);doc.text('TWIN',14,14);doc.setFontSize(10);doc.setTextColor(100);doc.text('Pulverizaciones aplicadas',14,20);
+  const rows=[];
+  repPulvGetRows(rets).forEach(({r,haVal,fechaApl,dias,tratamiento,prods})=>{
+    const prodStr=prods.map(p=>`${p.nombre}${p.dosis?': '+p.dosis+' '+p.unidad+'/ha → '+(p.dosis*haVal).toFixed(1)+' '+p.unidad:''}`).join('\n')||'—';
+    rows.push([fechaApl||'—',(r.campo_id||'').toUpperCase(),r.lote_id||'—',haVal>0?haVal.toFixed(1):'—',tratamiento,dias,prodStr]);
+  });
+  doc.autoTable({startY:24,head:[['Fecha','Campo','Lote','ha','Tratamiento','Δ días','Productos']],body:rows,styles:{fontSize:8},headStyles:{fillColor:[40,120,70]},columnStyles:{6:{cellWidth:80}}});
+  doc.save('pulverizaciones.pdf');
+}
 
 // ---- FERTILIZACIONES ----
 let repFertFiltro={campo:''};
