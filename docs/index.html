@@ -2408,7 +2408,7 @@ function repSFLimpiarTodo(){
 }
 
 // ---- PULVERIZACIONES ----
-let repPulvFiltro={campo:'',fecha:''};
+let repPulvFiltro={campo:''};
 function repRenderPulv(body){
   const ck2=repGetCli();
   const campos=repGetCampos();
@@ -2417,30 +2417,68 @@ function repRenderPulv(body){
   else if(ck2&&ck2!=='all'){rets=rets.filter(r=>r.cliente_id===ck2);}
   if(repPulvFiltro.campo)rets=rets.filter(r=>r.campo_id===repPulvFiltro.campo);
   rets.sort((a,b)=>new Date(b.fecha_aplicacion||b.created_at)-new Date(a.fecha_aplicacion||a.created_at));
-  const filtroHtml=repFiltroBar(campos,repPulvFiltro,'repPulvFiltrar');
+
+  const cOpts=campos.map(c=>`<option value="${c.key}" ${repPulvFiltro.campo===c.key?'selected':''}>${c.label}</option>`).join('');
+  const filtroHtml=`<div style="padding:10px 14px;background:var(--surf);border-bottom:1px solid var(--bord);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <select onchange="repPulvFiltrar('campo',this.value)" style="flex:1;min-width:140px;padding:7px 10px;border:${repPulvFiltro.campo?'1.5px solid var(--blu)':'1px solid var(--bord)'};border-radius:7px;background:var(--surf2);color:${repPulvFiltro.campo?'var(--blu)':'var(--txt)'};font-size:12px">
+      <option value="">Todos los campos</option>${cOpts}
+    </select>
+    <span style="font-size:11px;color:var(--txt3)">${rets.length} receta${rets.length!==1?'s':''} aplicada${rets.length!==1?'s':''}</span>
+  </div>`;
+
   if(!rets.length){body.innerHTML=filtroHtml+'<div class="empty" style="padding:40px">Sin pulverizaciones aplicadas</div>';return;}
-  const rows=rets.map(r=>{
-    const fecha=r.fecha_aplicacion?r.fecha_aplicacion.slice(0,10):(r.created_at?r.created_at.slice(0,10):'—');
-    const prods=(r.productos||[]).map(p=>p.nombre||p.n||'').filter(Boolean).join(', ')||'—';
+
+  const th='padding:7px 8px;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:2px solid var(--bord);white-space:nowrap;text-align:left';
+  const td='padding:6px 8px;font-size:11px;vertical-align:top';
+  const tdr='padding:6px 8px;font-size:11px;vertical-align:top;text-align:right';
+
+  const tablaRows=rets.map(r=>{
     const haVal=parseFloat(r.ha_aplicar)||parseFloat(D?.lotes?.find(l=>l.layer===r.campo_id&&l.name===r.lote_id)?.area)||0;
-    return `<tr style="border-bottom:1px solid var(--bord)">
-      <td style="padding:7px 8px;font-size:11px">${fecha}</td>
-      <td style="padding:7px 8px;font-size:11px;font-weight:500">${(r.campo_id||'').toUpperCase()}</td>
-      <td style="padding:7px 8px;font-size:11px">${r.lote_id||'—'}</td>
-      <td style="padding:7px 8px;font-size:11px;text-align:right">${haVal>0?haVal.toFixed(1):'—'}</td>
-      <td style="padding:7px 8px;font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${prods}</td>
+    const fechaRec=r.fecha?r.fecha.slice(0,10):'';
+    const fechaApl=r.fecha_aplicacion?r.fecha_aplicacion.slice(0,10):'';
+    let dias='—';
+    if(fechaRec&&fechaApl){
+      const d=Math.round((new Date(fechaApl)-new Date(fechaRec))/(1000*60*60*24));
+      dias=d>=0?'+'+d+'d':d+'d';
+    }
+    const tratamiento=r.objetivo||r.cultivo||'—';
+    const prods=(r.productos||[]).map(p=>{
+      const nombre=p.nombre||p.n||'';
+      const dosis=parseFloat(p.dosis||p.d)||0;
+      const uBase=(p.unidad||p.u||'').replace(/\/ha$/i,'').trim();
+      const total=haVal>0&&dosis>0?(dosis*haVal).toFixed(1)+' '+uBase:'—';
+      return `<div style="display:flex;justify-content:space-between;gap:16px;padding:2px 0;border-bottom:1px dashed var(--bord)">
+        <span style="color:var(--txt)">${nombre}</span>
+        <span style="white-space:nowrap;color:var(--txt2)">${dosis>0?dosis+' '+(p.unidad||p.u||''):''}</span>
+        <span style="white-space:nowrap;font-weight:500;color:var(--acc)">${total}</span>
+      </div>`;
+    }).join('')||'<span style="color:var(--txt3);font-size:11px">Sin productos</span>';
+
+    return `<tr style="border-bottom:2px solid var(--bord)">
+      <td style="${td};font-weight:500">${fechaApl||'—'}</td>
+      <td style="${td};font-weight:500">${(r.campo_id||'').toUpperCase()}</td>
+      <td style="${td}">${r.lote_id||'—'}</td>
+      <td style="${tdr}">${haVal>0?haVal.toFixed(1):'—'}</td>
+      <td style="${td}">${tratamiento}</td>
+      <td style="${td};color:${dias.startsWith('+')||dias==='0d'?'var(--grn)':'var(--txt3)'}">${dias}</td>
+      <td style="${td};min-width:220px">${prods}</td>
     </tr>`;
   }).join('');
-  body.innerHTML=filtroHtml+`<div style="padding:14px"><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
-    <thead><tr style="background:var(--surf2)">
-      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Fecha</th>
-      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Campo</th>
-      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Lote</th>
-      <th style="padding:7px 8px;text-align:right;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">ha</th>
-      <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--txt3);font-weight:500;border-bottom:1px solid var(--bord)">Productos</th>
-    </tr></thead>
-    <tbody>${rows}</tbody>
-  </table></div></div>`;
+
+  body.innerHTML=filtroHtml+`<div style="padding:14px 14px 0"><div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+    <table style="border-collapse:collapse;width:100%">
+      <thead><tr style="background:var(--surf2)">
+        <th style="${th}">Fecha aplic.</th>
+        <th style="${th}">Campo</th>
+        <th style="${th}">Lote</th>
+        <th style="${th};text-align:right">ha</th>
+        <th style="${th}">Tratamiento</th>
+        <th style="${th}">Δ días</th>
+        <th style="${th}">Productos · dosis/ha · total</th>
+      </tr></thead>
+      <tbody>${tablaRows}</tbody>
+    </table>
+  </div></div>`;
 }
 function repPulvFiltrar(campo,val){repPulvFiltro[campo]=val;repRenderPulv(document.getElementById('rep-body'));}
 
