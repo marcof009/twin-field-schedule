@@ -2175,7 +2175,12 @@ function repSiembraGetAllRows(){
   const campoLabel=k=>campos.find(c=>c.key===k)?.label||k;
   return lotes.map(l=>{
     const campoData=D?.siembra?.[l.layer]||{};
-    const loteKey=Object.keys(campoData).find(k=>k.toUpperCase()===l.name.toUpperCase());
+    const nameUp=l.name.toUpperCase();
+    // D.siembra keys are stored as "LOTE X"; l.name from shapefile may or may not have prefix
+    const loteKey=Object.keys(campoData).find(k=>{
+      const ku=k.toUpperCase();
+      return ku===nameUp||ku===('LOTE '+nameUp)||ku.replace(/^LOTE\s*/,'')===nameUp;
+    });
     const s=loteKey?campoData[loteKey]:null;
     return {campoKey:l.layer,campo:campoLabel(l.layer),lote:l.name,ha:parseFloat(l.area)||0,
       cultivo:s?.cultivo||'',variedad:s?.variedad||'',antecesor:s?.antecesor||s?.ant||'',
