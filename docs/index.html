@@ -1238,6 +1238,7 @@ const RET_TIPOS=[
   {key:'fertilizacion',lbl:'Fertilización',icon:'🌱',desc:'Aplicaciones de fertilizantes'},
   {key:'otras',lbl:'Otras aplicaciones',icon:'⚙️',desc:'Cebo, aéreo, drone, etc.'},
   {key:'labores',lbl:'Labores',icon:'🚜',desc:'Siembra, labranza, cosecha, etc.'},
+  {key:'ordenes_pdf',lbl:'Órdenes de trabajo PDF',icon:'📋',desc:'Archivos PDF por cliente'},
 ];
 let LABORES=[];
 function retTipoLbl(k){return RET_TIPOS.find(t=>t.key===k)?.lbl||k;}
@@ -1287,8 +1288,9 @@ function retSelTipo(k){retTipo=k;retOrdenMode=false;retRepMode=false;retFiltroPe
 function retRenderTipos(body){
   const all=retR;
   body.innerHTML='<div style="padding:14px 14px 0">'+RET_TIPOS.map(t=>{
-    const pend=all.filter(r=>r.tipo===t.key&&r.estado==='pendiente').length;
-    const ok=all.filter(r=>r.tipo===t.key&&r.estado==='ok').length;
+    const isPDF=t.key==='ordenes_pdf';
+    const pend=isPDF?0:all.filter(r=>r.tipo===t.key&&r.estado==='pendiente').length;
+    const ok=isPDF?0:all.filter(r=>r.tipo===t.key&&r.estado==='ok').length;
     return `<div onclick="retSelTipo('${t.key}')" style="display:flex;align-items:center;gap:14px;background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;cursor:pointer">
       <div style="font-size:28px;line-height:1">${t.icon}</div>
       <div style="flex:1">
@@ -1304,11 +1306,13 @@ function retRenderTipos(body){
 }
 function retRend(){
   const body=document.getElementById('ret-body');const t=retStk[retStk.length-1];
-  document.getElementById('ret-add').style.display=(!t&&retTipo&&SESSION.r==='admin')?'block':'none';
-  document.getElementById('ret-orden-btn').style.display=(!t&&retTipo)?'block':'none';
-  document.getElementById('ret-rep-btn').style.display=(!t&&retTipo)?'block':'none';
+  const isPDF=retTipo==='ordenes_pdf';
+  document.getElementById('ret-add').style.display=(!t&&retTipo&&SESSION.r==='admin'&&!isPDF)?'block':'none';
+  document.getElementById('ret-orden-btn').style.display=(!t&&retTipo&&!isPDF)?'block':'none';
+  document.getElementById('ret-rep-btn').style.display=(!t&&retTipo&&!isPDF)?'block':'none';
   document.getElementById('ret-title').textContent=t?(t.type==='nueva'?'Nueva receta':'Detalle'):retTipo?retTipoLbl(retTipo):'Recetas';
   if(!t&&!retTipo){retRenderTipos(body);}
+  else if(!t&&isPDF){retRenderOrdenesPDF(body);}
   else if(!t){retRL(body);}else if(t.type==='nueva'){retRF(body);}else{retRD(body,t.id);}
 }
 function retDashboard(){
@@ -1870,6 +1874,80 @@ function retRD(body,id){
       <button onclick="retEliminar('${r.id}')" style="flex:1;background:none;border:1px solid var(--red);border-radius:var(--r2);padding:11px;font-size:12px;color:var(--red);font-family:var(--f)">Eliminar</button>`:''}
     </div>`
     +'</div>';
+}
+
+// ORDENES PDF
+async function retRenderOrdenesPDF(body){
+  body.innerHTML='<div style="padding:20px;text-align:center;color:var(--txt3)">Cargando PDFs...</div>';
+  try{
+    if(!DBX_TOKEN)await dbxRefreshToken();
+    const isAdmin=SESSION.r==='admin';
+    // Determine which client folders to list
+    const clientKeys=isAdmin?Object.keys(CFG):(SESSION.c||[]);
+    const allFiles=[];
+    for(const ck of clientKeys){
+      const folderPath=TF+'/pdf/'+ck;
+      try{
+        const r=await fetch('https://api.dropboxapi.com/2/files/list_folder',{
+          method:'POST',
+          headers:{'Authorization':'Bearer '+DBX_TOKEN,'Content-Type':'application/json'},
+          body:JSON.stringify({path:folderPath,recursive:false})
+        });
+        if(!r.ok)continue;
+        const d=await r.json();
+        const pdfs=(d.entries||[]).filter(e=>e['.tag']==='file'&&e.name.match(/\.pdf$/i));
+        pdfs.forEach(f=>allFiles.push({...f,clienteKey:ck,clienteLbl:CFG[ck]?.lbl||ck}));
+      }catch(e){/* carpeta no existe aún */}
+    }
+    if(!allFiles.length){
+      body.innerHTML='<div style="padding:32px;text-align:center;color:var(--txt3);font-size:13px">No hay PDFs cargados aún.<br><span style="font-size:11px">Subí archivos a TwinField/pdf/{cliente}/</span></div>';
+      return;
+    }
+    // Group by client
+    const byCliente={};
+    allFiles.forEach(f=>{
+      if(!byCliente[f.clienteKey])byCliente[f.clienteKey]={lbl:f.clienteLbl,files:[]};
+      byCliente[f.clienteKey].files.push(f);
+    });
+    // Sort each group by name desc
+    Object.values(byCliente).forEach(g=>g.files.sort((a,b)=>b.name.localeCompare(a.name)));
+    let html='<div style="padding:12px">';
+    for(const[ck,grp] of Object.entries(byCliente)){
+      if(isAdmin)html+=`<div style="font-size:9px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--txt3);margin:12px 0 6px 2px">${grp.lbl}</div>`;
+      grp.files.forEach(f=>{
+        const sizeKB=(f.size/1024).toFixed(0);
+        const dateStr=f.server_modified?f.server_modified.slice(0,10):'';
+        html+=`<div style="display:flex;align-items:center;gap:12px;background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r);padding:11px 13px;margin-bottom:8px">
+          <div style="font-size:22px;line-height:1;flex-shrink:0">📄</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name.replace(/\.pdf$/i,'')}</div>
+            <div style="font-size:10px;color:var(--txt3);margin-top:2px">${dateStr}${sizeKB>0?' · '+sizeKB+' KB':''}</div>
+          </div>
+          <button onclick="retOrdPDFAbrir('${f.path_lower.replace(/'/g,"\\'")}','${f.name.replace(/'/g,"\\'")}')" style="background:var(--acc);color:#fff;border:none;border-radius:var(--r2);padding:8px 12px;font-size:11px;font-weight:400;font-family:var(--f);cursor:pointer;flex-shrink:0">Ver PDF</button>
+        </div>`;
+      });
+    }
+    html+='</div>';
+    body.innerHTML=html;
+  }catch(e){
+    body.innerHTML='<div style="padding:20px;color:var(--red);font-size:12px">Error al cargar PDFs: '+e.message+'</div>';
+  }
+}
+async function retOrdPDFAbrir(path,name){
+  try{
+    if(!DBX_TOKEN)await dbxRefreshToken();
+    // Create a temporary link
+    const r=await fetch('https://api.dropboxapi.com/2/files/get_temporary_link',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+DBX_TOKEN,'Content-Type':'application/json'},
+      body:JSON.stringify({path:path})
+    });
+    if(!r.ok)throw new Error('No se pudo obtener el link');
+    const d=await r.json();
+    window.open(d.link,'_blank');
+  }catch(e){
+    toast('Error: '+e.message);
+  }
 }
 
 // PLANOS
